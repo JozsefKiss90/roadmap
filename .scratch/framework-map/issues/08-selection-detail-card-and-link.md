@@ -91,3 +91,7 @@ Left:
 - **The decision squares in the detail card are styled in CSS**, not read from the mark tokens, so a change to a mark token needs the same change in `src/styles.css`.
 - **`src/scene.ts` now also draws the hover ring, the selection and the `implements` lines.** It is a candidate to split before the lenses arrive.
 - **Three type styles in the card have no row in "Map type"**: the 12px notes, the heavier section headings and the 600-weight decision class.
+
+### 2026-11-17: decisions accepted
+
+All fifteen decisions above were accepted as built. The items under "Not fixed" and "Left" stay open.
