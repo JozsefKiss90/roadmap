@@ -63,7 +63,7 @@ export interface Stage {
   onCameraChange(listener: () => void): void;
   /** Lets something else in the scene, such as a label, take clicks. It is asked before the plates. */
   addPickable(pickable: Pickable): void;
-  /** Applies changed constants: the field of place, the limits, and the camera's place for the current distance. */
+  /** Applies changed constants: the field of view, the limits, and the camera's place for the current distance. */
   applyConstants(): void;
 }
 
