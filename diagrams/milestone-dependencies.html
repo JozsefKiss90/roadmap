@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Every later milestone rests on a definition of “good”</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #14213d;   /* deep navy */
+      --color-ink:     #f6f1e7;   /* ivory */
+      --color-muted:   #b8c0d4;
+      --color-accent:  #7fa3ff;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .sub { font-size: 0.82rem; line-height: 1.5; color: var(--color-muted); max-width: 46rem; margin: -0.75rem 0 1.5rem; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+    /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Dependency graph · AI 2027 roadmap</p>
+    <h1>Every later milestone rests on a definition of “good”</h1>
+    <p class="sub">An arrow points from a milestone to what it depends on. The edges are read from the phase rationales in the roadmap; the sources do not list them.</p>
+
+        <div class="diagram-container">
+      <svg viewBox="0 0 1000 576" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="milestone-dependencies-title milestone-dependencies-desc">
+        <title id="milestone-dependencies-title">Every later milestone rests on a definition of “good”</title>
+        <desc id="milestone-dependencies-desc">Ranked dependency graph of eight roadmap milestones: retainer revenue depends on the first client result and the workshop offer; the client result, the workshop offer, the product-engineer role and the eval suite all depend on a written definition of good; the eval suite also depends on skills and routines and on the personal eval.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b8c0d4"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7fa3ff"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5fc4be"/></marker>
+
+          <!-- OPTIONAL: dot-pattern background. Uncomment and add <rect fill="url(#dots)"/> after the paper rect to enable. -->
+          <!--
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="rgba(246,241,231,0.08)"/>
+          </pattern>
+          -->
+        </defs>
+
+        <rect width="100%" height="100%" fill="#14213d"/>
+
+        <text x="40" y="84" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 0</text>
+        <text x="40" y="204" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 1</text>
+        <text x="40" y="324" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 2</text>
+        <text x="40" y="444" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 3</text>
+        <!-- Connectors drawn before boxes; an arrow points from a milestone to what it depends on -->
+        <!-- Retainer revenue -> Workshop offer -->
+        <line x1="500" y1="112" x2="500" y2="176" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Retainer revenue -> First client result -->
+        <path d="M 460,112 V 136 Q 460,144 452,144 H 308 Q 300,144 300,152 V 176" fill="none" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- First client result -> Eval suite -->
+        <line x1="280" y1="232" x2="280" y2="296" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- First client result -> Definition of good -->
+        <path d="M 340,232 V 248 Q 340,256 348,256 H 452 Q 460,256 460,264 V 296" fill="none" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Workshop offer -> Definition of good -->
+        <line x1="500" y1="232" x2="500" y2="296" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Product-engineer role -> Definition of good -->
+        <path d="M 700,112 V 248 Q 700,256 692,256 H 548 Q 540,256 540,264 V 296" fill="none" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Eval suite -> Definition of good -->
+        <line x1="380" y1="324" x2="420" y2="324" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Eval suite -> Skills and routines -->
+        <line x1="280" y1="352" x2="280" y2="416" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Eval suite -> Personal eval -->
+        <path d="M 340,352 V 376 Q 340,384 348,384 H 492 Q 500,384 500,392 V 416" fill="none" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Retainer revenue -->
+        <rect x="420" y="56" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="420" y="56" width="160" height="56" rx="6" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <rect x="428" y="62" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="442" y="71" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P4</text>
+        <rect x="544" y="62" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="558" y="71" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0 IN</text>
+        <text x="500" y="90" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Retainer revenue</text>
+        <text x="500" y="105" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">recurring or IP-based</text>
+        <!-- Product-engineer role -->
+        <rect x="620" y="56" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="620" y="56" width="160" height="56" rx="6" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <rect x="628" y="62" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="642" y="71" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P3</text>
+        <rect x="744" y="62" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="758" y="71" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0 IN</text>
+        <text x="700" y="90" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Product-engineer role</text>
+        <text x="700" y="105" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">or forward-deployed</text>
+        <!-- First client result -->
+        <rect x="220" y="176" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="220" y="176" width="160" height="56" rx="6" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <rect x="228" y="182" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="242" y="191" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P3</text>
+        <rect x="344" y="182" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="358" y="191" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 IN</text>
+        <text x="300" y="210" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">First client result</text>
+        <text x="300" y="225" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">against a guarantee</text>
+        <!-- Workshop offer -->
+        <rect x="420" y="176" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="420" y="176" width="160" height="56" rx="6" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <rect x="428" y="182" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="442" y="191" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P3</text>
+        <rect x="544" y="182" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="558" y="191" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 IN</text>
+        <text x="500" y="210" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Workshop offer</text>
+        <text x="500" y="225" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">team upskilling</text>
+        <!-- Eval suite -->
+        <rect x="220" y="296" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="220" y="296" width="160" height="56" rx="6" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <rect x="228" y="302" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="242" y="311" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P2</text>
+        <rect x="344" y="302" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="358" y="311" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 IN</text>
+        <text x="300" y="330" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Eval suite</text>
+        <text x="300" y="345" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">each skill x10, scored</text>
+        <!-- Definition of good -->
+        <rect x="420" y="296" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="420" y="296" width="160" height="56" rx="6" fill="rgba(246,241,231,0.05)" stroke="#b8c0d4" stroke-width="0.8"/>
+        <rect x="428" y="302" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="442" y="311" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P2</text>
+        <rect x="544" y="302" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="558" y="311" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">4 IN</text>
+        <text x="500" y="330" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Definition of good</text>
+        <text x="500" y="345" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">specs and rubrics</text>
+        <!-- Skills and routines -->
+        <rect x="220" y="416" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="220" y="416" width="160" height="56" rx="6" fill="rgba(246,241,231,0.05)" stroke="#b8c0d4" stroke-width="0.8"/>
+        <rect x="228" y="422" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="242" y="431" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P1</text>
+        <rect x="344" y="422" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="358" y="431" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 IN</text>
+        <text x="300" y="450" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Skills and routines</text>
+        <text x="300" y="465" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">first reusable builds</text>
+        <!-- Personal eval -->
+        <rect x="420" y="416" width="160" height="56" rx="6" fill="#14213d"/>
+        <rect x="420" y="416" width="160" height="56" rx="6" fill="rgba(246,241,231,0.05)" stroke="#b8c0d4" stroke-width="0.8"/>
+        <rect x="428" y="422" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="442" y="431" fill="#f6f1e7" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">P0</text>
+        <rect x="544" y="422" width="28" height="12" rx="2" fill="transparent" stroke="rgba(246,241,231,0.40)" stroke-width="0.8"/>
+        <text x="558" y="431" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 IN</text>
+        <text x="500" y="450" fill="#f6f1e7" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Personal eval</text>
+        <text x="500" y="465" fill="#b8c0d4" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">10-15 real tasks</text>
+        <line x1="40" y1="500" x2="960" y2="500" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+<text x="40" y="516" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="40" y="528" width="16" height="12" rx="2" fill="rgba(246,241,231,0.04)" stroke="#f6f1e7" stroke-width="1"/>
+        <text x="64" y="537" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Milestone</text>
+        <rect x="152" y="528" width="16" height="12" rx="2" fill="rgba(246,241,231,0.05)" stroke="#b8c0d4" stroke-width="0.8"/>
+        <text x="176" y="537" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Depends on nothing here</text>
+        <line x1="336" y1="534" x2="364" y2="534" stroke="#b8c0d4" stroke-width="1" marker-end="url(#arrow)"/>
+        <text x="376" y="537" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Depends on</text>
+        <text x="480" y="537" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif" font-style="italic">Badges count dependents. Four milestones converge on the definition of good.</text>
+
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

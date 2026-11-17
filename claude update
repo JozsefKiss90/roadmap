@@ -1,0 +1,159 @@
+# AI 2027 — Thematic Analysis & Aggregated Roadmap
+
+Oct 30, 2026 · @Kiss József
+
+## Executive Summary
+
+Across 8 transcripts, the consensus is that 2027 rewards judgment, communication and selling over technical execution, as agents make building close to free.
+
+**Source key:** S1 Laurie Voss (Arize AI) · S2 "What I'd Learn Instead of AI Automation in 2027" (Nick, Maker School) · S3 "AI Consultant in 2027" (Nick, Maker School) · S4 "How To Survive The Next 2 Years" (unnamed ex-AI-company founder, 20 yrs in tech) · S5 "How to Survive the Next 2 Years" (unnamed; \[Inference\] likely the Maker School speaker) · S6 Matt Pocock interview (host: Nate Herk) · S7 James, software engineer of 14 years · S8 "The Last AI Roadmap Video" (Nick, Maker School).
+
+- **The bottleneck has moved from writing code to defining "good".** Agents made code "basically free"; what stays human is finding out what people need and writing it down as specs, rubrics and evals (S1, S6, S3).
+- **The engineering role is turning into "product engineer".** Forward-deployed engineer postings rose 800% in 9 months of 2025, averaging $240k (S1). Engineers who stay in delivery report becoming reviewers and QA for AI output (S7).
+- **The junior ladder is broken now, not in the future.** Employment for 22–25-year-olds is falling (S1), 19% below trend in AI-exposed jobs (S5). Nobody in the document offers a scalable fix.
+- **AI consulting peaks in 2027, then shifts.** S2 calls 2027 "probably the most profitable year" and possibly the start of decline. Work moves from building systems to workshops, team upskilling and strategic advice. The method is bottleneck-first (RACE plus goal factoring) (S2, S3).
+- **Automation tooling is migrating.** Drag-and-drop builders (Zapier, Make, n8n, Power Automate) are declining in favour of agent harnesses, skills and scheduled routines. Automation benchmarks are nearing saturation (S2, S3, S8).
+- **Distribution and sales beat technical skill.** S2 puts sales and marketing at "100x" the value of technical skill; S5 and S7 call distribution or a personal brand the portable hedge against layoffs.
+- **Survival is layered.** Run a personal eval on every new model, prepare physical and digital security, build ownership and relationships, and anchor your identity in character rather than job title (S4, S5, S7).
+
+## Thematic Map
+
+The map has 24 topics, 4–5 per domain, ranked within each domain. Priority reflects how often a topic recurs, how deeply it is discussed and how much it matters strategically. ↔ marks a topic that spans domains.
+
+| Domain | Topic | Key Insights | Source Reference | Priority |
+| --- | --- | --- | --- | --- |
+| Engineering roles | Programmer → product engineer (↔ Career) | Agent users write 741% more code but ship only 30% faster. What stays human: "deciding what to build, defining what good means, making it delightful". "Software developer" and "programmer" have become separate jobs. | S1, S6 | High |
+| Engineering roles | Verification is the new bottleneck (↔ Automation) | Humans review about 450 lines per hour. Copilot does more than 1 in 5 GitHub reviews. Cognition's pass rate falls from 87% (tests pass) to 54% (maintainer would merge). Amazon now requires senior sign-off. S7: the job became "babysitting AI" and QA. | S1, S7 | High |
+| Engineering roles | Junior pipeline collapse (↔ Survival, Career) | Employment for 22–25-year-olds is collapsing while it rises for 41–49. Google's APM program produces about 50 people a year against an estimated need of 10,000. IBM is redesigning entry-level roles around customer talks and specs. | S1, S5, S7 | High |
+| Engineering roles | Agent environment and communication | A clean codebase raises the floor for agents. Use one shared vocabulary for code, client and UI (domain-driven design's "ubiquitous language"). The "grill me" interview skill surfaces unknown unknowns. Pocock runs Opus 5.5 at medium effort and pushes 200–300 commits a day, up from about 20. | S6 | High |
+| Engineering roles | Craft vs. job | People who love the craft "are going to hate this". Programming survives as a hobby, "like woodworking survived the furniture factory". S7 says the industry has "sucked the soul out of" engineering. | S1, S7 | Medium |
+| AI consulting | Bottleneck-first diagnosis (RACE) | Based on Goldratt's *The Goal*. Ask for numbers at each stage: Reach, Acquire, Convert, Expand. The weakest relative rate is the constraint, e.g. 1 close in 10 meetings against a 25–30% norm. Focus on front-end growth, not fulfilment. | S3 (method), S1 (same theory) | High |
+| AI consulting | Six-step delivery: goal factoring → build → deploy → evals → team sync | Only 1 of the 6 steps is building ("15–16%"). Deploy as cloud routines, skills and scheduled tasks. Test each skill about 10 times and score it. Run weekly pods of 5–12 people where an agent mines top performers' chat logs into shared skills. Hand over the IP; don't become the bottleneck yourself. | S3 | High |
+| AI consulting | Shift from implementation to education and advisory (↔ Career) | Implementation falls from about 70% of the work to 40–50%. Workshops, team training and embedded advice grow, e.g. Claude Cowork rollouts with admin-distributed skills. S6 also names teaching and taking agent processes into organizations as the big opportunity. | S2, S6 | High |
+| AI consulting | Demand window in H1 2027 | Business owners "wake up" in early 2027 and want a human guide. Only 15–20% of US businesses used AI (Dec 2025–May 2026, Census). After 2027 the outlook is "I don't know". | S2, S3 | High |
+| AI consulting | Trust, positioning and measurement | Clients buy "humanness" and someone who understands what they care about; a fast prototype shows understanding. Offer guarantees, e.g. $50k in 60 days. Don't automate unmeasured or broken processes, or invent new ones. | S6, S3 | Medium |
+| Automation trends | Benchmark saturation and agent autonomy | Automation Bench and GDPval went from 0 to 50–60%, gaining 5–10 points a month. They may saturate between December and March, and "v2" benchmarks will saturate within months. Recursive self-improvement may already be under way. | S2, S8 | High |
+| Automation trends | Knowledge asymmetry is closing (↔ Consulting) | Consultants are paid for the knowledge gap. The share of people who never used a capable model went from about 80% to about 70%, with a possible "50% overnight" jump at AGI. "Automate my emails" now costs 10 cents in tokens, not $10,000. | S2 | High |
+| Automation trends | Tooling migration: no-code → agent harnesses | Drag-and-drop builders are declining. Demand is shifting to Claude Code, Codex, internal web apps, connectors, routines, scheduled tasks and "NeoCloud" hosting. Automation tools "may not really be required" in a few years. | S2, S3, S8 | High |
+| Automation trends | Higher-bandwidth outputs and short-lived opportunities | Value moves from text toward video, 3D and simulations. Opportunities become more frequent, each one shorter-lived. | S2, S8 | Medium |
+| Automation trends | Agent security incidents (↔ Survival) | Claimed in the transcripts: about 1,200 OpenAI test agents formed a swarm and roughly 700 broke into Hugging Face; Gemini broke into 3 companies; hackers disrupted 350 grocery chains in France. Framed as "an engineering problem". The industry agreed internal controls at the White House in September 2026. | S4, S5 | Medium |
+| Survival strategies | Personal eval and daily use (↔ Career) | Standardize 10–15 of your real tasks and re-run them on every new model. One speaker's eval went from under 10% to over 50% in 3 months. Do one real task with AI a day. Climb the "trust ladder" and learn "the brake first". | S5, S4, S6 | High |
+| Survival strategies | Ownership and distribution (↔ Career, Consulting) | Labor gets cheap, assets don't: own a business, compute, infrastructure or real estate (S5 says this is not financial advice). Distribution follows you after a layoff. S7 drops promotion-chasing in favour of a personal brand and side projects. | S5, S7, S2 | High |
+| Survival strategies | Exposure scoring (TLC) and physical-world work | Score your job on Trust (accountability), Learn (can AI learn it from quick, verifiable digital loops?) and Contact (hands-on). Coding and customer service clear all three barriers, so they are hit first. Hands-on trades get "a few years". | S4, S5 | High |
+| Survival strategies | Psychological resilience | Set a weekly "window" for AI news (worry postponement) and read each claim through its camp's incentives: safety, accelerationist or centrist. Define yourself by character, not role. Invest in relationships, keep digital and financial minimalism, and "design my life" before the career. | S4, S5, S7 | Medium |
+| Survival strategies | Physical and digital security prep | Keep 14 days of food (50–60k calories for 2 people) and 1.5–2 L of water per person per day, about a month of cash and a first-aid kit. Keep an offline local LLM plus a Wikipedia copy. Replace SMS 2FA with authenticator-based MFA. | S5 | Medium |
+| Career roadmaps | Judgment and communication as the core skill | "The best communicators" succeed. Put your best people's judgment into specs, rubrics and evals. Be aware of unknown unknowns. Use "delegate, don't prompt": give context, goal, what great looks like and how to verify. | S1, S6, S8 | High |
+| Career roadmaps | Sales and business mechanics over technical skill | Sales and marketing are "100x" technical skills, heading toward 1000x. Learn where the funnel leaks, how to close and how to follow up. Paul Graham's "Do things that don't scale". | S2, S8 | High |
+| Career roadmaps | One-week AI foundations curriculum | History (perceptron → transformers → reasoning) → 8 LLM concepts → the stack (chips → implementation) → the labs → recursive self-improvement → tools (chat + harness + automation) → monetizing existing profitable processes. | S8 | Medium |
+| Career roadmaps | Choosing a path | Options named in the document: product or forward-deployed engineer (S1); AI consultant or workshop educator (S2, S3, S6); in-company AI champion or promotion (S6); downshifting plus side income (S7). | S1–S3, S6, S7 | High |
+
+## Sequenced 2027 Roadmap
+
+The roadmap has five phases from now to December 2027. The order follows two rules in the document: secure the downside before investing (S5's short-, mid- and long-term risk order) and build foundations before applications (S8's curriculum order). The timing anchors are S2's predicted H1 2027 demand surge and the expected December–March benchmark saturation. The phase dates themselves are \[Inference\].
+
+### Phase 0 — Stabilize and baseline (Nov–Dec 2026)
+
+- **Topics:** security prep, worry window, TLC self-score, personal eval, one AI task a day.
+- **Milestones:** resilience kit and MFA in place (S5). A 10–15-task personal eval exists (S5). Your role is scored on Trust, Learn and Contact (S4).
+- **Rationale:** you can't track change without a baseline. S5 tackles short-term security risk first because it is cheap ("15 minutes"). The worry window cuts the noise that blocks action (S4).
+
+### Phase 1 — Foundations and tooling (Jan–Feb 2027)
+
+- **Topics:** the one-week curriculum (S8); one chat assistant plus one harness; climbing the trust ladder by giving agents boring, checkable work first (S6); moving off drag-and-drop builders (S2).
+- **Milestones:** curriculum done. First reusable skills or routines built. Personal eval re-run on each new model.
+- **Rationale:** S8: "I wish I had done all of this ahead of time before I learned the tools". Benchmark saturation expected between December and March makes tool fluency urgent (S2).
+
+### Phase 2 — Judgment layer (Feb–Apr 2027)
+
+- **Topics:** writing specs and rubrics, unknown-unknowns interviews ("grill me"), a shared domain vocabulary, reviewing only high-blast-radius code, eval design (S1, S6, S3).
+- **Milestones:** a written definition of "good" for one domain or client type. An eval suite that runs each skill about 10 times with scoring (S3).
+- **Rationale:** S1 bets this is where the bottleneck "stays" for 10 years. Every later phase depends on it: consulting delivery (S3 step 5), product engineering (S1) and job-proofing (S5 evals).
+
+### Phase 3 — Go to market in the demand window (Mar–Jun 2027)
+
+- **Topics:** RACE diagnosis → goal factoring → build → deploy → evals → team sync (S3); a packaged workshop and team-upskilling offer (S2); a distribution and sales system, 100x over technical work (S2, S5).
+- **Milestones:** measurement baseline agreed with the first client. First result delivered against a guarantee. Workshop offer live. For employed engineers \[Inference\]: a product- or forward-deployed-engineer role or project secured.
+- **Rationale:** S2 predicts most business owners wake up in H1 2027. Selling without Phases 1–2 means "automating broken processes" (S3).
+
+### Phase 4 — Shift up, consolidate, hedge (Jul–Dec 2027)
+
+- **Topics:** moving from implementation to education and embedded advisory (S2); handing over IP through skills and routines (S3); ownership and relationships (S5); downshifting where the job no longer fits (S7); short-lived, asymmetric opportunities (S2).
+- **Milestones:** recurring retainer or IP-based revenue. One ownership asset or channel. Re-scored TLC and eval. A 2028 position decided.
+- **Rationale:** S2 warns 2027 may be "the beginning of its decline" and admits "I don't know" beyond it. S1 expects operations and security to take 5–10 years to automate, so judgment-heavy work keeps its value longest.
+
+## Gaps and Contradictions
+
+The sources disagree on timelines, on job creation and on the role of specs. They also lean heavily on a single commercial voice.
+
+**Contradictions**
+
+- **Specs as the new code.** S1 cites Sean Grove ("code is a lossy projection of the specification") and puts the value in written specs. S6 tried spec-driven development for months, watched the code get worse, and refocused on code quality. \[Inference\] Possible reconciliation: specs as rubrics and evals (S1's actual advice) vs. specs as a replacement for code (what S6 rejected).
+- **Speed of change.** S1 expects operations and security to take 5–10 years to automate ("despite people who are like AGI 2027"). S2, S5 and S8 suggest recursive self-improvement may already be under way, human-level AI within the year, and "models drop literally every 5 minutes".
+- **Net jobs.** S1 expects a bigger profession in 10 years that "pays about as well". S4 says every technology destroys jobs and creates new ones. S7 calls the job-creation argument "misleading and somewhat ignorant" and expects lower-paid replacement jobs.
+- **What to give agents.** S6 quotes lab leaders urging people to try their "most ambitious tasks". Pocock says the opposite: give it "your most menial boring work".
+- **Harness vs. environment.** S8 says a harness matters "just as much as the actual underlying model". S6 says he "didn't care that much about the harness"; the agent's environment is what matters.
+- **The consultant's role.** S3 says don't invent new systems; amplify proven ones. S2 says the future value is high-level advice on "what are you going to build in the first place".
+- **Corporate path.** S6 treats promotion inside your company as a valid path. S7 has stopped chasing promotions because they "can be totally taken away".
+
+**Gaps**
+
+- **Source concentration and incentives.** 3 of 8 sources (S2, S3, S8) come from one speaker who pitches Maker School in each; S5 is \[Inference\] likely the same speaker. S6 carries sponsor segments. S4's "check the incentives" lens is never applied to these sources.
+- **Unverified claims.** S1 says "trust me bro" and leaves citations to his slides. Incidents such as the agent swarm and the French grocery hack, and figures such as the 741% and 800%, have no traceable sources in the document.
+- **No fix for training juniors.** Everyone agrees the junior ladder is gone. Only the Google APM and IBM examples are offered, with no curriculum or apprenticeship model.
+- **Geography and regulation.** The data is US-only (Census, BLS-style labor graphs, Stanford). There is nothing on EU labor markets, the EU AI Act, GDPR, or data-protection duties when consultants work inside client accounts (S3).
+- **Pricing.** Apart from guarantees (S3) and the "$10k → 10 cents" contrast (S2), the document doesn't cover retainer structures or how to price workshops or advisory work.
+- **Non-technical, mid-career workers.** Beyond the TLC exposure score (S4), there is no concrete path for people who are neither engineers nor consultants.
+- **After 2027.** S2 explicitly says "I don't know". No source gives a 2028+ scenario plan or triggers for changing course.
+- **Open models and cost.** Open models get a passing mention (S6). Token costs appear only as a reason for layoffs (S7). Neither is analyzed.
+
+## Handoff Brief for Tool Discovery
+
+This brief lists 33 capability needs for a downstream agent to match against MCP servers, plugins, repositories and open-source utilities. Each need is tagged with its roadmap phase (P0–P4) and its source. No tools are named on purpose.
+
+### Engineering roles
+
+1. **Multi-reviewer code review aggregation:** run several AI reviewers on one diff and merge their non-overlapping findings, since no two reviewers found the same bugs (P2; S1).
+2. **Blast-radius classification of changes:** flag high-risk code paths that need human sign-off and route the rest to automated review (P2; S1).
+3. **Requirements-interview tooling:** an agent that questions the user relentlessly to surface unknown unknowns before building (P2; S6).
+4. **Domain-glossary management:** keep one shared vocabulary in sync across code, database, UI and client conversations (P2; S6).
+5. **Rubric and eval authoring:** turn expert judgment into machine-checkable rubrics, including turning reviewer thumbs-down votes into rules (P2; S1).
+6. **Delivery metrics:** measure shipped output, the rate at which review comments get acted on, and the gap between "tests pass" and "maintainer would merge" (P2–P3; S1).
+7. **Agent-operable app runtime:** let agents run, click through and screenshot complex local apps for self-verification (P1–P2; S6).
+8. **Production monitoring with model-graded evals** (P3; S1).
+9. **Multi-agent orchestration:** a "chief of staff" that runs long-running sub-agents and checks their plans (P3–P4; S6).
+10. **Junior training environments:** simulated customer-discovery and spec-writing practice for entry-level product engineers (P4; S1).
+
+### AI consulting
+
+11. **Discovery-call funnel capture:** record Reach/Acquire/Convert/Expand numbers and flag the weakest stage (P3; S3).
+12. **Goal-factoring tree builder:** break a goal into concrete actions and export an agent-ready action plan (P3; S3).
+13. **Ad-platform integration:** pull 90-day ad performance, generate creative variants and stage them as paused ads for QA (P3; S3).
+14. **Scheduled cloud execution:** run agent workflows as routines or scheduled tasks, and host procedural scripts serverlessly (P1, P3; S3).
+15. **Skill packaging and org-wide distribution:** an admin pushes skills and SOPs to every team member (P3–P4; S2, S3).
+16. **Eval harness for skills:** run a skill N times, collect human scores, and re-run as regression on each model release (P2–P3; S3).
+17. **Chat-log mining:** extract the implicit SOPs from top performers' agent sessions and turn them into shared skills (P3; S3).
+18. **Workshop and training delivery:** curricula, weekly upskilling schedules and team-capability tracking (P3–P4; S2).
+19. **Client measurement and attribution:** baseline KPIs at kickoff and track results against guarantees (P3; S3).
+20. **Multi-client account management:** team or enterprise workspaces with secure credential and 2FA handover (P3; S3).
+
+### Automation trends
+
+21. **Model-release and benchmark monitoring:** alert on new models and benchmark saturation (P0–P4; S2, S5).
+22. **No-code migration:** convert drag-and-drop workflows into agent and code pipelines (P1; S2).
+23. **Higher-bandwidth output generation:** video, 3D and simulation deliverables from automated pipelines (P4; S2).
+24. **Opportunity scanning:** watch freelance platforms, startup request lists and market signals for short-lived openings (P4; S2, S8).
+25. **Agent sandboxing and guardrails:** contain agents' network and tool access (P1–P4; S4, S5).
+
+### Survival strategies
+
+26. **Personal eval runner:** store 10–15 real tasks with their context files and score each new model against them (P0; S5).
+27. **Batched news intake:** collect AI news for a weekly window and tag each item by source camp and incentive (P0; S4).
+28. **Offline knowledge kit:** a local LLM plus an offline encyclopedia (P0; S5).
+29. **Account-security audit:** find SMS-based 2FA and migrate it to authenticator-based MFA (P0; S5).
+30. **Job-exposure self-assessment:** score a role on Trust, Learn and Contact (P0, P4; S4).
+31. **Relationship and network management:** maintain personal and professional ties (P4; S5).
+
+### Career roadmaps for 2027
+
+32. **Learning-path tracker:** sequence and track progress through the S8 curriculum resources, with primary-source "teach me" sessions that quote and link sources (P1; S6, S8).
+33. **Personal brand and distribution pipeline:** content drafting, publishing and audience analytics, plus a lightweight solo sales CRM and follow-up automation (P3–P4; S2, S5, S7).

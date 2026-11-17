@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Which sources shape which domain</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #14213d;   /* deep navy */
+      --color-ink:     #f6f1e7;   /* ivory */
+      --color-muted:   #b8c0d4;
+      --color-accent:  #7fa3ff;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .sub { font-size: 0.82rem; line-height: 1.5; color: var(--color-muted); max-width: 46rem; margin: -0.75rem 0 1.5rem; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+    /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Radar · AI 2027 roadmap</p>
+    <h1>Which sources shape which domain</h1>
+    <p class="sub">Radius is the share of a domain’s topics that cite the source group, counted from the Source Reference column of the Thematic Map (24 topics).</p>
+
+        <div class="diagram-container">
+      <svg viewBox="0 0 1000 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="source-coverage-radar-title source-coverage-radar-desc">
+        <title id="source-coverage-radar-title">Which sources shape which domain</title>
+        <desc id="source-coverage-radar-desc">Radar chart of five source groups across the five thematic domains, where radius is the share of a domain’s topics that cite the group: the Maker School videos reach every consulting and career topic and four of five automation topics but no engineering topic, while each other source concentrates on one or two domains.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b8c0d4"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7fa3ff"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5fc4be"/></marker>
+
+          <!-- OPTIONAL: dot-pattern background. Uncomment and add <rect fill="url(#dots)"/> after the paper rect to enable. -->
+          <!--
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="rgba(246,241,231,0.08)"/>
+          </pattern>
+          -->
+        </defs>
+
+        <rect width="100%" height="100%" fill="#14213d"/>
+
+        <polygon points="500,208 530,230 519,266 481,266 470,230" fill="none" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <polygon points="500,176 561,220 538,292 462,292 439,220" fill="none" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <polygon points="500,144 591,210 556,318 444,318 409,210" fill="none" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <polygon points="500,112 622,200 575,344 425,344 378,200" fill="none" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <polygon points="500,80 652,191 594,369 406,369 348,191" fill="none" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <line x1="500" y1="240" x2="500" y2="80" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <line x1="500" y1="240" x2="652" y2="191" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <line x1="500" y1="240" x2="594" y2="369" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <line x1="500" y1="240" x2="406" y2="369" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <line x1="500" y1="240" x2="348" y2="191" stroke="rgba(246,241,231,0.20)" stroke-width="1"/>
+        <text x="500" y="49" fill="#f6f1e7" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Engineering</text>
+        <text x="500" y="62" fill="#94a1bd" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">5 TOPICS</text>
+        <text x="669" y="189" fill="#f6f1e7" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Consulting</text>
+        <text x="669" y="202" fill="#94a1bd" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start" letter-spacing="0.06em">5 TOPICS</text>
+        <text x="605" y="400" fill="#f6f1e7" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="start">Automation</text>
+        <text x="605" y="413" fill="#94a1bd" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="start" letter-spacing="0.06em">5 TOPICS</text>
+        <text x="395" y="400" fill="#f6f1e7" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="end">Survival</text>
+        <text x="395" y="413" fill="#94a1bd" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.06em">5 TOPICS</text>
+        <text x="331" y="189" fill="#f6f1e7" font-size="11" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="end">Career</text>
+        <text x="331" y="202" fill="#94a1bd" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.06em">4 TOPICS</text>
+        <text x="494" y="82" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">100%</text>
+        <text x="494" y="114" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">80%</text>
+        <text x="494" y="146" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">60%</text>
+        <text x="494" y="178" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">40%</text>
+        <text x="494" y="210" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">20%</text>
+        <!-- Survival videos · S4, S5 -->
+        <polygon points="500,208 500,240 519,266 406,369 500,240" fill="rgba(184,134,112,0.22)" stroke="#b88670" stroke-width="1.5" stroke-linejoin="round"/>
+        <!-- James · S7 -->
+        <polygon points="500,144 500,240 500,240 462,292 462,228" fill="rgba(141,130,152,0.22)" stroke="#8d8298" stroke-width="1.5" stroke-linejoin="round"/>
+        <!-- Pocock · S6 -->
+        <polygon points="500,176 561,220 500,240 481,266 424,215" fill="rgba(211,173,122,0.22)" stroke="#d3ad7a" stroke-width="1.5" stroke-linejoin="round"/>
+        <!-- Voss · S1 -->
+        <polygon points="500,112 530,230 500,240 500,240 424,215" fill="rgba(156,175,143,0.22)" stroke="#9caf8f" stroke-width="1.5" stroke-linejoin="round"/>
+        <!-- focal: Maker School · S2, S3, S8 -->
+        <polygon points="500,240 652,191 575,344 481,266 348,191" fill="rgba(127,163,255,0.22)" stroke="#7fa3ff" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="500" cy="240" r="4" fill="#7fa3ff"/>
+        <circle cx="652" cy="191" r="4" fill="#7fa3ff"/>
+        <circle cx="575" cy="344" r="4" fill="#7fa3ff"/>
+        <circle cx="481" cy="266" r="4" fill="#7fa3ff"/>
+        <circle cx="348" cy="191" r="4" fill="#7fa3ff"/>
+        <line x1="40" y1="456" x2="960" y2="456" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+<text x="40" y="472" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="40" y="484" width="16" height="8" fill="rgba(127,163,255,0.22)" stroke="#7fa3ff" stroke-width="1.5"/>
+        <text x="64" y="492" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Maker School · S2, S3, S8</text>
+        <rect x="235" y="484" width="16" height="8" fill="rgba(156,175,143,0.22)" stroke="#9caf8f" stroke-width="1.5"/>
+        <text x="259" y="492" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Voss · S1</text>
+        <rect x="348" y="484" width="16" height="8" fill="rgba(211,173,122,0.22)" stroke="#d3ad7a" stroke-width="1.5"/>
+        <text x="372" y="492" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Pocock · S6</text>
+        <rect x="472" y="484" width="16" height="8" fill="rgba(184,134,112,0.22)" stroke="#b88670" stroke-width="1.5"/>
+        <text x="496" y="492" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Survival videos · S4, S5</text>
+        <rect x="662" y="484" width="16" height="8" fill="rgba(141,130,152,0.22)" stroke="#8d8298" stroke-width="1.5"/>
+        <text x="686" y="492" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">James · S7</text>
+
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

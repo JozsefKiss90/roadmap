@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool needs pile up in Phase 3, led by consulting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #14213d;   /* deep navy */
+      --color-ink:     #f6f1e7;   /* ivory */
+      --color-muted:   #b8c0d4;
+      --color-accent:  #7fa3ff;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .sub { font-size: 0.82rem; line-height: 1.5; color: var(--color-muted); max-width: 46rem; margin: -0.75rem 0 1.5rem; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+    /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Heatmap · AI 2027 roadmap</p>
+    <h1>Tool needs pile up in Phase 3, led by consulting</h1>
+    <p class="sub">Cell = number of the 33 capability needs in the Handoff Brief tagged with that phase. A need tagged with a range (P2–P3) or with several phases (P0, P4) counts once in each phase it names, so the cells sum to 49, not 33.</p>
+
+        <div class="diagram-container">
+      <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="handoff-heatmap-title handoff-heatmap-desc">
+        <title id="handoff-heatmap-title">Tool needs pile up in Phase 3, led by consulting</title>
+        <desc id="handoff-heatmap-desc">Heatmap of the 33 capability needs by domain and roadmap phase: Phase 3 carries 16 of the 49 phase tags, all ten AI consulting needs are tagged Phase 3, engineering needs cluster in Phase 2, survival needs in Phase 0, and automation needs spread across every phase.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b8c0d4"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7fa3ff"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5fc4be"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#14213d"/>
+
+        <!-- Axis titles -->
+        <text x="558" y="24" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.18em">ROADMAP PHASE</text>
+        <text x="148" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.18em">DOMAIN</text>
+
+        <!-- Column labels -->
+        <text data-col-label="P0" x="238" y="44" fill="#f6f1e7" font-size="9" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">P0</text>
+        <text x="238" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.10em">STABILIZE</text>
+        <text data-col-label="P1" x="398" y="44" fill="#f6f1e7" font-size="9" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">P1</text>
+        <text x="398" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.10em">FOUNDATIONS</text>
+        <text data-col-label="P2" x="558" y="44" fill="#f6f1e7" font-size="9" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">P2</text>
+        <text x="558" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.10em">JUDGMENT LAYER</text>
+        <text data-col-label="P3" x="718" y="44" fill="#f6f1e7" font-size="9" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">P3</text>
+        <text x="718" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.10em">GO TO MARKET</text>
+        <text data-col-label="P4" x="878" y="44" fill="#f6f1e7" font-size="9" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">P4</text>
+        <text x="878" y="56" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.10em">SHIFT UP</text>
+
+        <!-- Row labels -->
+        <text data-row-label="engineering" x="148" y="96" fill="#f6f1e7" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">Engineering roles</text>
+        <text data-row-label="consulting" x="148" y="156" fill="#f6f1e7" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">AI consulting</text>
+        <text data-row-label="automation" x="148" y="216" fill="#f6f1e7" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">Automation trends</text>
+        <text data-row-label="survival" x="148" y="276" fill="#f6f1e7" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">Survival strategies</text>
+        <text data-row-label="career" x="148" y="336" fill="#f6f1e7" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">Career roadmaps</text>
+
+        <!-- Ink ramp (non-focal): 0→0.05 · 1→0.11 · 2→0.17 · 3→0.24 · 4→0.31 · 5→0.60 · 7→0.68 -->
+
+        <!-- Row: engineering (y=64) — 0, 1, 7, 3, 2 -->
+        <rect x="160" y="64" width="156" height="56" fill="#14213d"/>
+        <rect data-row="engineering" data-col="P0" data-value="0" x="160" y="64" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="238" y="96" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="320" y="64" width="156" height="56" fill="#14213d"/>
+        <rect data-row="engineering" data-col="P1" data-value="1" x="320" y="64" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="398" y="96" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <rect x="480" y="64" width="156" height="56" fill="#14213d"/>
+        <rect data-row="engineering" data-col="P2" data-value="7" x="480" y="64" width="156" height="56" fill="rgba(246,241,231,0.68)"/>
+        <text x="558" y="96" fill="#14213d" font-size="10" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">7</text>
+
+        <rect x="640" y="64" width="156" height="56" fill="#14213d"/>
+        <rect data-row="engineering" data-col="P3" data-value="3" x="640" y="64" width="156" height="56" fill="rgba(246,241,231,0.24)"/>
+        <text x="718" y="96" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">3</text>
+
+        <rect x="800" y="64" width="156" height="56" fill="#14213d"/>
+        <rect data-row="engineering" data-col="P4" data-value="2" x="800" y="64" width="156" height="56" fill="rgba(246,241,231,0.17)"/>
+        <text x="878" y="96" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2</text>
+
+        <!-- Row: consulting (y=124) — 0, 1, 1, 10 (focal), 2 -->
+        <rect x="160" y="124" width="156" height="56" fill="#14213d"/>
+        <rect data-row="consulting" data-col="P0" data-value="0" x="160" y="124" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="238" y="156" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="320" y="124" width="156" height="56" fill="#14213d"/>
+        <rect data-row="consulting" data-col="P1" data-value="1" x="320" y="124" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="398" y="156" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <rect x="480" y="124" width="156" height="56" fill="#14213d"/>
+        <rect data-row="consulting" data-col="P2" data-value="1" x="480" y="124" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="558" y="156" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <!-- FOCAL CELL: consulting · P3 = 10, every consulting need is tagged P3 -->
+        <rect x="640" y="124" width="156" height="56" fill="#14213d"/>
+        <rect data-row="consulting" data-col="P3" data-value="10" data-focal="true" x="640" y="124" width="156" height="56" fill="rgba(127,163,255,0.85)" stroke="#7fa3ff" stroke-width="1.2"/>
+        <text x="718" y="149" fill="#0b1226" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">10</text>
+        <text x="718" y="164" fill="#0b1226" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">ALL 10 CONSULTING NEEDS</text>
+
+        <rect x="800" y="124" width="156" height="56" fill="#14213d"/>
+        <rect data-row="consulting" data-col="P4" data-value="2" x="800" y="124" width="156" height="56" fill="rgba(246,241,231,0.17)"/>
+        <text x="878" y="156" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2</text>
+
+        <!-- Row: automation (y=184) — 1, 3, 2, 2, 4 -->
+        <rect x="160" y="184" width="156" height="56" fill="#14213d"/>
+        <rect data-row="automation" data-col="P0" data-value="1" x="160" y="184" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="238" y="216" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <rect x="320" y="184" width="156" height="56" fill="#14213d"/>
+        <rect data-row="automation" data-col="P1" data-value="3" x="320" y="184" width="156" height="56" fill="rgba(246,241,231,0.24)"/>
+        <text x="398" y="216" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">3</text>
+
+        <rect x="480" y="184" width="156" height="56" fill="#14213d"/>
+        <rect data-row="automation" data-col="P2" data-value="2" x="480" y="184" width="156" height="56" fill="rgba(246,241,231,0.17)"/>
+        <text x="558" y="216" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2</text>
+
+        <rect x="640" y="184" width="156" height="56" fill="#14213d"/>
+        <rect data-row="automation" data-col="P3" data-value="2" x="640" y="184" width="156" height="56" fill="rgba(246,241,231,0.17)"/>
+        <text x="718" y="216" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2</text>
+
+        <rect x="800" y="184" width="156" height="56" fill="#14213d"/>
+        <rect data-row="automation" data-col="P4" data-value="4" x="800" y="184" width="156" height="56" fill="rgba(246,241,231,0.31)"/>
+        <text x="878" y="216" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">4</text>
+
+        <!-- Row: survival (y=244) — 5, 0, 0, 0, 2 -->
+        <rect x="160" y="244" width="156" height="56" fill="#14213d"/>
+        <rect data-row="survival" data-col="P0" data-value="5" x="160" y="244" width="156" height="56" fill="rgba(246,241,231,0.60)"/>
+        <text x="238" y="276" fill="#14213d" font-size="10" font-weight="500" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">5</text>
+
+        <rect x="320" y="244" width="156" height="56" fill="#14213d"/>
+        <rect data-row="survival" data-col="P1" data-value="0" x="320" y="244" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="398" y="276" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="480" y="244" width="156" height="56" fill="#14213d"/>
+        <rect data-row="survival" data-col="P2" data-value="0" x="480" y="244" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="558" y="276" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="640" y="244" width="156" height="56" fill="#14213d"/>
+        <rect data-row="survival" data-col="P3" data-value="0" x="640" y="244" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="718" y="276" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="800" y="244" width="156" height="56" fill="#14213d"/>
+        <rect data-row="survival" data-col="P4" data-value="2" x="800" y="244" width="156" height="56" fill="rgba(246,241,231,0.17)"/>
+        <text x="878" y="276" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2</text>
+
+        <!-- Row: career (y=304) — 0, 1, 0, 1, 1 -->
+        <rect x="160" y="304" width="156" height="56" fill="#14213d"/>
+        <rect data-row="career" data-col="P0" data-value="0" x="160" y="304" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="238" y="336" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="320" y="304" width="156" height="56" fill="#14213d"/>
+        <rect data-row="career" data-col="P1" data-value="1" x="320" y="304" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="398" y="336" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <rect x="480" y="304" width="156" height="56" fill="#14213d"/>
+        <rect data-row="career" data-col="P2" data-value="0" x="480" y="304" width="156" height="56" fill="rgba(246,241,231,0.05)"/>
+        <text x="558" y="336" fill="#b8c0d4" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0</text>
+
+        <rect x="640" y="304" width="156" height="56" fill="#14213d"/>
+        <rect data-row="career" data-col="P3" data-value="1" x="640" y="304" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="718" y="336" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <rect x="800" y="304" width="156" height="56" fill="#14213d"/>
+        <rect data-row="career" data-col="P4" data-value="1" x="800" y="304" width="156" height="56" fill="rgba(246,241,231,0.11)"/>
+        <text x="878" y="336" fill="#f6f1e7" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1</text>
+
+        <!-- Column totals (phase tags, counted once per phase per need) -->
+        <text x="148" y="378" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.10em">PHASE TOTAL</text>
+        <text x="238" y="378" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">6</text>
+        <text x="398" y="378" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">6</text>
+        <text x="558" y="378" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">10</text>
+        <text x="718" y="378" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">16</text>
+        <text x="878" y="378" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">11</text>
+
+        <!-- Legend -->
+        <line x1="40" y1="396" x2="960" y2="396" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <text x="40" y="412" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+
+        <!-- Ink ramp strip: the seven levels used, low to high -->
+        <rect x="120" y="400" width="20" height="12" fill="#14213d"/><rect x="120" y="400" width="20" height="12" fill="rgba(246,241,231,0.05)"/>
+        <rect x="142" y="400" width="20" height="12" fill="#14213d"/><rect x="142" y="400" width="20" height="12" fill="rgba(246,241,231,0.11)"/>
+        <rect x="164" y="400" width="20" height="12" fill="#14213d"/><rect x="164" y="400" width="20" height="12" fill="rgba(246,241,231,0.17)"/>
+        <rect x="186" y="400" width="20" height="12" fill="#14213d"/><rect x="186" y="400" width="20" height="12" fill="rgba(246,241,231,0.24)"/>
+        <rect x="208" y="400" width="20" height="12" fill="#14213d"/><rect x="208" y="400" width="20" height="12" fill="rgba(246,241,231,0.31)"/>
+        <rect x="230" y="400" width="20" height="12" fill="#14213d"/><rect x="230" y="400" width="20" height="12" fill="rgba(246,241,231,0.60)"/>
+        <rect x="252" y="400" width="20" height="12" fill="#14213d"/><rect x="252" y="400" width="20" height="12" fill="rgba(246,241,231,0.68)"/>
+        <text x="116" y="410" fill="#b8c0d4" font-size="7.5" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">LOW</text>
+        <text x="276" y="410" fill="#b8c0d4" font-size="7.5" font-family="'Geist Mono', ui-monospace, monospace">HIGH</text>
+
+        <!-- Focal accent swatch -->
+        <rect x="340" y="400" width="20" height="12" fill="#14213d"/><rect x="340" y="400" width="20" height="12" fill="rgba(127,163,255,0.85)" stroke="#7fa3ff" stroke-width="1"/>
+        <text x="368" y="410" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">AI consulting · P3 · 10 needs: every consulting need carries the P3 tag</text>
+
+        <!-- Scale and counting notes -->
+        <text x="40" y="432" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">NON-FOCAL SCALE: 0–7 NEEDS · SINGLE INK RAMP · FOCAL CELL (10) OUTSIDE THE RAMP</text>
+        <text x="960" y="432" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em" text-anchor="end">33 NEEDS · 49 PHASE TAGS · A RANGE COUNTS ONCE PER PHASE</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

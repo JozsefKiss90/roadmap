@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Five phases against the 2027 demand window</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #14213d;   /* deep navy */
+      --color-ink:     #f6f1e7;   /* ivory */
+      --color-muted:   #b8c0d4;
+      --color-accent:  #7fa3ff;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .sub { font-size: 0.82rem; line-height: 1.5; color: var(--color-muted); max-width: 46rem; margin: -0.75rem 0 1.5rem; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+    /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Gantt · AI 2027 roadmap</p>
+    <h1>Five phases against the 2027 demand window</h1>
+    <p class="sub">Phase dates are inferred from the sources; the two timing windows are S2’s predictions. Each bar names the phase’s key milestone.</p>
+
+        <div class="diagram-container">
+      <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="roadmap-gantt-title roadmap-gantt-desc">
+        <title id="roadmap-gantt-title">Five phases against the 2027 demand window</title>
+        <desc id="roadmap-gantt-desc">Gantt chart of the five roadmap phases from November 2026 to December 2027, with the expected benchmark saturation from December to March and the predicted first-half 2027 demand window; phase 3, go to market, sits inside the demand window.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b8c0d4"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7fa3ff"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5fc4be"/></marker>
+
+          <!-- OPTIONAL: dot-pattern background. Uncomment and add <rect fill="url(#dots)"/> after the paper rect to enable. -->
+          <!--
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="rgba(246,241,231,0.08)"/>
+          </pattern>
+          -->
+        </defs>
+
+        <rect width="100%" height="100%" fill="#14213d"/>
+
+        <rect x="12" y="72" width="976" height="100" rx="6" fill="rgba(246,241,231,0.03)" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <rect x="12" y="188" width="976" height="220" rx="6" fill="rgba(246,241,231,0.03)" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+        <text x="254" y="38" fill="#f6f1e7" font-size="9" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">2026</text>
+        <text x="632" y="38" fill="#f6f1e7" font-size="9" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">2027</text>
+        <text x="227" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">NOV</text>
+        <text x="281" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">DEC</text>
+        <text x="335" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">JAN</text>
+        <text x="389" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">FEB</text>
+        <text x="443" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">MAR</text>
+        <text x="497" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">APR</text>
+        <text x="551" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">MAY</text>
+        <text x="605" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">JUN</text>
+        <text x="659" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">JUL</text>
+        <text x="713" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">AUG</text>
+        <text x="767" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">SEP</text>
+        <text x="821" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">OCT</text>
+        <text x="875" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">NOV</text>
+        <text x="929" y="54" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">DEC</text>
+        <line x1="254" y1="60" x2="254" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="308" y1="24" x2="308" y2="424" stroke="rgba(246,241,231,0.22)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="362" y1="60" x2="362" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="416" y1="60" x2="416" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="470" y1="60" x2="470" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="524" y1="60" x2="524" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="578" y1="60" x2="578" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="632" y1="60" x2="632" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="686" y1="60" x2="686" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="740" y1="60" x2="740" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="794" y1="60" x2="794" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="848" y1="60" x2="848" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="902" y1="60" x2="902" y2="424" stroke="rgba(246,241,231,0.06)" stroke-width="0.6"/>
+        <line x1="200" y1="60" x2="956" y2="60" stroke="rgba(246,241,231,0.15)" stroke-width="0.8"/>
+        <line x1="200" y1="24" x2="200" y2="424" stroke="rgba(246,241,231,0.15)" stroke-width="0.8"/>
+        <text x="24" y="87" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.14em">MARKET TIMING · S2</text>
+        <text x="24" y="203" fill="#94a1bd" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.14em">ROADMAP PHASES</text>
+        <text x="24" y="112" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">Benchmark saturation</text>
+        <rect x="254" y="96" width="216" height="24" rx="4" fill="#14213d"/>
+        <rect x="254" y="96" width="216" height="24" rx="4" fill="rgba(246,241,231,0.02)" stroke="rgba(246,241,231,0.45)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="262" y="111" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">MAY SATURATE</text>
+        <text x="24" y="152" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">H1 demand window</text>
+        <rect x="308" y="136" width="324" height="24" rx="4" fill="#14213d"/>
+        <rect x="308" y="136" width="324" height="24" rx="4" fill="rgba(246,241,231,0.02)" stroke="rgba(246,241,231,0.45)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="316" y="151" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">BUSINESS OWNERS WAKE UP</text>
+        <text x="24" y="228" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">P0 · Stabilize, baseline</text>
+        <rect x="200" y="212" width="108" height="24" rx="4" fill="#14213d"/>
+        <rect x="200" y="212" width="108" height="24" rx="4" fill="rgba(184,192,212,0.15)" stroke="#b8c0d4" stroke-width="1"/>
+        <text x="208" y="227" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">EVAL BASELINE</text>
+        <text x="24" y="268" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">P1 · Foundations, tooling</text>
+        <rect x="308" y="252" width="108" height="24" rx="4" fill="#14213d"/>
+        <rect x="308" y="252" width="108" height="24" rx="4" fill="rgba(184,192,212,0.15)" stroke="#b8c0d4" stroke-width="1"/>
+        <text x="316" y="267" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">FIRST SKILLS</text>
+        <text x="24" y="308" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">P2 · Judgment layer</text>
+        <rect x="362" y="292" width="162" height="24" rx="4" fill="#14213d"/>
+        <rect x="362" y="292" width="162" height="24" rx="4" fill="rgba(184,192,212,0.15)" stroke="#b8c0d4" stroke-width="1"/>
+        <text x="370" y="307" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">DEFINITION OF GOOD</text>
+        <text x="24" y="348" fill="#7fa3ff" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">P3 · Go to market</text>
+        <rect x="416" y="332" width="216" height="24" rx="4" fill="#14213d"/>
+        <rect x="416" y="332" width="216" height="24" rx="4" fill="rgba(127,163,255,0.14)" stroke="#7fa3ff" stroke-width="1"/>
+        <text x="424" y="347" fill="#7fa3ff" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">FIRST CLIENT RESULT</text>
+        <text x="24" y="388" fill="#f6f1e7" font-size="10" font-weight="600" font-family="'Geist', system-ui, sans-serif">P4 · Shift up, hedge</text>
+        <rect x="632" y="372" width="324" height="24" rx="4" fill="#14213d"/>
+        <rect x="632" y="372" width="324" height="24" rx="4" fill="rgba(184,192,212,0.15)" stroke="#b8c0d4" stroke-width="1"/>
+        <text x="640" y="387" fill="#f6f1e7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.06em">RETAINER · 2028 POSITION</text>
+        <line x1="40" y1="440" x2="960" y2="440" stroke="rgba(246,241,231,0.10)" stroke-width="0.8"/>
+<text x="40" y="456" fill="#b8c0d4" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="40" y="466" width="20" height="12" rx="3" fill="rgba(127,163,255,0.14)" stroke="#7fa3ff" stroke-width="1"/>
+        <text x="68" y="476" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">P3 · inside the demand window</text>
+        <rect x="255" y="466" width="20" height="12" rx="3" fill="rgba(184,192,212,0.15)" stroke="#b8c0d4" stroke-width="1"/>
+        <text x="283" y="476" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Phase</text>
+        <rect x="348" y="466" width="20" height="12" rx="3" fill="rgba(246,241,231,0.02)" stroke="rgba(246,241,231,0.45)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="376" y="476" fill="#b8c0d4" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Predicted window, not a task</text>
+
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
