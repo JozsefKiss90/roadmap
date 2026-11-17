@@ -59,8 +59,12 @@ The graph holds 70 `overlaps` edges in 8 groups, and the CSV records none of the
    - a `Cluster` name that differs from the clusters file
    - a `Best fit` other than "Yes" or empty
    - a `Stars` cell that is not a whole number
-   - an empty or repeated ID
-   - an overlap member that is not a tool
+   - a row with too few or too many cells
+   - an ID that is repeated, or is not a lower-case slug
+   - a need or cluster listed twice in one cell
+   - an overlap member that is not a tool, or is listed twice
+   - a cluster whose tier is not in the clusters file
+   - an input file that is missing or broken
    - a phase string that does not parse
 5. **Everything else is left to the validator**, such as an unknown kind or a need ID that does not exist.
 6. **The title, the note and the axes are fixed text in the script.** The note and the Evidence axis both say the repository facts were read on 2026-11-17. That date must be changed in the script when the facts are read again.
@@ -73,3 +77,32 @@ The graph holds 70 `overlaps` edges in 8 groups, and the CSV records none of the
 - **Mutation.** Five faults were put into the generator one at a time, and the tests failed on each.
 
 The tdd skill was called, and the Architect agreed two seams: the `build_graph` function and the command itself. The first two tests were written and seen to fail first. The generator was then written in one piece, and the other twelve tests followed it.
+
+### 2026-11-17: after review
+
+The code-review skill ran a standards review and a spec review of commit 55d8b2c. The spec review confirmed the output is byte-identical to the old graph. It repeated the decision-class check on a second tool, with the same result.
+
+Fixed, each with a test written first:
+
+- **A short or long CSV row** crashed the generator. It is now reported with its row.
+- **Stars** accepted characters such as "²". Only plain digits pass now.
+- **A missing or broken input file** gave a traceback. The generator now names the file and exits with 1.
+- **Duplicate edges** could be made by a need listed twice in one cell, or a tool listed twice in an overlap group. Both are now reported.
+- **Phase strings** are read as the validator reads them: "P2-P2" is refused, and repeated or unordered phases are scheduled once, in order.
+- **An ID** with a space or a capital letter was accepted. It must now be a lower-case slug.
+- **`--date`** accepted any text. It must now be a date.
+- **A cluster in an unknown tier** is reported.
+
+Also changed:
+
+- `npm test` in `framework-map/` now runs the generator's tests too, so the stale-graph test runs with the rest.
+- The spec's data contract now says three small files, not two.
+
+Left as they are, for the Architect to weigh:
+
+- **The axes text is copied from the old graph.** It uses words the glossary avoids, such as "sector", "plane" and "time slider", and describes the layout ADR 0002 rejected. Changing it would have broken the "same as today" check. The map does not read the axes.
+- **"Overlap group" is not in the glossary.**
+- **The 2026-11-17 evidence date** is still fixed text in the script (choice 6 above).
+- **A tool's tier is not compared with its cluster's tier by the generator.** The validator reports it as `tier-mismatch`.
+- **"CSV row N" counts records.** It would drift from the line number if a cell held a line break. No cell does today.
+- **The status stays `ready-for-agent`**, as on tickets 01 to 03. The five labels have no value for "done".

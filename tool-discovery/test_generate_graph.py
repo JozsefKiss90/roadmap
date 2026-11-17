@@ -166,9 +166,44 @@ class BadInputs(unittest.TestCase):
     def test_an_overlap_member_must_be_a_tool(self):
         self.assertIn("ghost", self.problems([row()], {"pair": ["alpha", "ghost"]})[0])
 
+    def test_an_overlap_group_names_a_tool_once(self):
+        self.assertIn("more than once", self.problems([row()], {"pair": ["alpha", "alpha"]})[0])
+
     def test_a_need_phase_must_parse(self):
-        for phase in ("P5", "P3-P1", "soon", ""):
+        for phase in ("P5", "P3-P1", "P2-P2", "soon", ""):
             self.assertIn("N01", self.problems([row()], needs=[{**NEEDS[0], "phase": phase}])[0], phase)
+
+    def test_a_row_with_too_few_or_too_many_cells_is_reported(self):
+        short = {**row(ID="beta"), "Note": None, "Cluster ID": None, "ID": None}
+        long = {**row(ID="gamma"), None: ["extra"]}
+        problems = self.problems([row(), short, long])
+        self.assertEqual(len(problems), 2)
+        self.assertIn("CSV row 3 ", problems[0])
+        self.assertIn("CSV row 4 ", problems[1])
+
+    def test_an_id_is_a_lower_case_slug(self):
+        for bad_id in (" alpha", "Alpha", "al pha", ""):
+            self.assertIn("ID", self.problems([row(ID=bad_id)])[0], bad_id)
+
+    def test_stars_are_plain_digits(self):
+        self.assertIn("Stars", self.problems([row(Stars="²")])[0])
+
+    def test_a_need_or_cluster_listed_twice_in_one_cell_is_reported(self):
+        self.assertIn("N01", self.problems([row(Needs="N01, N01")])[0])
+        self.assertIn("1A", self.problems([row(Implements_cluster="1A, 1A")])[0])
+
+    def test_a_cluster_must_sit_in_a_known_tier(self):
+        clusters = {**CLUSTERS, "clusters": [{**CLUSTERS["clusters"][0], "tier": "T9"}]}
+        with self.assertRaises(GeneratorError) as raised:
+            build_graph([row()], clusters, NEEDS, {}, "2026-01-02")
+        self.assertIn("T9", raised.exception.problems[0])
+
+
+class NeedPhases(unittest.TestCase):
+    def test_phases_listed_out_of_order_or_twice_are_scheduled_once_in_order(self):
+        graph = build_graph([row(Needs="N01")], CLUSTERS, [{**NEEDS[0], "phase": "P3, P1-P3"}], {}, "2026-01-02")
+        self.assertEqual([e["target"] for e in edges(graph, "scheduled_in")],
+                         ["phase:P1", "phase:P2", "phase:P3"])
 
 
 def run_generator(*args):
@@ -229,6 +264,23 @@ class Command(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("'Janitor', which is not a role", result.stderr)
         self.assertFalse(out.exists())
+
+    def test_a_missing_or_broken_input_file_fails_with_its_path_and_no_traceback(self):
+        broken = self.folder / "broken.json"
+        broken.write_text("{", encoding="utf-8")
+        keyless = self.folder / "keyless.json"
+        keyless.write_text("{}", encoding="utf-8")
+        for flag, path in (("--csv", "absent.csv"), ("--needs", "absent.json"),
+                           ("--clusters", broken), ("--overlaps", keyless)):
+            result = run_generator("--out", self.folder / "graph.json", flag, path)
+            self.assertEqual(result.returncode, 1, flag)
+            self.assertIn(Path(path).name, result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+
+    def test_the_date_must_be_a_date(self):
+        result = run_generator("--out", self.folder / "graph.json", "--date", "banana")
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse((self.folder / "graph.json").exists())
 
 
 if __name__ == "__main__":

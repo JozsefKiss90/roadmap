@@ -58,19 +58,29 @@ def split_list(cell):
     return [item.strip() for item in cell.split(",") if item.strip()]
 
 
+def repeated(items):
+    """The items that appear more than once, each named once, in order."""
+    return [item for index, item in enumerate(items) if item in items[:index] and item not in items[index + 1:]]
+
+
 def parse_phases(text):
-    """'P2', 'P2-P3' or 'P1, P3' as a list of phases; None if the text is not one of those."""
-    phases = []
+    """'P2', 'P2-P3' or 'P1, P3' as a sorted list of phases; None if the text is not one of those.
+
+    Accepts what parsePhases in framework-map/src/validate.ts accepts.
+    """
+    numbers = set()
     for part in split_list(text):
         match = re.fullmatch(r"P([0-4])(?:-P([0-4]))?", part)
         if not match:
             return None
         first = int(match.group(1))
-        last = int(match.group(2)) if match.group(2) else first
-        if last < first:
-            return None
-        phases.extend(f"P{number}" for number in range(first, last + 1))
-    return phases or None
+        last = first
+        if match.group(2):
+            last = int(match.group(2))
+            if last <= first:
+                return None
+        numbers.update(range(first, last + 1))
+    return [f"P{number}" for number in sorted(numbers)] or None
 
 
 def axes(cluster_count, needs):
@@ -140,9 +150,13 @@ def tool_node(row, where, cluster_labels, problems):
     if stream is None:
         problems.append(f"{where}: Value stream {row['Value stream']!r} is not a value stream.")
 
+    for column in ("Needs", "Implements cluster"):
+        for item in repeated(split_list(row[column])):
+            problems.append(f"{where}: {column} lists {item!r} more than once.")
+
     stars = None
     if row["Stars"]:
-        if row["Stars"].isdigit():
+        if re.fullmatch(r"[0-9]+", row["Stars"]):
             stars = int(row["Stars"])
         else:
             problems.append(f"{where}: Stars is {row['Stars']!r}; it must be a whole number or empty.")
@@ -195,8 +209,13 @@ def build_graph(rows, clusters, needs, overlaps, generated):
     seen = set()
     for number, row in enumerate(rows, start=2):  # row 1 is the header
         where = f"CSV row {number} ({row['ID'] or row['Tool']!r})"
-        if not row["ID"]:
-            problems.append(f"{where}: ID is empty.")
+        if None in row or None in row.values():
+            problems.append(f"{where}: the row does not have {len(COLUMNS)} cells, one per column.")
+            continue
+        if not re.fullmatch(r"[a-z0-9][a-z0-9._-]*", row["ID"]):
+            problems.append(
+                f"{where}: ID is {row['ID']!r}; it must be lower-case letters, digits, '.', '_' or '-'."
+            )
         elif row["ID"] in seen:
             problems.append(f"{where}: ID {row['ID']!r} is used by an earlier row.")
         seen.add(row["ID"])
@@ -213,6 +232,13 @@ def build_graph(rows, clusters, needs, overlaps, generated):
         for member in members:
             if member not in seen:
                 problems.append(f"Overlap group {group!r}: {member!r} is not a tool ID in the CSV.")
+        for member in repeated(members):
+            problems.append(f"Overlap group {group!r}: {member!r} is listed more than once.")
+
+    tier_ids = {tier["id"] for tier in tiers}
+    for cluster in cluster_list:
+        if cluster["tier"] not in tier_ids:
+            problems.append(f"Cluster {cluster['id']}: tier {cluster['tier']!r} is not in the clusters file.")
 
     if problems:
         raise GeneratorError(problems)
@@ -301,17 +327,33 @@ def build_graph(rows, clusters, needs, overlaps, generated):
 
 
 def read_rows(path):
-    with open(path, encoding="utf-8-sig", newline="") as file:
-        reader = csv.DictReader(file)
-        missing = [column for column in COLUMNS if column not in (reader.fieldnames or [])]
-        if missing:
-            raise GeneratorError([f"{path}: missing column(s): {', '.join(missing)}."])
-        return list(reader)
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file)
+            rows = list(reader)
+    except (OSError, ValueError, csv.Error) as error:
+        raise GeneratorError([f"{path}: cannot be read: {error}"]) from error
+    missing = [column for column in COLUMNS if column not in (reader.fieldnames or [])]
+    if missing:
+        raise GeneratorError([f"{path}: missing column(s): {', '.join(missing)}."])
+    return rows
 
 
-def read_json(path):
-    with open(path, encoding="utf-8") as file:
-        return json.load(file)
+def read_json(path, *keys):
+    """The JSON file at `path`, which must be an object holding each of `keys`."""
+    try:
+        with open(path, encoding="utf-8") as file:
+            content = json.load(file)
+    except (OSError, ValueError) as error:
+        raise GeneratorError([f"{path}: cannot be read: {error}"]) from error
+    missing = [key for key in keys if not isinstance(content, dict) or key not in content]
+    if missing:
+        raise GeneratorError([f"{path}: missing {', '.join(repr(key) for key in missing)}."])
+    return content
+
+
+def iso_date(text):
+    return datetime.date.fromisoformat(text).isoformat()
 
 
 def main(argv=None):
@@ -321,18 +363,21 @@ def main(argv=None):
     parser.add_argument("--needs", type=Path, default=HERE / "needs.json")
     parser.add_argument("--overlaps", type=Path, default=HERE / "overlaps.json")
     parser.add_argument("--out", type=Path, default=HERE / "tool-framework.graph.json")
-    parser.add_argument("--date", default=datetime.date.today().isoformat(),
+    parser.add_argument("--date", type=iso_date, default=datetime.date.today().isoformat(),
                         help="generation date for the metadata (default: today)")
     args = parser.parse_args(argv)
 
     try:
         graph = build_graph(
             read_rows(args.csv),
-            read_json(args.clusters),
-            read_json(args.needs)["needs"],
-            read_json(args.overlaps)["groups"],
+            read_json(args.clusters, "tiers", "clusters"),
+            read_json(args.needs, "needs")["needs"],
+            read_json(args.overlaps, "groups")["groups"],
             args.date,
         )
+    except KeyError as error:
+        print(f"Cannot generate the graph: an entry in an input file lacks the field {error}.", file=sys.stderr)
+        return 1
     except GeneratorError as error:
         print(f"Cannot generate the graph: {len(error.problems)} problem(s).", file=sys.stderr)
         for problem in error.problems:

@@ -44,4 +44,4 @@ The generator stops without writing anything if it cannot translate a cell. It n
 python -m unittest discover tool-discovery
 ```
 
-One test fails if the committed graph is not what the generator produces from the committed inputs.
+`npm test` in `framework-map/` runs them too. One test fails if the committed graph is not what the generator produces from the committed inputs.

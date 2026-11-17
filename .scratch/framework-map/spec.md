@@ -209,7 +209,7 @@ The look is simple and minimal with a polished finish, drawn from the existing "
 ### Data contract
 
 - The map reads the graph JSON only, never the CSV or the xlsx.
-- A generator script in Python, with no new dependencies, reads the tool matrix CSV plus two small files extracted once from the current JSON (clusters and needs) and writes the graph JSON. The CSV becomes the edited source of truth; the xlsx is an export.
+- A generator script in Python, with no new dependencies, reads the tool matrix CSV plus three small files extracted once from the current JSON (clusters, needs and overlap groups) and writes the graph JSON. The CSV becomes the edited source of truth; the xlsx is an export.
 - A vocabulary file declares the allowed values for kind, decision class, hosting, value stream and gate. The values in today's data are reconciled against it once.
 - The map never patches data silently. Mismatches are reported by the validator and fixed upstream.
 - The map shows a build stamp: the data date from the graph's metadata and a build identifier from the commit.
