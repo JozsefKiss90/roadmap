@@ -11,16 +11,26 @@
  * @property {readonly string[]} mustNotContain Text that must not be in the file.
  */
 
-const isInline = (/** @type {string} */ target) => target.startsWith('data:') || target.startsWith('#');
+const isInline = (/** @type {string} */ target) => /^data:/i.test(target) || target.startsWith('#');
 
 /**
- * @param {string} html
- * @param {RegExp} pattern A global pattern whose first group is the target.
+ * @param {string} text
+ * @param {RegExp} pattern A global pattern; the target is its first group that matched.
  * @returns {string[]} Every target that points outside the file.
  */
-function outsideTargets(html, pattern) {
-  return [...html.matchAll(pattern)].map((match) => (match[1] ?? '').trim()).filter((target) => !isInline(target));
+function outsideTargets(text, pattern) {
+  return [...text.matchAll(pattern)]
+    .map((match) => (match.slice(1).find((group) => group !== undefined) ?? '').trim())
+    .filter((target) => !isInline(target));
 }
+
+// "src" and "href" are matched as whole attribute names, so "data-src" does not count.
+const SRC_ATTRIBUTE = /<[a-z][^>]*?(?<![\w-])src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+const LINK_HREF = /<link\b[^>]*?(?<![\w-])href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+const INLINE_SCRIPT = /(<script\b[^>]*>)[\s\S]*?<\/script>/gi;
+const STYLE_BLOCK = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+const CSS_URL = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))/gi;
+const CSS_IMPORT = /@import\s+(?:"([^"]*)"|'([^']*)')/gi;
 
 /**
  * @param {string} html The built file.
@@ -35,14 +45,18 @@ export function checkBuiltFile(html, rules) {
     faults.push(`The file is ${bytes} bytes, over the budget of ${rules.maxBytes} bytes.`);
   }
 
-  for (const target of outsideTargets(html, /<script\b[^>]*\bsrc\s*=\s*["']?([^"'\s>]+)/gi)) {
-    faults.push(`A script is loaded from another file: ${target}`);
+  // Inline scripts are emptied first: code may hold markup as text, and only
+  // real elements load anything.
+  const markup = html.replace(INLINE_SCRIPT, '$1</script>');
+
+  for (const target of outsideTargets(markup, SRC_ATTRIBUTE)) {
+    faults.push(`An element loads another file: ${target}`);
   }
-  for (const target of outsideTargets(html, /<link\b[^>]*\bhref\s*=\s*["']?([^"'\s>]+)/gi)) {
+  for (const target of outsideTargets(markup, LINK_HREF)) {
     faults.push(`A link element loads another file: ${target}`);
   }
-  for (const [, css = ''] of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
-    for (const target of outsideTargets(css, /url\(\s*["']?([^"')]+)/gi)) {
+  for (const [, css = ''] of markup.matchAll(STYLE_BLOCK)) {
+    for (const target of [...outsideTargets(css, CSS_URL), ...outsideTargets(css, CSS_IMPORT)]) {
       faults.push(`A style block loads another file: ${target}`);
     }
   }

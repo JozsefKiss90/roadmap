@@ -5,12 +5,12 @@
  * screenshots/ at the repository root.
  *
  * It fails if a state logs a console error, throws, never signals "ready", or
- * makes a request to anything other than the file itself. It does not compare
+ * requests anything other than the file itself. It does not compare
  * pixels, because headless 3D rendering varies between runs.
  *
  * Usage: node scripts/screenshots.mjs [path to the built file]
  */
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
@@ -30,17 +30,28 @@ async function launchBrowser() {
     try {
       return await chromium.launch({ channel, headless: true });
     } catch (error) {
-      failures.push(`${channel ?? 'bundled chromium'}: ${error instanceof Error ? error.message.split('\n')[0] : error}`);
+      failures.push(`${channel ?? 'bundled chromium'}: ${firstLine(error)}`);
     }
   }
   throw new Error(`No browser could be started.\n${failures.join('\n')}`);
 }
 
-/** A request stays inside the file when it is the file itself or inline data. */
-const staysInsideFile = (/** @type {string} */ url) => /^(file|data|blob|about):/.test(url);
+const builtFileUrl = pathToFileURL(builtFile).href;
 
+/** A request stays inside the file when it is the file itself or inline data. */
+const staysInsideFile = (/** @type {string} */ url) =>
+  url.split('#')[0] === builtFileUrl || /^(data|blob|about):/.test(url);
+
+const firstLine = (/** @type {unknown} */ error) =>
+  error instanceof Error ? error.message.split(/\r?\n/)[0] : String(error);
+
+// Start from an empty folder, so a state that fails leaves no old screenshot behind.
 mkdirSync(outputDir, { recursive: true });
+for (const file of readdirSync(outputDir)) {
+  if (file.endsWith('.png')) rmSync(path.join(outputDir, file));
+}
 const browser = await launchBrowser();
+console.log(`browser: ${browser.browserType().name()} ${browser.version()}`);
 /** @type {string[]} */
 const failures = [];
 
@@ -59,7 +70,7 @@ try {
         if (!staysInsideFile(request.url())) failures.push(`${label}: network request: ${request.url()}`);
       });
 
-      const url = pathToFileURL(builtFile);
+      const url = new URL(builtFileUrl);
       url.hash = state.fragment;
       try {
         await page.goto(url.href);
@@ -68,7 +79,7 @@ try {
         await page.screenshot({ path: screenshotPath });
         console.log(`saved ${path.relative(repositoryRoot, screenshotPath)}`);
       } catch (error) {
-        failures.push(`${label}: ${error instanceof Error ? error.message.split('\n')[0] : error}`);
+        failures.push(`${label}: ${firstLine(error)}`);
       }
       await context.close();
     }

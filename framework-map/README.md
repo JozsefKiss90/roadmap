@@ -22,7 +22,7 @@ Run these from this folder, after `npm install`.
 
 ## The "ready" signal
 
-The page sets `data-ready="true"` on the `<html>` element and fires a `framework-map:ready` event on `window` once its first render is done. The screenshot script waits for it.
+The page sets `data-ready="true"` on the `<html>` element once its first render is done. The screenshot script waits for it.
 
 ## Adding a screenshot state
 

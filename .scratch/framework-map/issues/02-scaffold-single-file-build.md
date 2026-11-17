@@ -23,7 +23,7 @@ The page shows only the title for now. It embeds the current graph JSON so the i
 
 ### 2026-11-17: done
 
-The source is in `framework-map/`. `npm run build` there writes `framework-map.html` at the repository root: 0.85 MB of the 5 MB budget, of which the graph JSON is 0.73 MB. `framework-map/README.md` lists the commands.
+The source is in `framework-map/`. `npm run build` there writes `framework-map.html` at the repository root: 0.85 MB of the 5 MB budget, of which the graph JSON is 0.70 MB. `framework-map/README.md` lists the commands.
 
 What was checked, and how:
 
@@ -32,8 +32,8 @@ What was checked, and how:
 | Renders the title in Instrument Serif from `file://`, no network request | Opened in headless Chrome and Edge: Instrument Serif reported as loaded, and the only request was the file itself |
 | Fonts bundled through Fontsource | Six woff2 files inlined as data URIs: Instrument Serif 400, Geist and Geist Mono (variable weight), each in Latin and Latin Extended |
 | Graph inlined, under 5 MB | Checked on every build by `scripts/publish.mjs` |
-| "Ready" signal | `data-ready="true"` on `<html>`, plus a `framework-map:ready` event |
-| Vitest | 7 tests pass, on the built-file checks |
+| "Ready" signal | `data-ready="true"` on `<html>` |
+| Vitest | 10 tests pass, on the built-file checks |
 | Screenshot script | 1 state at 2 viewports, saved to `screenshots/`; a page with a console error and an outside request made it exit 1 |
 | Tweakpane dev only | Mounted under the dev server; the build fails if its class names are in the built file |
 
@@ -49,3 +49,18 @@ Decisions made here that later tickets inherit:
 - **Versions are newer than the spec assumed:** Vite 8 (Rolldown), Vitest 5, TypeScript 7. Nothing needed a workaround. Tweakpane 4 needs `@tweakpane/core` installed for its types.
 
 The tdd skill was not called: this ticket has no test seam of its own (data, layout and state are empty), so the tests were written first by hand for the one piece of logic, the built-file checks.
+
+### 2026-11-17: after review
+
+The review found no unmet criterion. These were fixed:
+
+- The screenshot script accepted any `file:` request; it now accepts only the built file itself. It also empties `screenshots/` first and prints which browser it used.
+- The built-file checks now cover every element with a `src`, and `@import` in a style block. They no longer misread `data-src`, upper-case `DATA:`, or markup held as text inside the inline script.
+- The page now logs a console error if a typeface it asked for is not available when it signals "ready", so the screenshot script catches a missing face.
+- The `framework-map:ready` event was removed; nothing listened for it.
+
+Left as they are:
+
+- The "ready" signal waits on two animation frames, which a browser does not run in a background tab. The signal then arrives when the tab is shown.
+- The build proves the graph is inlined by looking for the graph's title. Ticket 03's validator is the real check on the data.
+- The two unicode ranges are repeated for each family in `src/fonts.css`.

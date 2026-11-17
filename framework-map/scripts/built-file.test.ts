@@ -36,6 +36,21 @@ describe('checkBuiltFile', () => {
     expect(faults).toEqual([expect.stringContaining('./geist.woff2')]);
   });
 
+  it('reports an image loaded from another file', () => {
+    const faults = checkBuiltFile(page('', 'graph-title <img src=" ./stack.png">'), rules);
+    expect(faults).toEqual([expect.stringContaining('./stack.png')]);
+  });
+
+  it('reports a stylesheet imported by a style block', () => {
+    const faults = checkBuiltFile(page('<style>@import "./more.css";</style>'), rules);
+    expect(faults).toEqual([expect.stringContaining('./more.css')]);
+  });
+
+  it('accepts inline data whatever its letter case, and attributes that only end in src', () => {
+    const html = page('<style>a{background:url(DATA:image/png;base64,AAAA)}</style>', 'graph-title <i data-src="x.png"></i>');
+    expect(checkBuiltFile(html, rules)).toEqual([]);
+  });
+
   it('reports text that must not be in the file', () => {
     const faults = checkBuiltFile(page('', 'graph-title tuning-panel'), rules);
     expect(faults).toEqual([expect.stringContaining('tuning-panel')]);

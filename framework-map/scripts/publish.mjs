@@ -14,9 +14,12 @@ const graphPath = fileURLToPath(new URL('../../tool-discovery/tool-framework.gra
 /** @type {{ meta: { title: string } }} */
 const graph = JSON.parse(readFileSync(graphPath, 'utf8'));
 
+const MAX_BYTES = 5 * 1024 * 1024;
+const megabytes = (/** @type {number} */ bytes) => (bytes / (1024 * 1024)).toFixed(2);
+
 const html = readFileSync(builtPath, 'utf8');
 const faults = checkBuiltFile(html, {
-  maxBytes: 5 * 1024 * 1024,
+  maxBytes: MAX_BYTES,
   // The graph's own title shows that the graph JSON was inlined.
   mustContain: [graph.meta.title],
   // Class names that Tweakpane puts in its stylesheet and its DOM.
@@ -30,5 +33,6 @@ if (faults.length > 0) {
 }
 
 copyFileSync(builtPath, publishedPath);
-const megabytes = (Buffer.byteLength(html, 'utf8') / (1024 * 1024)).toFixed(2);
-console.log(`Published ${publishedPath} (${megabytes} MB of 5 MB).`);
+console.log(
+  `Published ${publishedPath} (${megabytes(Buffer.byteLength(html, 'utf8'))} MB of ${megabytes(MAX_BYTES)} MB).`,
+);
