@@ -44,6 +44,7 @@ Every token must clear the threshold for each role it plays, against the backgro
 - **A token used in several roles must pass each one.** `accent` is a stroke in one place and a label in another, so it is held to 4.5:1, not the 3:1 its strokes alone would need. Don't assume a token is non-text because it usually is.
 - **Translucent colors are composited first.** An `rgba()` fill or stroke is blended over `paper` before its ratio is measured. A value that clears the bar at full strength can fail at 0.5 opacity.
 - **Surfaces other than `paper` cost contrast.** Inside an `accent-tint` box or on `paper-2` every ratio drops. Measure text placed there against that surface, not against `paper`.
+- **Map rows.** The map's tokens are held to this contract by their own rows, under [Map contrast rows](#map-contrast-rows).
 - **Current values:** see the ratios printed by `scripts/verify-contrast.py --style-guide <this file>`; every text token clears 4.5:1 in both skins.
 
 ### Inversion rule (light → dark)
@@ -209,6 +210,142 @@ Semantic role combinations — reference these by name in type specs.
 | `input` | `muted @ 0.10` | `soft` |
 | `optional` | `ink @ 0.02` | `ink @ 0.20` dashed `4,3` |
 | `security` | `accent @ 0.05` | `accent @ 0.50` dashed `4,4` |
+
+---
+
+## Map
+
+The map is the interactive 3D presentation of the Hermes OS tool framework. This section defines what the map needs and the rest of the guide does not cover. It adds tokens and changes none: every map token takes its colour from a semantic role above.
+
+The map uses the light skin only. Its code reads each colour by token name, so a dark skin can be added later from the dark column.
+
+### Map tokens
+
+The stack stands on `paper`. Widths are in pixels on screen. They do not grow as the camera moves closer.
+
+| Token | Value | Use |
+|---|---|---|
+| `map-plate-fill` | `paper-2` fill | The plate of a tier |
+| `map-plate-edge` | `rule-solid` edge, 1px | The edge of a plate |
+| `map-cell-line` | `rule` hairline, 1px | The outline of a cell |
+| `map-mark-committed` | Solid `ink` fill, no outline | Decision class: committed |
+| `map-mark-planned` | `paper` fill, 2px `ink` outline | Decision class: planned |
+| `map-mark-optional` | `paper` fill, 1px `soft` outline | Decision class: optional |
+| `map-mark-guarded` | No fill, 1px dashed `muted` outline | Decision class: guarded |
+| `map-hover-ring` | 1px `ink` ring, 2px clear of the mark | The mark under the pointer |
+| `map-selected-fill` | Solid `accent` fill | A selected mark, or a mark in a need trace or phase scrub |
+| `map-bestfit-ring` | 2px `accent` ring, 2px clear of the mark | A best-fit tool in a need trace |
+| `map-home-cell` | 2px `accent` outline | The home cell of a traced need |
+| `map-trace-line` | 1px `accent` line | The line from a home cell to a serving tool, or from an internal skill to its cluster |
+| `map-focus-outline` | 2px `accent` outline, with a 2px gap | Keyboard focus, in the panels and on the canvas |
+| `map-faded` | `ink @ 0.12` | A mark outside the active lens or filter |
+| `map-text-name` | `ink` | Tier, cluster and tool names |
+| `map-text-tag` | `muted` | Counts and tags |
+
+### Decision-class scale
+
+A mark's form shows its decision class in four steps. The map's display table groups the ten decision-class values into these steps.
+
+| Step | Fill | Outline |
+|---|---|---|
+| Committed | `ink` | None |
+| Planned | `paper` | `ink`, 2px, solid |
+| Optional | `paper` | `soft`, 1px, solid |
+| Guarded | None; the plate shows through | `muted`, 1px, dashed |
+
+The steps differ by form: filled or not, a heavy or a thin outline, a solid or a dashed one. No step differs from another by opacity alone. All marks are the same size.
+
+### Map states
+
+| State | Treatment |
+|---|---|
+| Hover | `map-hover-ring` is added. The mark itself does not change. |
+| Selected or traced | The mark takes `map-selected-fill`, whatever its step. |
+| Keyboard focus | `map-focus-outline` is added. |
+| Faded | The mark keeps its form. Its `ink`, `soft` or `muted` part turns to `map-faded`, and a `paper` fill stays `paper`. |
+
+A selected or traced mark no longer shows its decision class. The detail card states it. Selection is never shown by the mark alone: the detail card and the outline tree show it too.
+
+### Exceptions to the guide
+
+The map departs from the guide in two places, both on purpose.
+
+1. **`accent` may mark many tools at once.** The guide allows one or two focal elements per diagram. During a need trace or a phase scrub, every tool in the set takes `map-selected-fill`. At rest, `accent` marks only the selection and the keyboard focus.
+2. **Faded marks sit below 3:1.** `map-faded` measures 1.26:1 on a plate. The marks inside the set carry the meaning, and a faded mark only has to keep its place. Every faded tool stays reachable through the outline tree and the search.
+
+### Map contrast rows
+
+These rows extend the [contrast contract](#contrast-contract) to the map. Each one names a map token, the semantic role its colour comes from, the surface it sits on, and its use. A mark sits on its plate, so marks are measured on `paper-2`. A token that sits on two surfaces has two rows.
+
+| Token | Colour | Sits on | Use | Minimum | Measured |
+|---|---|---|---|---|---|
+| `map-plate-fill` | `paper-2` | `paper` | decorative | none | 1.11:1 |
+| `map-plate-edge` | `rule-solid` | `paper` | decorative | none | 1.63:1 |
+| `map-cell-line` | `rule` | `paper-2` | decorative | none | 1.26:1 |
+| `map-mark-committed` | `ink` | `paper-2` | non-text | 3:1 | 12.84:1 |
+| `map-mark-planned` | `ink` | `paper-2` | non-text | 3:1 | 12.84:1 |
+| `map-mark-planned` | `ink` | `paper` | non-text | 3:1 | 14.19:1 |
+| `map-mark-optional` | `soft` | `paper-2` | non-text | 3:1 | 4.77:1 |
+| `map-mark-optional` | `soft` | `paper` | non-text | 3:1 | 5.27:1 |
+| `map-mark-guarded` | `muted` | `paper-2` | non-text | 3:1 | 5.94:1 |
+| `map-hover-ring` | `ink` | `paper-2` | non-text | 3:1 | 12.84:1 |
+| `map-selected-fill` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-bestfit-ring` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-home-cell` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-trace-line` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-trace-line` | `accent` | `paper` | non-text | 3:1 | 5.89:1 |
+| `map-focus-outline` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-focus-outline` | `accent` | `paper` | non-text | 3:1 | 5.89:1 |
+| `map-faded` | `ink @ 0.12` | `paper-2` | exception | none | 1.26:1 |
+| `map-text-name` | `ink` | `paper` | text | 4.5:1 | 14.19:1 |
+| `map-text-name` | `ink` | `paper-2` | text | 4.5:1 | 12.84:1 |
+| `map-text-tag` | `muted` | `paper` | text | 4.5:1 | 6.57:1 |
+| `map-text-tag` | `muted` | `paper-2` | text | 4.5:1 | 5.94:1 |
+
+The plate and the cell line are decorative, so neither may be the only carrier of meaning. Plate height and the tier name carry the tier. The marks of a cell sit together on one grid, with a gap to the next cell, and that grouping carries the cluster at the stack distance. From the tier distance the cluster name carries it too. The `exception` row is the second exception above.
+
+**How the rows are checked.** `scripts/verify-contrast.py` belongs to the diagram-design plugin and reads only the Semantic roles table. The map rows are checked in this repository. In `framework-map/`, `npm run contrast` measures every row in the light skin. It fails on any of these:
+
+- a row below its minimum;
+- a Minimum or Measured cell that disagrees with the measurement;
+- a colour that the token's row in Map tokens does not name;
+- a map token with no row.
+
+The check cannot tell which surfaces a token sits on. Giving a token a row for each surface stays the author's job.
+
+`npm test` and `npm run build` run the same check.
+
+### Map type
+
+| Role | Family | Size on screen | Weight | Usage |
+|---|---|---|---|---|
+| `map-tier-name` | Instrument Serif | 20px | 400 | Tier names |
+| `map-cluster-name` | Geist (sans) | 13px | 600 | Cluster names |
+| `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
+| `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts |
+| `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags |
+
+**Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 1280×720. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.
+
+**Fonts.** The map bundles Geist, Geist Mono and Instrument Serif in its one file, through Fontsource, so it makes no network request. The faces are the same as the diagrams use. The guide's own `Font source` stays `web`, and the diagrams keep loading their fonts from the web.
+
+### Map motion
+
+| What moves | Duration |
+|---|---|
+| Camera flight | 700 ms |
+| Lens and filter fade | 250 ms |
+| Panel | 200 ms |
+| Phase step | 300 ms |
+
+The renderer's own camera transition runs the flights. anime.js runs the fades, the panels and the phase scrub. It never moves the camera or a mark. With reduced motion switched on, every duration is zero. Nothing moves while the partner is not interacting.
+
+### Map postprocessing
+
+- **Antialiasing** is always on.
+- **Depth blur** is slight, and is used at the tier and cluster distances only. It is the first thing switched off if frames run slow.
+- **No glow.**
+- **No vignette.**
 
 ---
 

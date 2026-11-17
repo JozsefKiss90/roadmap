@@ -8,8 +8,9 @@ Run these from this folder, after `npm install`.
 
 | Command | What it does |
 | --- | --- |
-| `npm run build` | Type-checks, validates the graph, builds, checks the built file and copies it to `../framework-map.html` |
+| `npm run build` | Type-checks, validates the graph, checks the map's contrast rows, builds, checks the built file and copies it to `../framework-map.html` |
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
+| `npm run contrast` | Measures the map's contrast rows in the style guide; add `-- path/to/style-guide.md` to check another file |
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
 | `npm run screenshots` | Opens the built file in each named state and saves a screenshot to `../screenshots/` |
 | `npm test` | Runs the unit tests, then the generator's tests in `../tool-discovery/` |
@@ -40,6 +41,23 @@ Run these from this folder, after `npm install`.
 | `malformed` | The file is not a graph, or a node or edge lacks its id, type, source or target |
 
 The vocabulary file is `../tool-discovery/vocabulary.json`. Kind and gate values are listed under the family the map groups them into. To allow a new value, add it there under a family.
+
+## The contrast check
+
+`npm run contrast` reads `../references/style-guide.md` and exits with 1 if it has a finding. It measures every row of the guide's "Map contrast rows" table in the light skin. The build runs it, and `npm test` runs the same check on the real guide.
+
+A finding is one of these:
+
+- a row below the minimum for its use;
+- a Minimum or Measured cell that disagrees with the measurement;
+- a colour or surface that is not a semantic role, or a use the contract does not know;
+- a colour that the token's row in "Map tokens" does not name;
+- a table whose columns are not the ones the check reads;
+- a token in the "Map tokens" table with no contrast row, or a row for a token that table lacks.
+
+To add a map token, add it to "Map tokens", give it a row for each surface it sits on, and run the command. The command prints the measured ratio to write in the row.
+
+The rows of the guide's "Semantic roles" table are not checked here. The diagram-design plugin's `verify-contrast.py` checks those.
 
 ## The "ready" signal
 
