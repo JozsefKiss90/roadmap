@@ -1,9 +1,10 @@
 /**
  * panels: the DOM interface around the canvas.
  *
- * So far: the left rail with the title, the search box and the outline; the
- * breadcrumb at the top centre; the detail card on the right; the list of
- * keys; and the keys that work anywhere. All read the state store and write
+ * So far: the left rail with the title, the search box, the filters and the
+ * outline; the breadcrumb at the top centre; the detail card on the right;
+ * the legend at the bottom left; the list of keys; and the keys that work
+ * anywhere. All read the state store and write
  * to it; none knows the scene.
  */
 import { ChevronRight, createElement } from 'lucide';
@@ -12,7 +13,9 @@ import type { GraphIndex } from './data';
 import { mountAnnouncer } from './announcer';
 import { mountDetailCard } from './detail-card';
 import { element } from './dom';
+import { mountFilterPanel } from './filter-panel';
 import { mountKeyList } from './key-list';
+import { mountLegend } from './legend';
 import { mountOutline } from './outline';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
@@ -71,14 +74,16 @@ function mountBreadcrumb(app: HTMLElement, index: GraphIndex, store: Store): voi
   store.subscribe(render);
 }
 
-/** A key press that belongs to a field the partner is typing in. */
+/** A key press that belongs to a field the partner is typing in. A checkbox takes no typing. */
 const isTyping = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+  target instanceof HTMLElement &&
+  !(target instanceof HTMLInputElement && target.type === 'checkbox') &&
+  (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 /** Adds the interface around the canvas, and the keys that work anywhere on the page. */
 export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, constants: Constants): void {
   // The rail is put in the page before the breadcrumb and the detail card, so Tab reaches
-  // the search and the outline first.
+  // the search, the filters and the outline first.
   const rail = element('div', 'rail');
   const title = app.querySelector('.title');
   if (title) rail.append(title);
@@ -105,7 +110,10 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   });
   // A chosen result opens its detail card, and the focus goes there to read it.
   const searchBox = mountSearchBox(rail, outline.element, index, search, store, () => card.focus());
+  // The filters stand between the search box and the outline.
+  mountFilterPanel(rail, outline.element, index, store);
 
+  mountLegend(app, store);
   mountAnnouncer(app, index, store);
 
   document.addEventListener('keydown', (event) => {

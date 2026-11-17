@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { KIND_ICONS, decisionStep, gateBadge, kindIcon } from './display';
+import { COMMITTED_ONLY, KIND_ICONS, decisionStep, gateBadge, kindIcon } from './display';
 import type { Vocabulary } from './validate';
 
 const vocabulary = JSON.parse(
@@ -33,6 +33,23 @@ describe('decisionStep', () => {
 
   it('refuses a decision class it does not know', () => {
     expect(() => decisionStep('Maybe')).toThrow(/Maybe/);
+  });
+});
+
+describe('"committed only"', () => {
+  it('chooses decision classes the vocabulary file has', () => {
+    expect(COMMITTED_ONLY).toEqual(['Core v1', 'Core later', 'Build']);
+    for (const decisionClass of COMMITTED_ONLY) expect(vocabulary.decision_class).toContain(decisionClass);
+  });
+
+  // The ticket gives the number: 327 of the 752 tools.
+  it('chooses 327 tools of the framework', () => {
+    const graph = JSON.parse(
+      readFileSync(new URL('../../tool-discovery/tool-framework.graph.json', import.meta.url), 'utf8'),
+    ) as { nodes: { type: string; decision_class?: string }[] };
+    const tools = graph.nodes.filter((node) => node.type === 'tool');
+    expect(tools).toHaveLength(752);
+    expect(tools.filter((tool) => COMMITTED_ONLY.includes(tool.decision_class ?? ''))).toHaveLength(327);
   });
 });
 

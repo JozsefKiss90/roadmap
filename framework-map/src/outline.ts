@@ -6,13 +6,16 @@
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
  *
+ * A tool the filters leave out is dimmed, and so is a cluster or a tier with
+ * no tool left in. A dimmed row can still be chosen.
+ *
  * Tiers start open and clusters closed. A cluster's tool rows are made when it
  * is first opened, so the page opens with 63 rows and not 815.
  */
 import { ChevronRight, createElement } from 'lucide';
 import type { GraphIndex } from './data';
 import { decisionStep } from './display';
-import { element, swatch } from './dom';
+import { dressSwatch, element, swatch } from './dom';
 import type { ClusterNode, TierNode, ToolNode } from './graph';
 import { inGridOrder } from './layout';
 import type { MapState, Store } from './state';
@@ -39,12 +42,32 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
   /** Makes a closed cluster's tool rows. */
   const fillOf = new WeakMap<HTMLElement, () => void>();
 
+  /** The tools each row stands for: itself, or those of its cluster or tier. A row dims when the filters leave none in. */
+  const toolsOf = new Map<string, readonly ToolNode[]>();
+  /** Each row's name for assistive technology, before "filtered out" is added to it. */
+  const labelOf = new WeakMap<HTMLElement, string>();
+
+  /** Dims a row, or brings it back, for the tools that pass the filters. */
+  function dim(row: HTMLLIElement, passing: ReadonlySet<string>): void {
+    const tools = toolsOf.get(row.dataset.id ?? '') ?? [];
+    const out = !tools.some((tool) => passing.has(tool.id));
+    if (out === (row.dataset.filtered === 'true')) return;
+    if (out) row.dataset.filtered = 'true';
+    else delete row.dataset.filtered;
+    const label = labelOf.get(row) ?? '';
+    row.setAttribute('aria-label', out ? `${label}, filtered out` : label);
+    // A tool's square fades as its mark does.
+    const square = row.querySelector<HTMLElement>(':scope > .outline-row > .swatch');
+    if (square && tools[0]) dressSwatch(square, decisionStep(tools[0].decision_class), out);
+  }
+
   function item(
     id: string,
     level: number,
     position: number,
     setSize: number,
     label: string,
+    tools: readonly ToolNode[],
     choose: () => void,
     ...row: (Node | string)[]
   ): HTMLLIElement {
@@ -59,6 +82,10 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
     made.dataset.id = id;
     itemOf.set(id, made);
     chooseOf.set(made, choose);
+    toolsOf.set(id, tools);
+    labelOf.set(made, label);
+    // A row made while a filter is on starts dimmed.
+    dim(made, index.passing(store.get().filters));
     return made;
   }
 
@@ -91,6 +118,7 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
       position,
       setSize,
       `${tool.label}, ${decisionStep(tool.decision_class)}`,
+      [tool],
       () => store.select(tool.id),
       swatch(tool.decision_class),
       element('span', 'outline-name', tool.label),
@@ -105,6 +133,7 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
         position,
         setSize,
         `${cluster.id}, ${cluster.label}, ${count(tools.length)}`,
+        tools,
         () => store.select(cluster.id),
         chevron(),
         element('span', 'outline-tag', cluster.id),
@@ -126,6 +155,7 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
         position,
         index.tiers.length,
         `${tier.id}, ${tier.label}, ${count(tools)}`,
+        clusters.flatMap((cluster) => index.toolsOf(cluster.id)),
         () => store.focusTier(tier.id),
         chevron(),
         element('span', 'outline-tag', tier.id),
@@ -300,6 +330,18 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
   parent.insertBefore(nav, before);
 
   follow(store.get());
-  store.subscribe(follow);
+  store.subscribe((state, previous) => {
+    if (state.filters !== previous.filters) {
+      const passing = index.passing(state.filters);
+      for (const row of itemOf.values()) dim(row, passing);
+    }
+    // A change of filter alone leaves the tree where the partner has scrolled it.
+    const stayed =
+      state.distance === previous.distance &&
+      state.tier === previous.tier &&
+      state.cluster === previous.cluster &&
+      state.selection === previous.selection;
+    if (!stayed) follow(state);
+  });
   return { element: nav, focus: () => active.focus() };
 }

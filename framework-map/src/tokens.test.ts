@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { MAP_TOKENS, ROLES, colourOf } from './tokens';
+import { MAP_TOKENS, ROLES, colourOf, cssOf, fadedColour, markPartColour } from './tokens';
 
 const guide = readFileSync(new URL('../../references/style-guide.md', import.meta.url), 'utf8');
 
@@ -39,13 +39,26 @@ describe('tokens', () => {
     for (const [name, token] of Object.entries(MAP_TOKENS)) {
       const value = tokens.get(name)?.[1];
       expect(value, `the guide's row for ${name}`).toBeDefined();
-      const roles = Object.values(token).filter((part): part is string => typeof part === 'string');
+      // A thinned role is written as the guide writes it: `ink @ 0.12`.
+      const roles =
+        'tint' in token
+          ? [`${token.tint} @ ${token.alpha}`]
+          : Object.values(token).filter((part): part is string => typeof part === 'string');
       expect(namedIn(value!).sort(), `roles of ${name}`).toEqual([...roles].sort());
       if ('widthPx' in token && token.widthPx > 0) expect(value, `width of ${name}`).toContain(`${token.widthPx}px`);
       if ('dashed' in token) expect(/dashed/.test(value!), `dash of ${name}`).toBe(token.dashed);
       if ('fill' in token && token.fill === null) expect(value).toMatch(/No fill/);
       if ('outline' in token && token.outline === null) expect(value).toMatch(/no outline/);
     }
+  });
+
+  it('turns every part of a faded mark but a paper one to map-faded', () => {
+    expect(fadedColour()).toEqual({ hex: '#14213d', alpha: 0.12 });
+    expect(markPartColour('soft', true)).toEqual(fadedColour());
+    expect(markPartColour('paper', true)).toEqual({ hex: '#f6f1e7', alpha: 1 });
+    expect(markPartColour('soft', false)).toEqual({ hex: '#55638a', alpha: 1 });
+    expect(cssOf(fadedColour())).toBe('rgba(20, 33, 61, 0.12)');
+    expect(cssOf(colourOf('ink'))).toBe('#14213d');
   });
 
   it('splits a translucent role into a colour and an alpha', () => {

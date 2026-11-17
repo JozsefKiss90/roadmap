@@ -41,6 +41,12 @@ export interface MarkToken {
   dashed: boolean;
 }
 
+/** A role's colour thinned to a part of its strength, as the guide writes `ink @ 0.12`. */
+export interface TintToken {
+  tint: Role;
+  alpha: number;
+}
+
 export const MAP_TOKENS = {
   'map-plate-fill': { fill: 'paper-2' },
   'map-plate-edge': { line: 'rule-solid', widthPx: 1 },
@@ -53,11 +59,12 @@ export const MAP_TOKENS = {
   'map-selected-fill': { fill: 'accent' },
   'map-selected-cell': { line: 'accent', widthPx: 2 },
   'map-trace-line': { line: 'accent', widthPx: 1 },
+  'map-faded': { tint: 'ink', alpha: 0.12 },
   'map-text-name': { text: 'ink' },
   'map-text-selected': { text: 'accent' },
   'map-text-tag': { text: 'muted' },
   'map-label-leader': { line: 'soft', widthPx: 1 },
-} as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | RingToken | MarkToken>;
+} as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | RingToken | MarkToken | TintToken>;
 
 /** The mark token of each decision-class step. */
 export const MARK_TOKEN_OF_STEP: Readonly<Record<DecisionStep, MarkToken>> = {
@@ -75,6 +82,26 @@ export interface Rgba {
   hex: string;
   /** 0 to 1. */
   alpha: number;
+}
+
+/** The colour a faded mark's `ink`, `soft` or `muted` part turns to. */
+export function fadedColour(): Rgba {
+  const { tint, alpha } = MAP_TOKENS['map-faded'];
+  return { hex: colourOf(tint).hex, alpha };
+}
+
+/**
+ * The colour a part of a mark is drawn in. In the faded state a `paper` part
+ * stays `paper` and any other turns to `map-faded` (the guide's "Map states").
+ */
+export function markPartColour(role: Role, faded: boolean): Rgba {
+  return faded && role !== PAGE_ROLE ? fadedColour() : colourOf(role);
+}
+
+/** A colour as CSS reads it. */
+export function cssOf({ hex, alpha }: Rgba): string {
+  const channel = (at: number): number => parseInt(hex.slice(at, at + 2), 16);
+  return alpha >= 1 ? hex : `rgba(${channel(1)}, ${channel(3)}, ${channel(5)}, ${alpha})`;
 }
 
 const RGBA = /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/;

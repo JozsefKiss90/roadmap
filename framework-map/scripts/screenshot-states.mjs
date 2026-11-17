@@ -30,6 +30,9 @@ export const states = [
     keys: [['press', 'Tab'], ['press', 'Tab'], ['press', 'ArrowDown'], ['press', 'ArrowRight'], ['press', 'ArrowRight']],
   },
   { name: 'key-list', fragment: 'cluster=4A&select=tool:serena', keys: [['press', '?']] },
+  // Filters: "or" within the roles and "and" with the hosting, across the whole stack; then "committed only" close in.
+  { name: 'filtered', fragment: 'used=D&used=M&hosting=Hub' },
+  { name: 'filtered-cluster', fragment: 'cluster=4A&decision=Core+v1&decision=Core+later&decision=Build' },
 ];
 
 /** The most labels a state may show at once. The spec asks for "no more than about 60". */

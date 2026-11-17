@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { AT_STACK, createStore, focusCluster, focusTier, fromFragment, select, stepBack, stepOut, toFragment } from './state';
-import type { MapState, Places } from './state';
+import {
+  AT_STACK,
+  FILTER_NAMES,
+  NO_FILTERS,
+  clearFilters,
+  createStore,
+  focusCluster,
+  focusTier,
+  fromFragment,
+  isFiltered,
+  passes,
+  select,
+  setFilter,
+  stepBack,
+  stepOut,
+  toFragment,
+  toggleFilter,
+} from './state';
+import type { Facets, FilterName, Filters, MapState, Places } from './state';
 
 /** Two tiers; T1 holds the clusters 1A and 1B, T0 holds 0A. */
 const clusters: Record<string, { id: string; tier: string }> = {
@@ -13,15 +30,32 @@ const tools: Record<string, { id: string; cluster: string }> = {
   'tool:a': { id: 'tool:a', cluster: '1A' },
   'tool:b': { id: 'tool:b', cluster: '0A' },
 };
+/** The values each filter lists, in the order it lists them. */
+const filterValues: Record<FilterName, readonly string[]> = {
+  decision: ['Core v1', 'Core later', 'Build', 'Optional / benchmark'],
+  kind: ['Skill or command', 'Plug-in, subagent or hook', 'Model'],
+  used: ['A', 'D', 'M'],
+  operated: ['A', 'D', 'M'],
+  hosting: ['Hub', 'Cloud'],
+  stream: ['OS', 'Build'],
+  gate: ['None', 'Guarded'],
+};
 const places: Places = {
+  filterValues: (name) => filterValues[name],
   tier: (id) => (['T0', 'T1'].includes(id) ? { id } : undefined),
   cluster: (id) => (Object.hasOwn(clusters, id) ? clusters[id] : undefined),
   tool: (id) => (Object.hasOwn(tools, id) ? tools[id] : undefined),
   need: (id) => (id === 'N1' ? { id } : undefined),
 };
 
-const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null });
-const atCluster = (tier: string, cluster: string): MapState => ({ distance: 'cluster', tier, cluster, selection: null });
+const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS });
+const atCluster = (tier: string, cluster: string): MapState => ({
+  distance: 'cluster',
+  tier,
+  cluster,
+  selection: null,
+  filters: NO_FILTERS,
+});
 const withTool = (tier: string, cluster: string, id: string): MapState => ({
   ...atCluster(tier, cluster),
   selection: { type: 'tool', id },
@@ -127,6 +161,90 @@ describe('stepping out', () => {
   });
 });
 
+/** A skill on the Hub that the Architect and the Designer use; the Architect operates it. */
+const skill: Facets = {
+  decision: ['Core v1'],
+  kind: ['Skill or command'],
+  used: ['A', 'D'],
+  operated: ['A'],
+  hosting: ['Hub'],
+  stream: ['OS'],
+  gate: ['None'],
+};
+/** An optional model in the cloud that only the Analyst uses. */
+const model: Facets = {
+  decision: ['Optional / benchmark'],
+  kind: ['Model'],
+  used: ['M'],
+  operated: ['A'],
+  hosting: ['Cloud'],
+  stream: ['Build'],
+  gate: ['Guarded'],
+};
+const filtersOf = (state: MapState): Filters => state.filters;
+const choose = (...choices: [FilterName, string][]): MapState =>
+  choices.reduce((state, [name, value]) => toggleFilter(state, places, name, value), AT_STACK);
+
+describe('filtering', () => {
+  it('lets every tool pass while no filter has a value chosen', () => {
+    expect(passes(NO_FILTERS, skill)).toBe(true);
+    expect(isFiltered(NO_FILTERS)).toBe(false);
+  });
+
+  it('passes a tool that has either of two values chosen in one filter', () => {
+    const filters = filtersOf(choose(['kind', 'Skill or command'], ['kind', 'Model']));
+    expect(passes(filters, skill)).toBe(true);
+    expect(passes(filters, model)).toBe(true);
+    expect(passes(filtersOf(choose(['kind', 'Model'])), skill)).toBe(false);
+  });
+});
+
+describe('filtering across filters, and clearing', () => {
+  it('passes only a tool that passes every filter with a value chosen', () => {
+    const filters = filtersOf(choose(['kind', 'Skill or command'], ['kind', 'Model'], ['hosting', 'Hub']));
+    expect(passes(filters, skill)).toBe(true);
+    expect(passes(filters, model)).toBe(false);
+  });
+
+  it('passes a tool that one of the chosen roles uses, among the roles that use it', () => {
+    expect(passes(filtersOf(choose(['used', 'D'])), skill)).toBe(true);
+    expect(passes(filtersOf(choose(['used', 'D'])), model)).toBe(false);
+    expect(passes(filtersOf(choose(['used', 'D'], ['operated', 'D'])), skill)).toBe(false);
+  });
+
+  it('takes a chosen value out when it is chosen again', () => {
+    const state = toggleFilter(choose(['kind', 'Model'], ['hosting', 'Hub']), places, 'kind', 'Model');
+    expect(state.filters).toEqual({ ...NO_FILTERS, hosting: ['Hub'] });
+  });
+
+  it('keeps the chosen values in the order the filter lists them, whatever order they were chosen in', () => {
+    expect(choose(['used', 'M'], ['used', 'A']).filters.used).toEqual(['A', 'M']);
+  });
+
+  it('ignores a value the filter does not list', () => {
+    expect(choose(['hosting', 'Moon'])).toEqual(AT_STACK);
+    expect(setFilter(AT_STACK, places, 'decision', ['Build', 'Nonsense', 'Core v1']).filters.decision).toEqual([
+      'Core v1',
+      'Build',
+    ]);
+  });
+
+  it('clears every filter at once, and leaves the place and the selection', () => {
+    const selected = select(choose(['kind', 'Model'], ['used', 'A'], ['gate', 'Guarded']), places, 'tool:a');
+    expect(isFiltered(selected.filters)).toBe(true);
+    expect(clearFilters(selected)).toEqual(withTool('T1', '1A', 'tool:a'));
+  });
+
+  it('keeps the filters wherever the map goes', () => {
+    const filtered = choose(['hosting', 'Cloud']);
+    const hosting = { ...NO_FILTERS, hosting: ['Cloud'] };
+    expect(focusTier(filtered, places, 'T1')).toEqual({ ...atTier('T1'), filters: hosting });
+    expect(select(filtered, places, 'tool:a')).toEqual({ ...withTool('T1', '1A', 'tool:a'), filters: hosting });
+    expect(stepOut(focusTier(filtered, places, 'T1'))).toEqual({ ...AT_STACK, filters: hosting });
+    expect(stepBack(select(filtered, places, 'tool:a'))).toEqual({ ...atCluster('T1', '1A'), filters: hosting });
+  });
+});
+
 describe('the URL fragment', () => {
   it.each([
     ['the stack', AT_STACK, ''],
@@ -178,6 +296,42 @@ describe('the URL fragment', () => {
     expect(toFragment(withTool('T1', '1A', 'tool:a'), 'filter=a%3Ab')).toBe('filter=a%3Ab&cluster=1A&select=tool:a');
   });
 
+  it('writes each chosen value of a filter under the name of the filter', () => {
+    expect(toFragment(choose(['decision', 'Core v1'], ['decision', 'Build'], ['used', 'D']))).toBe(
+      'decision=Core+v1&decision=Build&used=D',
+    );
+    expect(toFragment(select(choose(['hosting', 'Hub']), places, 'tool:a'))).toBe(
+      'cluster=1A&select=tool:a&hosting=Hub',
+    );
+  });
+
+  it.each<[string, MapState]>([
+    ['one value', choose(['hosting', 'Cloud'])],
+    ['two values of one filter', choose(['kind', 'Model'], ['kind', 'Plug-in, subagent or hook'])],
+    ['a value with a slash in it', choose(['decision', 'Optional / benchmark'])],
+    ['every filter at once', FILTER_NAMES.reduce((state, name) => toggleFilter(state, places, name, filterValues[name][1]!), AT_STACK)],
+    ['filters beside a selected tool', select(choose(['stream', 'Build'], ['gate', 'Guarded']), places, 'tool:b')],
+    ['filters at a tier', focusTier(choose(['operated', 'M']), places, 'T0')],
+  ])('reads back the filters it wrote: %s', (_name, state) => {
+    expect(isFiltered(state.filters)).toBe(true);
+    expect(fromFragment(toFragment(state), places)).toEqual(state);
+  });
+
+  it('leaves out a filter value the filter does not list, and keeps the rest', () => {
+    expect(fromFragment('hosting=Moon&hosting=Hub&tier=T1', places)).toEqual({
+      ...atTier('T1'),
+      filters: { ...NO_FILTERS, hosting: ['Hub'] },
+    });
+  });
+
+  it('keeps the filters when the place or the selection it names is not in the graph', () => {
+    expect(fromFragment('tier=T9&used=A', places)).toEqual({ ...AT_STACK, filters: { ...NO_FILTERS, used: ['A'] } });
+  });
+
+  it('drops a cleared filter from the fragment', () => {
+    expect(toFragment(clearFilters(choose(['used', 'A'])), 'used=A&tier=T1')).toBe('');
+  });
+
   it('reads its own part of a fragment that holds other parts too', () => {
     expect(fromFragment('lens=role&cluster=0A', places)).toEqual(atCluster('T0', '0A'));
   });
@@ -220,6 +374,28 @@ describe('the store', () => {
     ]);
   });
 
+  it('filters, and keeps the filters when the partner goes back to the stack', () => {
+    const store = createStore(places);
+    const seen: MapState[] = [];
+    store.subscribe((state) => seen.push(state));
+
+    store.toggleFilter('used', 'D');
+    store.focusTier('T1');
+    store.focusStack();
+    store.setFilter('decision', ['Core v1', 'Build']);
+    store.clearFilters();
+    store.clearFilters();
+
+    const used = { ...NO_FILTERS, used: ['D'] };
+    expect(seen).toEqual([
+      { ...AT_STACK, filters: used },
+      { ...atTier('T1'), filters: used },
+      { ...AT_STACK, filters: used },
+      { ...AT_STACK, filters: { ...used, decision: ['Core v1', 'Build'] } },
+      AT_STACK,
+    ]);
+  });
+
   it('says nothing when a change leaves the state as it was', () => {
     const store = createStore(places, atTier('T1'));
     let calls = 0;
@@ -228,6 +404,8 @@ describe('the store', () => {
     store.focusTier('T1');
     store.focusTier('T9');
     store.set(atTier('T1'));
+    store.toggleFilter('hosting', 'Moon');
+    store.setFilter('kind', []);
 
     expect(calls).toBe(0);
   });

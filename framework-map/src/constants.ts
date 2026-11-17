@@ -30,11 +30,12 @@ export const constants = {
 
   /**
    * The part of the window kept clear around the stack at rest, in pixels. The
-   * left one holds the rail and, beside it, the column of tier names.
+   * left one holds the rail and, beside it, the column of tier names. The
+   * bottom one holds the legend.
    */
   insetTopPx: 76,
   insetRightPx: 40,
-  insetBottomPx: 32,
+  insetBottomPx: 64,
   insetLeftPx: 512,
 
   /**

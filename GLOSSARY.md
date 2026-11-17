@@ -71,7 +71,7 @@ The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
 **Rail**:
-The column down the left of the map that holds the title, the search box and the outline.
+The column down the left of the map that holds the title, the search box, the filters and the outline.
 _Avoid_: Sidebar, left panel, navigation
 
 **Outline**:
@@ -89,6 +89,14 @@ _Avoid_: Duplicate set, alternatives
 **Lens**:
 A way of re-colouring or filtering the map that leaves every tool where it is.
 _Avoid_: Mode, filter (when it means a lens)
+
+**Filter**:
+One of the seven ways to narrow the map to the tools that have a chosen value; the tools it leaves out fade in place.
+_Avoid_: Lens (when it means a filter)
+
+**Legend**:
+The panel at the bottom left of the map that names the four decision-class steps.
+_Avoid_: Key (a key is on the keyboard)
 
 **View**:
 A distinct spatial arrangement of the map.

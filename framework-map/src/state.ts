@@ -1,9 +1,9 @@
 /**
  * state: one store for what the map shows, synced to the URL fragment.
  *
- * So far it holds the distance, the focused tier or cluster, and the selection.
- * The scene, the labels and the panels all read it and write to it, and never
- * call each other. Lens and filters join it in later tickets.
+ * So far it holds the distance, the focused tier or cluster, the selection
+ * and the filters. The scene, the labels and the panels all read it and write
+ * to it, and never call each other. The lens joins it in a later ticket.
  *
  * The transitions are pure functions of the state; the store only holds the
  * current state and tells its subscribers when it changes.
@@ -18,6 +18,30 @@ export interface Selection {
   readonly id: string;
 }
 
+/** The seven filters, in the order the rail lists them. The names are also their keys in the URL fragment. */
+export const FILTER_NAMES = ['decision', 'kind', 'used', 'operated', 'hosting', 'stream', 'gate'] as const;
+
+export type FilterName = (typeof FILTER_NAMES)[number];
+
+/**
+ * The values chosen in each filter, in the order the filter lists them. A
+ * filter with no value chosen lets every tool pass.
+ */
+export type Filters = Readonly<Record<FilterName, readonly string[]>>;
+
+/** What one tool has for each filter. A tool that several roles use has several values for "used". */
+export type Facets = Readonly<Record<FilterName, readonly string[]>>;
+
+export const NO_FILTERS: Filters = {
+  decision: [],
+  kind: [],
+  used: [],
+  operated: [],
+  hosting: [],
+  stream: [],
+  gate: [],
+};
+
 /**
  * Where the map is, and what is selected. At the stack distance nothing is
  * focused; at the tier distance a tier is; at the cluster distance a cluster
@@ -29,35 +53,40 @@ export interface MapState {
   readonly tier: string | null;
   readonly cluster: string | null;
   readonly selection: Selection | null;
+  /** The filters hold wherever the map goes and whatever is selected. */
+  readonly filters: Filters;
 }
 
-/** What the state needs to know of the graph: which tiers, clusters, tools and needs it has. */
+/** What the state needs to know of the graph: its tiers, clusters, tools and needs, and what each filter lists. */
 export interface Places {
+  /** The values a filter lists, in its own order. */
+  filterValues(name: FilterName): readonly string[];
   tier(id: string): { id: string } | undefined;
   cluster(id: string): { id: string; tier: string } | undefined;
   tool(id: string): { id: string; cluster: string } | undefined;
   need(id: string): { id: string } | undefined;
 }
 
-export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null };
+export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS };
 
 const same = (a: MapState, b: MapState): boolean =>
   a.distance === b.distance &&
   a.tier === b.tier &&
   a.cluster === b.cluster &&
   a.selection?.type === b.selection?.type &&
-  a.selection?.id === b.selection?.id;
+  a.selection?.id === b.selection?.id &&
+  (a.filters === b.filters || FILTER_NAMES.every((name) => a.filters[name].join('\n') === b.filters[name].join('\n')));
 
 /** Goes to the tier distance for a tier, with nothing selected. An id the graph lacks changes nothing. */
 export function focusTier(state: MapState, places: Places, tierId: string): MapState {
   const tier = places.tier(tierId);
-  return tier ? { distance: 'tier', tier: tier.id, cluster: null, selection: null } : state;
+  return tier ? { ...state, distance: 'tier', tier: tier.id, cluster: null, selection: null } : state;
 }
 
 /** Goes to the cluster distance for a cluster, with nothing selected. An id the graph lacks changes nothing. */
 export function focusCluster(state: MapState, places: Places, clusterId: string): MapState {
   const cluster = places.cluster(clusterId);
-  return cluster ? { distance: 'cluster', tier: cluster.tier, cluster: cluster.id, selection: null } : state;
+  return cluster ? { ...state, distance: 'cluster', tier: cluster.tier, cluster: cluster.id, selection: null } : state;
 }
 
 /**
@@ -83,14 +112,44 @@ export function clearSelection(state: MapState): MapState {
 /** Steps out one distance: from a cluster to its tier, from a tier to the stack. */
 export function stepOut(state: MapState): MapState {
   if (state.distance === 'cluster' && state.tier) {
-    return { distance: 'tier', tier: state.tier, cluster: null, selection: null };
+    return { ...state, distance: 'tier', tier: state.tier, cluster: null, selection: null };
   }
-  return AT_STACK;
+  return { ...AT_STACK, filters: state.filters };
 }
 
 /** What Escape does: closes the detail card if it is open, and otherwise steps out one distance. */
 export function stepBack(state: MapState): MapState {
   return state.selection ? clearSelection(state) : stepOut(state);
+}
+
+/** Chooses a value in a filter, or takes it out if it is chosen. A value the filter does not list changes nothing. */
+export function toggleFilter(state: MapState, places: Places, name: FilterName, value: string): MapState {
+  const chosen = state.filters[name];
+  return setFilter(state, places, name, chosen.includes(value) ? chosen.filter((each) => each !== value) : [...chosen, value]);
+}
+
+/** Replaces what is chosen in one filter. Values the filter does not list are left out. */
+export function setFilter(state: MapState, places: Places, name: FilterName, values: readonly string[]): MapState {
+  const chosen = places.filterValues(name).filter((value) => values.includes(value));
+  return { ...state, filters: { ...state.filters, [name]: chosen } };
+}
+
+/** Clears every filter. The place and the selection stay. */
+export function clearFilters(state: MapState): MapState {
+  return isFiltered(state.filters) ? { ...state, filters: NO_FILTERS } : state;
+}
+
+/** Whether any filter has a value chosen. */
+export const isFiltered = (filters: Filters): boolean => FILTER_NAMES.some((name) => filters[name].length > 0);
+
+/**
+ * Whether a tool passes the filters. Within one filter it needs any one of
+ * the chosen values; across filters it needs to pass each.
+ */
+export function passes(filters: Filters, facets: Facets): boolean {
+  return FILTER_NAMES.every(
+    (name) => filters[name].length === 0 || filters[name].some((value) => facets[name].includes(value)),
+  );
 }
 
 /**
@@ -106,6 +165,10 @@ export function toFragment(state: MapState, current = ''): string {
   if (state.distance === 'cluster' && state.cluster) parts.set('cluster', state.cluster);
   else if (state.distance === 'tier' && state.tier) parts.set('tier', state.tier);
   if (state.selection) parts.set('select', state.selection.id);
+  for (const name of FILTER_NAMES) {
+    parts.delete(name);
+    for (const value of state.filters[name]) parts.append(name, value);
+  }
   // A tool's id has a colon in it, which a fragment may hold as it is. The other parts are left as they are.
   return parts.toString().replace(/(^|&)select=[^&]*/, (part) => part.replace(/%3A/gi, ':'));
 }
@@ -113,20 +176,26 @@ export function toFragment(state: MapState, current = ''): string {
 /**
  * Reads a URL fragment. Anything it cannot read, or an id the graph lacks,
  * gives the stack at rest. A selected tool or cluster decides the place, so
- * the fragment cannot name a selection that is somewhere else.
+ * the fragment cannot name a selection that is somewhere else. The filters
+ * are read on their own: a value a filter does not list is left out, and the
+ * rest hold wherever the map opens.
  */
 export function fromFragment(fragment: string, places: Places): MapState {
   const parts = new URLSearchParams(fragment.replace(/^#/, ''));
   const cluster = parts.get('cluster');
   const tier = parts.get('tier');
-  let state = AT_STACK;
-  if (cluster !== null) state = focusCluster(AT_STACK, places, cluster);
-  else if (tier !== null) state = focusTier(AT_STACK, places, tier);
-  if ((cluster !== null || tier !== null) && state === AT_STACK) return AT_STACK;
+  const atStack = FILTER_NAMES.reduce((filtered, name) => {
+    const values = parts.getAll(name);
+    return values.length > 0 ? setFilter(filtered, places, name, values) : filtered;
+  }, AT_STACK);
+  let state = atStack;
+  if (cluster !== null) state = focusCluster(atStack, places, cluster);
+  else if (tier !== null) state = focusTier(atStack, places, tier);
+  if ((cluster !== null || tier !== null) && state === atStack) return atStack;
   const selected = parts.get('select');
   if (selected === null) return state;
   const withSelection = select(state, places, selected);
-  return withSelection.selection ? withSelection : AT_STACK;
+  return withSelection.selection ? withSelection : atStack;
 }
 
 /** Called after a change, with the new state and the one before it. */
@@ -147,6 +216,11 @@ export interface Store {
   clearSelection(): void;
   /** What Escape does. */
   stepBack(): void;
+  /** Chooses a value in a filter, or takes it out if it is chosen. */
+  toggleFilter(name: FilterName, value: string): void;
+  /** Replaces what is chosen in one filter. */
+  setFilter(name: FilterName, values: readonly string[]): void;
+  clearFilters(): void;
 }
 
 export function createStore(places: Places, initial: MapState = AT_STACK): Store {
@@ -165,13 +239,16 @@ export function createStore(places: Places, initial: MapState = AT_STACK): Store
       subscribers.add(subscriber);
       return () => void subscribers.delete(subscriber);
     },
-    focusStack: () => set(AT_STACK),
+    focusStack: () => set({ ...AT_STACK, filters: state.filters }),
     focusTier: (tierId) => set(focusTier(state, places, tierId)),
     focusCluster: (clusterId) => set(focusCluster(state, places, clusterId)),
     stepOut: () => set(stepOut(state)),
     select: (id) => set(select(state, places, id)),
     clearSelection: () => set(clearSelection(state)),
     stepBack: () => set(stepBack(state)),
+    toggleFilter: (name, value) => set(toggleFilter(state, places, name, value)),
+    setFilter: (name, values) => set(setFilter(state, places, name, values)),
+    clearFilters: () => set(clearFilters(state)),
   };
 }
 
@@ -194,7 +271,7 @@ export function syncWithFragment(store: Store, places: Places): void {
   };
   const read = (): void => {
     store.set(fromFragment(window.location.hash, places));
-    // A fragment that names a tier, cluster or selection the graph lacks is put right.
+    // A fragment that names a tier, cluster, selection or filter value the graph lacks is put right.
     write(store.get());
   };
   read();

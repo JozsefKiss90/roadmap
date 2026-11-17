@@ -29,13 +29,13 @@ Run these from this folder, after `npm install`.
 | --- | --- |
 | `src/data.ts` | Validates the graph with the validator below and indexes it. It throws `GraphRejected` for a graph with any fault |
 | `src/inlined-graph.ts` | Hands `data.ts` the graph and the vocabulary file that are inlined in the page |
-| `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows, and gives each kind family its icon and each gate family its badge |
+| `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows, names the steps and the classes of "committed only", and gives each kind family its icon and each gate family its badge |
 | `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
 | `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
 | `src/camera.ts` | The arithmetic for where the camera stands at each distance |
-| `src/state.ts` | The state store: the distance, the focused tier or cluster, and the selection, in step with the URL fragment |
-| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring and the selected mark |
-| `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token |
+| `src/state.ts` | The state store: the distance, the focused tier or cluster, the selection and the filters, in step with the URL fragment |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected mark and the faded marks |
+| `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token, in the faded state or not |
 | `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
 | `src/pick.ts` | Which plate, cell and mark lie under the pointer |
 | `src/hover-label.ts` | The label beside the pointer that names the mark under it |
@@ -45,6 +45,8 @@ Run these from this folder, after `npm install`.
 | `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card and the list of keys, and takes the keys that work anywhere |
 | `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
 | `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
+| `src/filter-panel.ts` | The seven filters in the rail, with the count, "committed only" and "clear" |
+| `src/legend.ts` | The legend of the four decision-class steps |
 | `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
 | `src/search-box.ts` | The search field and the list of what it finds |
 | `src/key-list.ts` | The list of keys that `?` opens |
@@ -101,7 +103,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box and the outline. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the filters and the outline. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -139,6 +141,24 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 - **Changes are announced.** A live region says what is now selected, or where the map has gone when nothing is selected. The search says how many results it found.
 - **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width.
 - **A long tool name is cut short with an ellipsis** in the list above a cell, where the list would not fit between the rail and the open detail card. The outline, the hover label and the detail card give the name in full.
+
+## Filters and the legend
+
+Seven filters stand in the rail between the search box and the outline: decision class, kind, used by, operated by, hosting, value stream and gate. A filter opens under its name and lists its values, each with the number of tools that have it. `src/state.ts` holds what is chosen.
+
+- **Values of one filter combine as "or", and filters combine as "and".** Designer and Analyst under "Used by", with Hub under "Hosting", leaves the Hub tools that either role uses.
+- **A tool the filters leave out fades and stays in place.** Its mark keeps its form and takes the guide's `map-faded`. Its row in the outline is dimmed, and so is its name in the list above a focused cell. It can still be hovered, clicked and selected. A selected mark keeps the selected fill.
+- **A cluster or tier row of the outline is dimmed** when the filters leave none of its tools in.
+- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". It is a live region, so a change is announced.
+- **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 327 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
+- **"Clear"** clears every filter. It is there only while a filter is on.
+- **The numbers beside the values do not change.** Each is the number of all tools with that value, whatever else is chosen.
+- **Kind and gate are filtered by family.** The families and their order come from `../tool-discovery/vocabulary.json`. Decision classes are listed from the committed step to the guarded one.
+- **The URL fragment holds the filters**, one part for each chosen value: `#used=D&used=M&hosting=Hub`. The names are `decision`, `kind`, `used`, `operated`, `hosting`, `stream` and `gate`. Roles and value streams are given by their codes. A value a filter does not list is dropped.
+- **The filters hold** wherever the map goes and whatever is selected.
+- **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+
+**The legend** at the bottom left of the canvas shows the four decision-class steps with their names. Its squares are drawn from the same mark tokens as the marks. While a filter is on, it also shows a faded square, named "Filtered out". The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
 
 ## The graph validator
 

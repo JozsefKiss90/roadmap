@@ -165,6 +165,94 @@ describe('readGraph', () => {
     expect(() => index.gateFamilyOf('Unheard of')).toThrow(/gate family/);
   });
 
+  describe('for the filters', () => {
+    const filterVocabulary: Vocabulary = {
+      decision_class: ['Core v1', 'Core later', 'Adapter', 'Build', 'Delay / guarded', 'Optional / benchmark'],
+      hosting: ['Hub', 'Cloud'],
+      stream: ['OS', 'Build'],
+      kind: { 'Skill or command': ['Skill', 'Ruleset'], Model: ['Reranker'] },
+      gate: { None: ['None'], Guarded: ['Guarded: client data'] },
+    };
+    /** Four tools: `a` and `c` are plain skills, `b` is a guarded ruleset in the cloud, `d` a reranker. */
+    const filterGraph = () => {
+      const graph = validGraph();
+      const facets: Record<string, Record<string, unknown>> = {
+        'tool:a': { used_by: ['A', 'D'], operated_by: ['A'] },
+        'tool:b': {
+          kind: 'Ruleset',
+          decision_class: 'Build',
+          hosting: 'Cloud',
+          gate: 'Guarded: client data',
+          used_by: ['M'],
+          operated_by: ['A'],
+        },
+        'tool:c': { used_by: ['A'], operated_by: ['A'] },
+        'tool:d': { kind: 'Reranker', stream: 'Build', used_by: ['D', 'A'], operated_by: ['D'] },
+      };
+      graph.nodes = graph.nodes.map((node) => ({ ...node, ...facets[node.id as string] }));
+      graph.nodes.push(
+        { id: 'role:A', type: 'role', label: 'Architect' },
+        { id: 'role:D', type: 'role', label: 'Designer' },
+        { id: 'role:M', type: 'role', label: 'Analyst' },
+      );
+      return graph;
+    };
+
+    it('lists every tool', () => {
+      expect(ids(readGraph(filterGraph(), filterVocabulary).tools)).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
+    });
+
+    it('gives what a tool has for each filter, with its kind and its gate as their families', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect(index.facetsOf('tool:b')).toEqual({
+        decision: ['Build'],
+        kind: ['Skill or command'],
+        used: ['M'],
+        operated: ['A'],
+        hosting: ['Cloud'],
+        stream: ['OS'],
+        gate: ['Guarded'],
+      });
+      expect(index.facetsOf('tool:d').used).toEqual(['D', 'A']);
+    });
+
+    it('lists the values of each filter: decision classes by their step, families and the rest as the vocabulary file has them, and the roles', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect(index.filterValues('decision')).toEqual([
+        'Core v1',
+        'Adapter',
+        'Core later',
+        'Build',
+        'Optional / benchmark',
+        'Delay / guarded',
+      ]);
+      expect(index.filterValues('kind')).toEqual(['Skill or command', 'Model']);
+      expect(index.filterValues('gate')).toEqual(['None', 'Guarded']);
+      expect(index.filterValues('hosting')).toEqual(['Hub', 'Cloud']);
+      expect(index.filterValues('stream')).toEqual(['OS', 'Build']);
+      expect(index.filterValues('used')).toEqual(['A', 'D', 'M']);
+      expect(index.filterValues('operated')).toEqual(['A', 'D', 'M']);
+    });
+
+    it('gives the tools that pass the filters: any chosen value within a filter, and every filter', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      const none = { decision: [], kind: [], used: [], operated: [], hosting: [], stream: [], gate: [] };
+      expect([...index.passing(none)]).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
+      expect([...index.passing({ ...none, used: ['D', 'M'] })]).toEqual(['tool:a', 'tool:b', 'tool:d']);
+      expect([...index.passing({ ...none, used: ['D', 'M'], kind: ['Skill or command'] })]).toEqual(['tool:a', 'tool:b']);
+      expect([...index.passing({ ...none, gate: ['Guarded'], hosting: ['Hub'] })]).toEqual([]);
+    });
+
+    it('counts the tools that have each value of a filter', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect(index.toolCountWith('kind', 'Skill or command')).toBe(3);
+      expect(index.toolCountWith('used', 'A')).toBe(3);
+      expect(index.toolCountWith('used', 'D')).toBe(2);
+      expect(index.toolCountWith('operated', 'M')).toBe(0);
+      expect(index.toolCountWith('decision', 'Adapter')).toBe(0);
+    });
+  });
+
   it('refuses a graph the validator rejects, and names the faults', () => {
     const graph = validGraph();
     graph.nodes.push(tool('tool:e', '9Z', 'T0'));

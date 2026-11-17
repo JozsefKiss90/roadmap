@@ -257,11 +257,17 @@ export function addLabels(
   /** The names in the list, by tool, so that the selected one can be told apart. */
   let toolNames = new Map<string, Text>();
 
-  /** Gives the selected tool's name its colour, and every other name the colour of a name. */
+  /**
+   * Gives the selected tool's name its colour, a name the filters leave out
+   * the colour of a tag, and every other name the colour of a name.
+   */
   function showSelectedName(): void {
-    const { selection } = store.get();
+    const { selection, filters } = store.get();
     const selected = selection?.type === 'tool' ? selection.id : null;
-    for (const [tool, name] of toolNames) name.color = tool === selected ? selectedColour : nameColour;
+    const passing = index.passing(filters);
+    for (const [tool, name] of toolNames) {
+      name.color = tool === selected ? selectedColour : passing.has(tool) ? nameColour : tagColour;
+    }
   }
 
   let toolsShown: string | null = null;

@@ -4,7 +4,7 @@
  * of a selected cell are drawn the same way.
  */
 import { Color, DoubleSide, ShaderMaterial } from 'three';
-import { colourOf } from './tokens';
+import { markPartColour } from './tokens';
 import type { MarkToken } from './tokens';
 
 /** How far a mark is lifted off its plate, so the two never share a depth. */
@@ -28,6 +28,7 @@ const MARK_FRAGMENT = /* glsl */ `
   uniform vec3 uFill;
   uniform float uFillAlpha;
   uniform vec3 uOutline;
+  uniform float uOutlineAlpha;
   uniform float uOutlinePx;
   uniform float uDashed;
   uniform float uPixelRatio;
@@ -54,7 +55,7 @@ const MARK_FRAGMENT = /* glsl */ `
     float alongPerPixel = (nearestIsUpright ? perPixel.y : perPixel.x) / MARK_EDGE;
     float dash = clamp((along - DASH_GAP) / alongPerPixel + 0.5, 0.0, 1.0);
 
-    float outline = (shape - inner) * mix(1.0, dash, uDashed);
+    float outline = (shape - inner) * mix(1.0, dash, uDashed) * uOutlineAlpha;
     float fill = inner * uFillAlpha;
     float alpha = outline + fill;
     if (alpha < 0.004) discard;
@@ -63,11 +64,14 @@ const MARK_FRAGMENT = /* glsl */ `
   }
 `;
 
-/** The material of a mark in the form of a token. Its outline is `widthPx` wide on screen. */
-export function markMaterial(token: MarkToken, pixelRatio: number): ShaderMaterial {
+/**
+ * The material of a mark in the form of a token. Its outline is `widthPx` wide
+ * on screen. A faded mark keeps the form and is drawn in the faded colours.
+ */
+export function markMaterial(token: MarkToken, pixelRatio: number, faded = false): ShaderMaterial {
   // A mark with no outline is all fill; one with no fill lets the plate show.
-  const fill = token.fill ? colourOf(token.fill) : null;
-  const outline = token.outline ? colourOf(token.outline) : null;
+  const fill = token.fill ? markPartColour(token.fill, faded) : null;
+  const outline = token.outline ? markPartColour(token.outline, faded) : null;
   return new ShaderMaterial({
     vertexShader: MARK_VERTEX,
     fragmentShader: MARK_FRAGMENT,
@@ -75,6 +79,7 @@ export function markMaterial(token: MarkToken, pixelRatio: number): ShaderMateri
       uFill: { value: new Color(fill?.hex ?? '#000000') },
       uFillAlpha: { value: fill?.alpha ?? 0 },
       uOutline: { value: new Color(outline?.hex ?? '#000000') },
+      uOutlineAlpha: { value: outline?.alpha ?? 0 },
       uOutlinePx: { value: outline ? token.widthPx : 0 },
       uDashed: { value: token.dashed ? 1 : 0 },
       uPixelRatio: { value: pixelRatio },

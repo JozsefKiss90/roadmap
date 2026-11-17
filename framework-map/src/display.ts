@@ -4,7 +4,8 @@
  * The ten decision-class values group into the four steps a mark's form shows
  * (spec, "Encodings"). Kind and gate families are grouped in the vocabulary
  * file itself; the steps are grouped here. The table also gives each kind
- * family its icon and each gate family the word on its badge.
+ * family its icon and each gate family the word on its badge, and names the
+ * decision classes of the "committed only" control.
  */
 
 /** The four steps, from most to least committed. A cell lists its marks in this order. */
@@ -33,6 +34,21 @@ export function decisionStep(decisionClass: string): DecisionStep {
   if (!step) throw new Error(`The display table has no step for the decision class "${decisionClass}".`);
   return step;
 }
+
+/** The name of each step, as the legend gives it. */
+export const STEP_NAMES: Readonly<Record<DecisionStep, string>> = {
+  committed: 'Committed',
+  planned: 'Planned',
+  optional: 'Optional',
+  guarded: 'Guarded',
+};
+
+/**
+ * The decision classes the "committed only" control chooses (spec, "Spatial
+ * model"). They are not the committed step: the control takes in what is
+ * planned and built, and leaves out adapters, skills and rules.
+ */
+export const COMMITTED_ONLY: readonly string[] = ['Core v1', 'Core later', 'Build'];
 
 /** The Lucide icons the map draws for kind families, by Lucide's own names. */
 export const KIND_ICONS = [

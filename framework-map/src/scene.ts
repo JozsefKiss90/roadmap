@@ -11,6 +11,9 @@
  * mark. It moves the camera and changes colour and opacity; it never moves a
  * plate, a cell or a mark.
  *
+ * A mark of a tool that the filters leave out is drawn in the faded state: it
+ * keeps its form and its place.
+ *
  * The mark under the pointer gets a ring and a hover label, and the selected
  * tool's mark takes the selected fill. src/selection-drawing.ts draws the
  * rest of the selection: a selected cell's outline and the `implements`
@@ -132,6 +135,8 @@ interface TierParts {
   fill: MeshBasicMaterial;
   lines: Line[];
   marks: Map<DecisionStep, ShaderMaterial>;
+  /** The same forms in the faded state, for the marks the filters leave out. */
+  fadedMarks: Map<DecisionStep, ShaderMaterial>;
   /** The material of the tier's selected mark. */
   selected: ShaderMaterial;
   /** Every object drawn for the tier: its plate, its lines and its marks. */
@@ -141,6 +146,13 @@ interface TierParts {
   from: number;
   to: number;
 }
+
+/** Every material a tier's marks are drawn with. */
+const markMaterialsOf = (parts: TierParts): ShaderMaterial[] => [
+  ...parts.marks.values(),
+  ...parts.fadedMarks.values(),
+  parts.selected,
+];
 
 function setTierOpacity(parts: TierParts, opacity: number): void {
   parts.opacity = opacity;
@@ -154,7 +166,7 @@ function setTierOpacity(parts: TierParts, opacity: number): void {
   }
   parts.fill.opacity = opacity;
   for (const { material, fullOpacity } of parts.lines) material.opacity = fullOpacity * opacity;
-  for (const material of [...parts.marks.values(), parts.selected]) material.uniforms.uOpacity!.value = opacity;
+  for (const material of markMaterialsOf(parts)) material.uniforms.uOpacity!.value = opacity;
 }
 
 /** The limits the orbit controls hold the camera to at one distance. */
@@ -201,6 +213,9 @@ export function createStage(
     const marks = new Map<DecisionStep, ShaderMaterial>(
       DECISION_STEPS.map((step) => [step, markMaterial(MARK_TOKEN_OF_STEP[step], renderer.getPixelRatio())]),
     );
+    const fadedMarks = new Map<DecisionStep, ShaderMaterial>(
+      DECISION_STEPS.map((step) => [step, markMaterial(MARK_TOKEN_OF_STEP[step], renderer.getPixelRatio(), true)]),
+    );
     const selected = markMaterial(SELECTED_MARK, renderer.getPixelRatio());
     const objects: Object3D[] = [];
     tiers.set(plate.tier, {
@@ -208,6 +223,7 @@ export function createStage(
       fill,
       lines: [edge, cellLine],
       marks,
+      fadedMarks,
       selected,
       objects,
       opacity: 1,
@@ -248,10 +264,17 @@ export function createStage(
   const markOf = new Map<string, MarkLayout>(layout.marks.map((mark) => [mark.tool, mark]));
   const cellOf = new Map<string, CellLayout>(layout.cells.map((cell) => [cell.cluster, cell]));
   const meshes = new Map<string, { mesh: Mesh; node: MarkNode }>();
-  const selectedTool = (): string | null => {
-    const { selection } = store.get();
-    return selection?.type === 'tool' ? selection.id : null;
-  };
+  /**
+   * The material of a mark for a state: the selected fill for the selected
+   * tool, the faded form for a tool the filters leave out, and otherwise the
+   * form of its step.
+   */
+  function materialOf(mark: MarkNode, state: MapState): ShaderMaterial {
+    const parts = partsOf(mark.tier);
+    if (state.selection?.type === 'tool' && state.selection.id === mark.id) return parts.selected;
+    const forms = index.passing(state.filters).has(mark.id) ? parts.marks : parts.fadedMarks;
+    return forms.get(mark.step)!;
+  }
   const nodes: MarkNode[] = layout.marks.map((mark) => {
     const tool = index.tool(mark.tool);
     if (!tool) throw new Error(`The layout places "${mark.tool}", which is not a tool in the graph.`);
@@ -282,7 +305,8 @@ export function createStage(
     .nodeThreeObject((node) => {
       const mark = node as MarkNode;
       const parts = partsOf(mark.tier);
-      const mesh = new Mesh(square, mark.id === selectedTool() ? parts.selected : parts.marks.get(mark.step));
+      // A mark is made in the form the state gives it, so the page may open with a selection or a filter.
+      const mesh = new Mesh(square, materialOf(mark, store.get()));
       meshes.set(mark.id, { mesh, node: mark });
       mesh.scale.setScalar(mark.size / MARK_SHARE_OF_QUAD);
       mesh.renderOrder = parts.opacity >= 1 ? 0 : UNDER_THE_REST;
@@ -291,22 +315,9 @@ export function createStage(
     })
     .graphData({ nodes, links: [] });
 
-  // A mark made while its tool is selected starts with the selected fill, so the page may open with one.
-  let filled = selectedTool();
-  /** Gives the selected tool's mark the selected fill, and every other mark the form of its step. */
-  function showSelectedMark(): void {
-    const next = selectedTool();
-    if (next === filled) return;
-    for (const [id, selected] of [
-      [filled, false],
-      [next, true],
-    ] as const) {
-      const made = id === null ? undefined : meshes.get(id);
-      if (!made) continue;
-      const parts = partsOf(made.node.tier);
-      made.mesh.material = selected ? parts.selected : parts.marks.get(made.node.step)!;
-    }
-    filled = next;
+  /** Gives every mark the material the state asks for. Ticket 14 gives the change its fade. */
+  function dressMarks(state: MapState): void {
+    for (const { mesh, node } of meshes.values()) mesh.material = materialOf(node, state);
   }
 
   // The rest of the selection: a selected cell's outline, and the `implements` lines.
@@ -590,9 +601,7 @@ export function createStage(
     camera.fov = constants.fieldOfViewDegrees;
     // The outline widths are in screen pixels, so they follow the display's pixel ratio.
     for (const parts of tiers.values()) {
-      for (const material of [...parts.marks.values(), parts.selected]) {
-        material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
-      }
+      for (const material of markMaterialsOf(parts)) material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
     }
     ringMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
     selectionDrawing.setPixelRatio(renderer.getPixelRatio());
@@ -637,7 +646,7 @@ export function createStage(
   selectionDrawing.show(store.get().selection);
   store.subscribe((state, before) => {
     hover(null);
-    showSelectedMark();
+    if (state.selection !== before.selection || state.filters !== before.filters) dressMarks(state);
     selectionDrawing.show(state.selection);
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();

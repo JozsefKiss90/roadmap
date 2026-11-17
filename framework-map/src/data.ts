@@ -6,7 +6,10 @@
  * It imports no file, so the build can run it under Node; src/inlined-graph.ts
  * feeds it the graph that is inlined in the page.
  */
+import { DECISION_STEPS, decisionStep } from './display.ts';
 import type { ClusterNode, Graph, NeedNode, TierNode, ToolNode } from './graph';
+import { passes } from './state.ts';
+import type { Facets, FilterName, Filters } from './state.ts';
 import { validateGraph } from './validate.ts';
 import type { Fault, Vocabulary } from './validate.ts';
 
@@ -25,6 +28,8 @@ export class GraphRejected extends Error {
 /** A validated graph, with the lookups the map needs. */
 export interface GraphIndex {
   readonly graph: Graph;
+  /** Every tool, in the graph's own order. */
+  readonly tools: readonly ToolNode[];
   /** The tiers from the top of the stack (T7) down. */
   readonly tiers: readonly TierNode[];
   /** A tier's clusters, in the order they sit on its plate. */
@@ -53,6 +58,18 @@ export interface GraphIndex {
   /** The family the vocabulary file lists a raw kind or gate value under. */
   kindFamilyOf(kind: string): string;
   gateFamilyOf(gate: string): string;
+  /**
+   * The values a filter lists. Decision classes run from the committed step to
+   * the guarded one; kind and gate are the families of the vocabulary file;
+   * "used" and "operated" are the roles' codes.
+   */
+  filterValues(name: FilterName): readonly string[];
+  /** What a tool has for each filter: its kind and its gate as their families. */
+  facetsOf(toolId: string): Facets;
+  /** How many tools have a value of a filter. */
+  toolCountWith(name: FilterName, value: string): number;
+  /** The ids of the tools that pass the filters. */
+  passing(filters: Filters): ReadonlySet<string>;
 }
 
 export interface ServedNeed {
@@ -100,7 +117,9 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
   const tools: ToolNode[] = [];
   const needs = new Map<string, NeedNode>();
   const labels = new Map<string, string>();
+  const roles: string[] = [];
   for (const node of graph.nodes) {
+    if (node.type === 'role') roles.push(node.id.replace(/^role:/, ''));
     if (node.type === 'tier') tiers.push(node);
     else if (node.type === 'cluster') clusters.push(node);
     else if (node.type === 'tool') tools.push(node);
@@ -155,8 +174,63 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     }
   }
 
+  const kindFamilyOf = familyOfValue(vocabulary.kind, 'kind');
+  const gateFamilyOf = familyOfValue(vocabulary.gate, 'gate');
+  const stepOrder = (decisionClass: string): number => DECISION_STEPS.indexOf(decisionStep(decisionClass));
+  const filterValues: Readonly<Record<FilterName, readonly string[]>> = {
+    decision: [...vocabulary.decision_class].sort((a, b) => stepOrder(a) - stepOrder(b)),
+    kind: Object.keys(vocabulary.kind),
+    used: roles,
+    operated: roles,
+    hosting: vocabulary.hosting,
+    stream: vocabulary.stream,
+    gate: Object.keys(vocabulary.gate),
+  };
+  const facets = new Map<string, Facets>();
+  const facetsOf = (toolId: string): Facets => {
+    const known = facets.get(toolId);
+    if (known) return known;
+    const tool = toolById.get(toolId);
+    if (!tool) throw new Error(`The graph has no tool "${toolId}".`);
+    const made: Facets = {
+      decision: [tool.decision_class],
+      kind: [kindFamilyOf(tool.kind)],
+      used: tool.used_by,
+      operated: tool.operated_by,
+      hosting: [tool.hosting],
+      stream: [tool.stream],
+      gate: [gateFamilyOf(tool.gate)],
+    };
+    facets.set(toolId, made);
+    return made;
+  };
+  /** The counts of one filter, made when the filter is first asked for. */
+  const counts = new Map<FilterName, Map<string, number>>();
+  const countsOf = (name: FilterName): Map<string, number> => {
+    let made = counts.get(name);
+    if (!made) {
+      made = new Map();
+      for (const tool of tools) {
+        for (const value of facetsOf(tool.id)[name]) made.set(value, (made.get(value) ?? 0) + 1);
+      }
+      counts.set(name, made);
+    }
+    return made;
+  };
+
+  // The scene, the outline and the filters all ask for the same filters after a change, so the last answer is kept.
+  let passed: { filters: Filters; ids: ReadonlySet<string> } | null = null;
+  const passing = (filters: Filters): ReadonlySet<string> => {
+    if (passed?.filters !== filters) {
+      const ids = tools.filter((tool) => passes(filters, facetsOf(tool.id))).map((tool) => tool.id);
+      passed = { filters, ids: new Set(ids) };
+    }
+    return passed.ids;
+  };
+
   return {
     graph,
+    tools,
     tiers,
     clustersOf: (tierId) => clustersByTier.get(tierId) ?? [],
     toolsOf: (clusterId) => toolsByCluster.get(clusterId) ?? [],
@@ -177,7 +251,11 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     implementedBy: (clusterId) => inGraphOrder(implementersByCluster.get(clusterId) ?? []),
     roleName: (code) => labels.get(`role:${code}`) ?? code,
     streamName: (code) => labels.get(`stream:${code}`) ?? code,
-    kindFamilyOf: familyOfValue(vocabulary.kind, 'kind'),
-    gateFamilyOf: familyOfValue(vocabulary.gate, 'gate'),
+    kindFamilyOf,
+    gateFamilyOf,
+    filterValues: (name) => filterValues[name],
+    facetsOf,
+    toolCountWith: (name, value) => countsOf(name).get(value) ?? 0,
+    passing,
   };
 }
