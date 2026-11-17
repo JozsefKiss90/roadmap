@@ -10,6 +10,7 @@ Run these from this folder, after `npm install`.
 | --- | --- |
 | `npm run build` | Type-checks, validates the graph, builds, checks the built file and copies it to `../framework-map.html` |
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
+| `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
 | `npm run screenshots` | Opens the built file in each named state and saves a screenshot to `../screenshots/` |
 | `npm test` | Runs the unit tests |
 | `npm run typecheck` | Type-checks without building |

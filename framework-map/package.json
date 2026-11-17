@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/validate-graph.ts",
+    "generate": "python ../tool-discovery/generate_graph.py && npm run validate",
     "build": "tsc --noEmit && npm run validate && vite build && node scripts/publish.mjs",
     "screenshots": "node scripts/screenshots.mjs"
   },

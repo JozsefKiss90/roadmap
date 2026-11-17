@@ -1,0 +1,855 @@
+{
+  "tiers": [
+    {
+      "id": "T7",
+      "label": "Autonomous experimentation and AI optimisation",
+      "description": "Systems that improve models, prompts, harnesses and skills without a human in each step."
+    },
+    {
+      "id": "T6",
+      "label": "Agent orchestration and looped operations",
+      "description": "The persistent controller, scheduling, multi-agent coordination, loop governance and telemetry."
+    },
+    {
+      "id": "T5",
+      "label": "Ontology engineering and formal verification",
+      "description": "What is admissible and how it is proven: ontologies, constraints, specs, formal methods, evals and review."
+    },
+    {
+      "id": "T4",
+      "label": "Semantic layers and agent grounding",
+      "description": "What agents know: engineering graph, knowledge graphs, retrieval, enterprise semantics, memory and context assembly."
+    },
+    {
+      "id": "T3",
+      "label": "Pipelines and applications",
+      "description": "What agents work on and through: sources, documents, browsers, design, media, marketing, sales, measurement, training."
+    },
+    {
+      "id": "T2",
+      "label": "Agent runtimes and harnesses",
+      "description": "Where agents run: coding agents, knowledge-work surfaces, sandboxes, guardrails and channels."
+    },
+    {
+      "id": "T1",
+      "label": "Extension primitives",
+      "description": "The units everything above is composed from: skills, plug-ins, subagents, hooks, commands and MCP servers."
+    },
+    {
+      "id": "T0",
+      "label": "Substrate",
+      "description": "Models, local runtime, gateways, compute, network, secrets and the code toolchain."
+    }
+  ],
+  "clusters": [
+    {
+      "id": "0A",
+      "label": "Model providers and hosted models",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Cloud",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "0B",
+      "label": "Local model runtime and offline kit",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "0C",
+      "label": "Routing and gateways",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "0D",
+      "label": "Embeddings and rerankers",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "0E",
+      "label": "Compute, containers and hosting",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "0F",
+      "label": "Network, identity and secrets",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Guarded: credentials"
+    },
+    {
+      "id": "0G",
+      "label": "SCM, CI/CD and code-quality toolchain",
+      "tier": "T0",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Cloud",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "1A",
+      "label": "Skills",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "Enable",
+      "gate": "Admission review for third-party skills"
+    },
+    {
+      "id": "1B",
+      "label": "Plug-ins, marketplaces and distribution",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Cloud",
+      "stream": "Enable",
+      "gate": "Admission review"
+    },
+    {
+      "id": "1C",
+      "label": "Subagents",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "1D",
+      "label": "Hooks, commands and project constitution",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "1E",
+      "label": "MCP servers and connector tooling",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Admission review (mcp-auditor)"
+    },
+    {
+      "id": "1F",
+      "label": "Catalogues and reference lists",
+      "tier": "T1",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "n/a",
+      "stream": "Enable",
+      "gate": "Reference only"
+    },
+    {
+      "id": "2A",
+      "label": "Coding agents and CLIs",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "2B",
+      "label": "Knowledge-work agent surfaces",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "D",
+        "M",
+        "A"
+      ],
+      "hosting": "Spoke",
+      "stream": "Enable",
+      "gate": "None"
+    },
+    {
+      "id": "2C",
+      "label": "Alternative persistent harnesses",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Benchmark only"
+    },
+    {
+      "id": "2D",
+      "label": "Sandboxes and execution isolation",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "2E",
+      "label": "Guardrails, policy and agent security",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "2G",
+      "label": "Channels and human interfaces",
+      "tier": "T2",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Cloud",
+      "stream": "OS",
+      "gate": "Guarded: account access"
+    },
+    {
+      "id": "3A",
+      "label": "Web search and source harvesting",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Guarded: site terms and personal data"
+    },
+    {
+      "id": "3B",
+      "label": "Document processing and normalisation",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "3C",
+      "label": "Research, news and opportunity monitoring",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "M",
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "GTM",
+      "gate": "None"
+    },
+    {
+      "id": "3D",
+      "label": "Browser and app operation",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "Guarded: acts with user sign-ins"
+    },
+    {
+      "id": "3E",
+      "label": "Interface design and front-end",
+      "tier": "T3",
+      "operated_by": [
+        "D"
+      ],
+      "used_by": [
+        "D",
+        "A"
+      ],
+      "hosting": "Spoke",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "3F",
+      "label": "Diagrams, decks and documents",
+      "tier": "T3",
+      "operated_by": [
+        "D"
+      ],
+      "used_by": [
+        "D",
+        "M",
+        "A"
+      ],
+      "hosting": "Spoke",
+      "stream": "Deliver",
+      "gate": "None"
+    },
+    {
+      "id": "3G",
+      "label": "Video, motion, voice, 3D and simulation",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "D"
+      ],
+      "hosting": "Hub",
+      "stream": "GTM",
+      "gate": "None"
+    },
+    {
+      "id": "3H",
+      "label": "Marketing, content and distribution",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "M",
+        "D"
+      ],
+      "hosting": "Cloud",
+      "stream": "GTM",
+      "gate": "Guarded: outbound publishing and ad spend"
+    },
+    {
+      "id": "3I",
+      "label": "Sales, CRM and outreach",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "M"
+      ],
+      "hosting": "Cloud",
+      "stream": "GTM",
+      "gate": "Guarded: personal data and outbound email"
+    },
+    {
+      "id": "3J",
+      "label": "Client measurement and analytics",
+      "tier": "T3",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "Deliver",
+      "gate": "Guarded: client data"
+    },
+    {
+      "id": "3K",
+      "label": "Training, learning and enablement",
+      "tier": "T3",
+      "operated_by": [
+        "M"
+      ],
+      "used_by": [
+        "M",
+        "D",
+        "A"
+      ],
+      "hosting": "Spoke",
+      "stream": "Enable",
+      "gate": "None"
+    },
+    {
+      "id": "4A",
+      "label": "Engineering graph and code intelligence",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "Admission review"
+    },
+    {
+      "id": "4B",
+      "label": "Knowledge graphs and GraphRAG",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "4C",
+      "label": "Retrieval substrate and stores",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "4D",
+      "label": "Enterprise semantic layer and data context",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Client",
+      "stream": "Deliver",
+      "gate": "Guarded: client data"
+    },
+    {
+      "id": "4E",
+      "label": "Agent memory",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Zero silent writes"
+    },
+    {
+      "id": "4F",
+      "label": "Context assembly and compression",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Admission review"
+    },
+    {
+      "id": "4G",
+      "label": "Knowledge work surface",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "4H",
+      "label": "RAG Factory blueprints and templates",
+      "tier": "T4",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "5A",
+      "label": "Ontology modelling and glossary",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "5B",
+      "label": "Constraint and graph validation",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "5C",
+      "label": "Specification and requirements",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "Deliver",
+      "gate": "None"
+    },
+    {
+      "id": "5D",
+      "label": "Formal methods and deep testing",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "5E",
+      "label": "Evals, rubrics and harness gates",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "5F",
+      "label": "Code review and change-risk verification",
+      "tier": "T5",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "6A",
+      "label": "Persistent controller (Hermes)",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Operator approval"
+    },
+    {
+      "id": "6B",
+      "label": "Multi-agent orchestration",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "ADR first: v1 excludes multi-agent orchestration"
+    },
+    {
+      "id": "6C",
+      "label": "Agent frameworks and SDKs",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    },
+    {
+      "id": "6D",
+      "label": "Scheduling and durable workflows",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Cloud",
+      "stream": "OS",
+      "gate": "Operator approval for cron changes"
+    },
+    {
+      "id": "6E",
+      "label": "Loop governance and job contracts",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "6F",
+      "label": "Observability, cost and delivery metrics",
+      "tier": "T6",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "7A",
+      "label": "Autonomous research and experiment loops",
+      "tier": "T7",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Admission review"
+    },
+    {
+      "id": "7B",
+      "label": "Prompt, program and harness optimisation",
+      "tier": "T7",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "7C",
+      "label": "Self-improving skills and session mining",
+      "tier": "T7",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "Guarded: session data and consent"
+    },
+    {
+      "id": "7D",
+      "label": "Model and benchmark intelligence",
+      "tier": "T7",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A",
+        "D",
+        "M"
+      ],
+      "hosting": "Hub",
+      "stream": "OS",
+      "gate": "None"
+    },
+    {
+      "id": "7E",
+      "label": "Model adaptation and domain models",
+      "tier": "T7",
+      "operated_by": [
+        "A"
+      ],
+      "used_by": [
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Build",
+      "gate": "None"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "groups": {
+    "code-topology": [
+      "codegraph-colbymchenry-codegraph",
+      "graphify",
+      "serena",
+      "codeflow",
+      "floorplan"
+    ],
+    "token-economy": [
+      "context-mode",
+      "headroom",
+      "chisle",
+      "tokeneconomizer",
+      "ponytail-dietrichgebert-ponytail"
+    ],
+    "agent-team-boards": [
+      "paperclip",
+      "multica",
+      "herdr",
+      "switch",
+      "vibe-kanban",
+      "claude-squad",
+      "gas-town"
+    ],
+    "web-harvest": [
+      "firecrawl",
+      "crawl4ai",
+      "scrapling",
+      "scrapegraphai",
+      "maxun"
+    ],
+    "skill-learning": [
+      "autoharness",
+      "skill-recorder",
+      "self-improving-loop",
+      "skill-creator-skill"
+    ],
+    "free-model-lists": [
+      "awesome-free-llm-apis",
+      "free-llm-api-resources"
+    ],
+    "llm-observability": [
+      "arize-phoenix-arize-ai-phoenix",
+      "langfuse",
+      "opik",
+      "helicone"
+    ],
+    "spec-methods": [
+      "spec-kit",
+      "openspec",
+      "bmad-method",
+      "grill-me-mattpocock-skills"
+    ]
+  }
+}
