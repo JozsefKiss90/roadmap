@@ -70,6 +70,14 @@ _Avoid_: Time slider, timeline
 The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
+**Rail**:
+The column down the left of the map that holds the title, the search box and the outline.
+_Avoid_: Sidebar, left panel, navigation
+
+**Outline**:
+The tree of tiers, clusters and tools in the rail; it reaches everything the canvas does, by keyboard.
+_Avoid_: Tree view, list, index
+
 **Hover label**:
 The small label beside the pointer that names the tool under it and its cluster.
 _Avoid_: Tooltip, popup

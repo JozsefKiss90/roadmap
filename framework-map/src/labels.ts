@@ -44,7 +44,7 @@ import type { GraphIndex } from './data';
 import { gateBadge, kindIcon } from './display';
 import type { KindIcon } from './display';
 import { drawKindIcon } from './icons';
-import { listLayout, staircaseRise } from './label-layout';
+import { listLayout, nameCap, staircaseRise } from './label-layout';
 import type { StackLayout } from './layout';
 import type { Stage } from './scene';
 import type { MapState, Store } from './state';
@@ -265,6 +265,24 @@ export function addLabels(
   }
 
   let toolsShown: string | null = null;
+  /** The room the list was last set in, and whether any name had to be cut to fit it. */
+  let toolsRoom = 0;
+  let toolsCut = false;
+  let toolsNaturalWidth = 0;
+
+  /** The room for the list of tool names: between the rail and the window's edge, or the open detail card. */
+  const listRoom = (): number =>
+    stage.window.width -
+    constants.railPx -
+    (store.get().selection ? constants.detailCardPx : 0) -
+    2 * constants.listEdgePx;
+
+  /** A name cut to about a part of its length, with an ellipsis. */
+  const cut = (label: string, part: number): string => {
+    // By whole characters, so that none is split.
+    const letters = Array.from(label);
+    return `${letters.slice(0, Math.max(1, Math.floor(letters.length * part) - 1)).join('').trimEnd()}…`;
+  };
   let disposeTools: (() => void)[] = [];
   let toolsReady: Promise<void> = Promise.resolve();
 
@@ -351,13 +369,57 @@ export function addLabels(
     toolNames = new Map(rows.map(({ tool, name }) => [tool, name]));
     showSelectedName();
 
-    toolsReady = Promise.all(rows.map(({ name }) => typeset(name))).then(() => {
+    const room = listRoom();
+    toolsRoom = room;
+    toolsCut = false;
+    // Not known until the names are typeset; the room is looked at again then.
+    toolsNaturalWidth = 0;
+    /** What each row holds beside its name: the icon, and the badge with its gap. */
+    const extras = rows.map(({ badge }) => nameLeft + (badge ? constants.toolBadgeGapPx + badge.scale.x : 0));
+
+    /**
+     * Cuts the longest names short where the list is wider than its room. A cut
+     * is by letters, so it is measured again and cut again if it is still too wide.
+     */
+    async function fitNames(): Promise<void> {
+      await Promise.all(rows.map(({ name }) => typeset(name)));
+      if (toolLabels !== labels) return;
+      toolsNaturalWidth = listLayout(
+        rows.map(({ name }, i) => blockOf(name)[2] + extras[i]!),
+        constants.toolListMostRows,
+        constants.toolRowPx,
+        constants.toolColumnGapPx,
+      ).width;
+      for (let pass = 0; pass < 4 && toolLabels === labels; pass += 1) {
+        const names = rows.map(({ name }) => blockOf(name)[2]);
+        const cap = nameCap(names, extras, constants.toolListMostRows, constants.toolColumnGapPx, room, constants.toolNameLeastPx);
+        const tooLong = rows.filter((_row, i) => names[i]! > cap + 0.5);
+        if (tooLong.length === 0) return;
+        toolsCut = true;
+        // Only a name whose text has changed is typeset again; any other would never report back.
+        await Promise.all(
+          tooLong.map(({ name }) => {
+            const shorter = cut(name.text, cap / blockOf(name)[2]);
+            if (shorter === name.text) return undefined;
+            name.text = shorter;
+            return typeset(name);
+          }),
+        );
+      }
+    }
+
+    // A name thrown away while it is being typeset never reports back, so a list that is
+    // cleared counts as done.
+    const cleared = new Promise<void>((resolve) => disposeTools.push(resolve));
+    toolsReady = Promise.race([fitNames(), cleared]).then(() => {
       // The partner may have moved on while the names were being typeset.
       if (toolLabels !== labels) return;
-      const widths = rows.map(({ name, badge }) => {
-        const nameRight = nameLeft + blockOf(name)[2];
-        return badge ? nameRight + constants.toolBadgeGapPx + badge.scale.x : nameRight;
-      });
+      // The room may have changed while the names were being typeset: the list is then set again.
+      if (!listSuitsRoom()) {
+        showToolLabels(clusterId);
+        return;
+      }
+      const widths = rows.map(({ name }, i) => blockOf(name)[2] + extras[i]!);
       const list = listLayout(widths, constants.toolListMostRows, constants.toolRowPx, constants.toolColumnGapPx);
       // The badges of a column start on one line, set by the widest badge in it.
       const widestBadgeAt = new Map<number, number>();
@@ -384,6 +446,16 @@ export function addLabels(
     });
   }
 
+  /**
+   * Whether the list on show is still right for its room. The room changes when
+   * the detail card opens or closes and when the window does. The list is set
+   * again where names were cut for a room that has changed, or now need to be.
+   */
+  const listSuitsRoom = (): boolean => {
+    const room = listRoom();
+    return room === toolsRoom || (!toolsCut && toolsNaturalWidth <= room);
+  };
+
   /** The labels on screen for the current state. */
   function shown(): Label[] {
     const state = store.get();
@@ -398,7 +470,7 @@ export function addLabels(
       for (const label of labels) label.group.visible = state.distance === 'tier' && state.tier === tier;
     }
     if (state.distance !== 'cluster' || !state.cluster) clearToolLabels();
-    else if (toolsShown !== state.cluster) showToolLabels(state.cluster);
+    else if (toolsShown !== state.cluster || !listSuitsRoom()) showToolLabels(state.cluster);
     showSelectedName();
     place();
   }
@@ -430,10 +502,10 @@ export function addLabels(
       group.scale.setScalar(unitsPerPixel);
     }
 
-    // The list is centred on its cell. Where that would take it out of the window,
-    // or under the open detail card, the whole list moves across to stay in view.
+    // The list is centred on its cell. Where that would take it under the rail, out of
+    // the window or under the open detail card, the whole list moves across to stay in view.
     if (toolLabels.length > 0 && toolLabels[0]!.group.visible) {
-      const least = constants.listEdgePx;
+      const least = constants.railPx + constants.listEdgePx;
       const most = stage.window.width - (store.get().selection ? constants.detailCardPx : 0) - constants.listEdgePx;
       let left = Infinity;
       let rightmost = -Infinity;
@@ -487,11 +559,24 @@ export function addLabels(
 
   show(store.get());
   store.subscribe(show);
-  stage.onCameraChange(place);
+  stage.onCameraChange(() => {
+    // A window that has changed size may have changed the list's room.
+    const { distance, cluster } = store.get();
+    if (distance === 'cluster' && cluster && toolsShown === cluster && !listSuitsRoom()) showToolLabels(cluster);
+    place();
+  });
   const namesReady = Promise.all(pending).then(place);
 
   return {
-    settled: () => Promise.all([namesReady, toolsReady]).then(() => undefined),
+    async settled() {
+      await namesReady;
+      // The list may be set again while it is awaited, for a room that has changed.
+      let awaited: Promise<void>;
+      do {
+        awaited = toolsReady;
+        await awaited;
+      } while (awaited !== toolsReady);
+    },
     rects: () =>
       covers().map(({ rect }) => ({
         left: rect.left + stage.origin.x,

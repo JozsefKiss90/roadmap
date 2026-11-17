@@ -1,14 +1,21 @@
 /**
  * panels: the DOM interface around the canvas.
  *
- * So far: the breadcrumb at the top centre, the detail card on the right, and
- * the Escape key. All read the state store and write to it; none knows the
- * scene.
+ * So far: the left rail with the title, the search box and the outline; the
+ * breadcrumb at the top centre; the detail card on the right; the list of
+ * keys; and the keys that work anywhere. All read the state store and write
+ * to it; none knows the scene.
  */
 import { ChevronRight, createElement } from 'lucide';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
+import { mountAnnouncer } from './announcer';
 import { mountDetailCard } from './detail-card';
+import { element } from './dom';
+import { mountKeyList } from './key-list';
+import { mountOutline } from './outline';
+import { createSearch } from './search';
+import { mountSearchBox } from './search-box';
 import type { MapState, Store } from './state';
 
 interface Crumb {
@@ -64,14 +71,58 @@ function mountBreadcrumb(app: HTMLElement, index: GraphIndex, store: Store): voi
   store.subscribe(render);
 }
 
+/** A key press that belongs to a field the partner is typing in. */
+const isTyping = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
 /** Adds the interface around the canvas, and the keys that work anywhere on the page. */
 export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, constants: Constants): void {
+  // The rail is put in the page before the breadcrumb and the detail card, so Tab reaches
+  // the search and the outline first.
+  const rail = element('div', 'rail');
+  const title = app.querySelector('.title');
+  if (title) rail.append(title);
+  app.append(rail);
+
+  const keyList = mountKeyList(app);
+  const keys = element('button', 'rail-keys', 'Keys', element('kbd', null, '?'));
+  keys.type = 'button';
+  keys.setAttribute('aria-label', 'Show the list of keys');
+  keys.addEventListener('click', () => keyList.open());
+  const foot = element('footer', 'rail-foot', keys);
+  rail.append(foot);
+  const outline = mountOutline(rail, foot, index, store);
+
   mountBreadcrumb(app, index, store);
-  mountDetailCard(app, index, store, constants);
+  // A card that closes under the partner's hands hands the focus to the outline, at the row for where the map is.
+  const card = mountDetailCard(app, index, store, constants, () => outline.focus());
+
+  const nodes = index.graph.nodes;
+  const search = createSearch({
+    tools: nodes.filter((node) => node.type === 'tool'),
+    clusters: nodes.filter((node) => node.type === 'cluster'),
+    needs: nodes.filter((node) => node.type === 'need'),
+  });
+  // A chosen result opens its detail card, and the focus goes there to read it.
+  const searchBox = mountSearchBox(rail, outline.element, index, search, store, () => card.focus());
+
+  mountAnnouncer(app, index, store);
+
   document.addEventListener('keydown', (event) => {
-    // A held key steps back once, not all the way.
-    if (event.key !== 'Escape' || event.defaultPrevented || event.repeat) return;
-    // Closes the detail card if it is open, and otherwise steps out one distance.
-    store.stepBack();
+    // A held key acts once. The open list of keys takes its own Escape, and no other key.
+    if (event.defaultPrevented || event.repeat || keyList.isOpen()) return;
+    if (event.key === 'Escape') {
+      // Closes the detail card if it is open, and otherwise steps out one distance.
+      store.stepBack();
+      return;
+    }
+    if (isTyping(event.target) || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === '/') {
+      event.preventDefault();
+      searchBox.focus();
+    } else if (event.key === '?') {
+      event.preventDefault();
+      keyList.open();
+    }
   });
 }

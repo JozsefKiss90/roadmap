@@ -7,7 +7,7 @@
  * It fails if a state logs a console error, throws, never signals "ready", or
  * requests anything other than the file itself. It also fails if a state
  * shows too many labels, two labels that overlap, or a label that runs out of
- * the window or under the detail card. It does not compare pixels, because headless 3D rendering varies
+ * the window, under the rail or under the detail card. It does not compare pixels, because headless 3D rendering varies
  * between runs.
  *
  * Usage: node scripts/screenshots.mjs [path to the built file]
@@ -78,12 +78,18 @@ try {
       try {
         await page.goto(url.href);
         await page.waitForSelector(READY_SELECTOR, { state: 'attached', timeout: READY_TIMEOUT_MS });
+        // A state may need the keyboard to reach it: a key to press, or text to type.
+        for (const [action, value] of state.keys ?? []) {
+          if (action === 'press') await page.keyboard.press(value);
+          else await page.keyboard.type(value);
+        }
         const labels = await page.evaluate(() => window.frameworkMap?.labels() ?? null);
-        // An open detail card covers the right of the window, so the labels must end before it.
-        const cardLeft = await page.evaluate(
-          () => document.querySelector('.detail-card:not([hidden])')?.getBoundingClientRect().left ?? null,
-        );
-        const clear = { width: cardLeft ?? viewport.width, height: viewport.height };
+        // The rail covers the left of the window and an open detail card the right, so the labels stand between them.
+        const [railRight, cardLeft] = await page.evaluate(() => [
+          document.querySelector('.rail')?.getBoundingClientRect().right ?? null,
+          document.querySelector('.detail-card:not([hidden])')?.getBoundingClientRect().left ?? null,
+        ]);
+        const clear = { left: railRight ?? 0, width: cardLeft ?? viewport.width, height: viewport.height };
         for (const fault of labelFaults(labels, clear, MOST_LABELS)) failures.push(`${label}: ${fault}`);
         const screenshotPath = path.join(outputDir, `${label}.png`);
         await page.screenshot({ path: screenshotPath });

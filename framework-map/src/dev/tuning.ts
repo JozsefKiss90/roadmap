@@ -33,7 +33,7 @@ export function mountTuning(constants: Constants, onChange: () => void): void {
   insets.addBinding(constants, 'insetTopPx', { label: 'top', min: 0, max: 300, step: 4 });
   insets.addBinding(constants, 'insetRightPx', { label: 'right', min: 0, max: 500, step: 4 });
   insets.addBinding(constants, 'insetBottomPx', { label: 'bottom', min: 0, max: 300, step: 4 });
-  insets.addBinding(constants, 'insetLeftPx', { label: 'left', min: 0, max: 500, step: 4 });
+  insets.addBinding(constants, 'insetLeftPx', { label: 'left', min: 0, max: 800, step: 4 });
 
   pane.on('change', onChange);
 }

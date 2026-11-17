@@ -5,6 +5,7 @@
  * @typedef {object} ScreenshotState
  * @property {string} name Used in the screenshot's file name.
  * @property {string} fragment The URL fragment, without the leading "#".
+ * @property {readonly (readonly ['press' | 'type', string])[]} [keys] What to do at the keyboard once the page is ready: a key to press, or text to type.
  */
 
 /** @type {readonly ScreenshotState[]} */
@@ -19,6 +20,16 @@ export const states = [
   { name: 'internal-skill-selected', fragment: 'cluster=1A&select=tool:ci-gate-add' },
   { name: 'cluster-selected', fragment: 'cluster=5B&select=5B' },
   { name: 'need-selected', fragment: 'cluster=5F&select=N01' },
+  // The search, reached with "/": results in all three groups, and a word the framework lacks.
+  { name: 'search-results', fragment: '', keys: [['press', '/'], ['type', 'semantic']] },
+  { name: 'search-no-result', fragment: '', keys: [['press', '/'], ['type', 'zeppelin']] },
+  // The outline by keyboard alone: Tab to the tree, open T7's first cluster and stand on its first tool.
+  {
+    name: 'outline-keyboard-focus',
+    fragment: '',
+    keys: [['press', 'Tab'], ['press', 'Tab'], ['press', 'ArrowDown'], ['press', 'ArrowRight'], ['press', 'ArrowRight']],
+  },
+  { name: 'key-list', fragment: 'cluster=4A&select=tool:serena', keys: [['press', '?']] },
 ];
 
 /** The most labels a state may show at once. The spec asks for "no more than about 60". */

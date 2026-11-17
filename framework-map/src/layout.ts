@@ -41,7 +41,7 @@ export const STACK_METRICS: StackMetrics = {
   cellPadding: 0.3,
   cellGap: 0.7,
   platePadding: 0.55,
-  plateSpacing: 5,
+  plateSpacing: 6.5,
 };
 
 /** A plate: the rectangle of one tier. `x`, `z` are its centre, `y` its top face. */
@@ -99,7 +99,7 @@ const stepRank = (tool: ToolNode): number => DECISION_STEPS.indexOf(decisionStep
  * committed to guarded, then by name. The order does not depend on the order
  * of the graph's node list.
  */
-function inGridOrder(tools: readonly ToolNode[]): ToolNode[] {
+export function inGridOrder(tools: readonly ToolNode[]): ToolNode[] {
   const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
   return [...tools].sort(
     (a, b) =>

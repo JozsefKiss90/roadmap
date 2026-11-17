@@ -25,11 +25,17 @@ export const constants = {
   nearestZoom: 0.4,
   farthestZoom: 1.1,
 
-  /** The part of the window kept clear around the stack at rest, in pixels. */
+  /** The left rail's width. The picture, its names and the camera all keep right of it. */
+  railPx: 240,
+
+  /**
+   * The part of the window kept clear around the stack at rest, in pixels. The
+   * left one holds the rail and, beside it, the column of tier names.
+   */
   insetTopPx: 76,
   insetRightPx: 40,
   insetBottomPx: 32,
-  insetLeftPx: 296,
+  insetLeftPx: 512,
 
   /**
    * The camera at the tier and cluster distances. It tilts toward top-down,
@@ -46,7 +52,7 @@ export const constants = {
   focusTurnDegrees: 30,
   focusNearestZoom: 0.7,
   focusFarthestZoom: 1.3,
-  /** The window's margins at those two distances. The right one at the tier distance is room for cluster names. */
+  /** The window's margins at those two distances, the left one from the rail. The right one at the tier distance is room for cluster names. */
   nearInsetSidePx: 48,
   tierInsetRightPx: 260,
   /** The detail card's width. While it is open, the tier and cluster distances keep clear of it. */
@@ -88,8 +94,10 @@ export const constants = {
   toolColumnGapPx: 40,
   /** From the foot of the list down to the cell. */
   toolListGapPx: 30,
-  /** The least space between the list and the edge of the window, or of the open detail card. */
+  /** The least space between the list and the rail, and the edge of the window or of the open detail card. */
   listEdgePx: 24,
+  /** A name too long for the list's room is cut short with an ellipsis, but never below this width. */
+  toolNameLeastPx: 80,
   /** The kind icon, and the space between an icon, a name and a gate badge. */
   toolIconPx: 14,
   toolPartGapPx: 7,

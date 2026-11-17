@@ -404,7 +404,7 @@ export function createStage(
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
-    // An open detail card covers the right of the window, so the plate or cell stands clear of it.
+    // The rail covers the left of the window and an open detail card the right, so the plate or cell stands clear of both.
     const card = state.selection ? constants.detailCardPx : 0;
     const cell = state.distance === 'cluster' ? cellOf.get(state.cluster ?? '') : undefined;
     if (cell) {
@@ -416,7 +416,7 @@ export function createStage(
           framed,
           frame,
           inPicture(
-            constants.nearInsetSidePx,
+            constants.railPx + constants.nearInsetSidePx,
             constants.annotationTopPx + roomAbove,
             windowSize.width - constants.nearInsetSidePx - card,
             windowSize.height - constants.insetBottomPx,
@@ -443,7 +443,7 @@ export function createStage(
       const top =
         constants.annotationTopPx + staircaseHeight(names, constants.clusterRowPx, constants.clusterNameGapPx);
       const region = inPicture(
-        constants.nearInsetSidePx,
+        constants.railPx + constants.nearInsetSidePx,
         top,
         windowSize.width - constants.tierInsetRightPx - card,
         windowSize.height - constants.insetBottomPx,

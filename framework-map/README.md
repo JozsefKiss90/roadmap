@@ -21,7 +21,7 @@ Run these from this folder, after `npm install`.
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window or under the detail card. It uses the installed Chrome or Edge.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -42,8 +42,14 @@ Run these from this folder, after `npm install`.
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
 | `src/label-layout.ts` | The arithmetic for where cluster and tool names stand |
 | `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
-| `src/panels.ts` | Mounts the breadcrumb and the detail card, and takes the Escape key |
+| `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card and the list of keys, and takes the keys that work anywhere |
 | `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
+| `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
+| `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
+| `src/search-box.ts` | The search field and the list of what it finds |
+| `src/key-list.ts` | The list of keys that `?` opens |
+| `src/announcer.ts` | Tells assistive technology what is now selected, or where the map has gone |
+| `src/dom.ts` | The helpers the panels build their elements with |
 
 **The layout runs in the build, not in the page** (ADR 0002). A plugin in `vite.config.ts` runs `layoutStack` on the graph and serves the result as the module `virtual:stack-layout`. The page imports positions and never computes them, and nothing is written into the graph JSON. The layout's spacings are `STACK_METRICS` in `src/layout.ts`; after changing one, rebuild or reload the dev server.
 
@@ -58,8 +64,8 @@ The map has three distances: stack, tier and cluster. `src/state.ts` holds the d
 | Distance | What is on screen | How to get there |
 | --- | --- | --- |
 | Stack | Every plate, with each tier's name and tool count | Open the map, press Escape from a tier, or click "Stack" in the breadcrumb |
-| Tier | The focused plate, with its cluster names above it. The plates above it are faded | Click a plate or a tier name |
-| Cluster | The focused cell, with its tool names above it. Each name has its kind icon and, where the tool is gated, a gate badge | Click a cell of the focused plate, or a cluster name |
+| Tier | The focused plate, with its cluster names above it. The plates above it are faded | Click a plate or a tier name, or choose a tier in the outline |
+| Cluster | The focused cell, with its tool names above it. Each name has its kind icon and, where the tool is gated, a gate badge | Click a cell of the focused plate, or a cluster name, or choose a cluster in the outline |
 
 - **Nothing moves but the camera.** A change of distance flies the camera and changes opacity. No plate, cell or mark changes place.
 - **From the stack, a click anywhere on a plate goes to its tier.** A cell takes clicks once its plate is focused.
@@ -75,9 +81,9 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 | To select | Do this |
 | --- | --- |
-| A tool | Click its mark on the focused plate, its name in the list above a focused cell, or its row in the detail card |
-| A cluster | Click its cell on the focused plate, between the marks, or click its name |
-| A need | Click its row in a tool's detail card |
+| A tool | Click its mark on the focused plate, its name in the list above a focused cell, or its row in the detail card. Or choose it in the outline or the search |
+| A cluster | Click its cell on the focused plate, between the marks, or click its name. Or choose it in the outline or the search |
+| A need | Click its row in a tool's detail card, or choose it in the search |
 
 - **Selecting a tool or a cluster goes to that cluster.** Selecting a need leaves the map where it is.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
@@ -92,6 +98,47 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 - **The camera keeps clear of the detail card.** At the tier and cluster distances the focused plate or cell is centred in the room left of the card.
 - **A field with no value is left out.** A tool with no repository shows no repository, stars, last commit or licence.
 - **The link to the tool matrix** leads to `Hermes OS tool matrix.xlsx` beside the map's file. Its address is `toolMatrixHref` in `src/constants.ts`.
+
+## The rail: outline, search and keyboard
+
+The rail is the 240-pixel column down the left. It holds the title, the search box and the outline. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+
+**The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
+
+- **Choosing a row goes there.** A tier row goes to the tier. A cluster or tool row selects it, which flies to it and opens its detail card.
+- **The outline follows the map.** Selecting on the canvas, in the detail card or by a link opens the rows above the selected row, marks it and scrolls to it. With nothing selected, the outline scrolls to the focused tier or cluster and marks its row as the place. A focused cluster's row is opened.
+- **It is a tree to assistive technology.** Each row gives its name and its tool count, or its decision step for a tool.
+- **Tool rows are in the order of the cell's grid**, as the names above a focused cell are.
+
+**The search** uses MiniSearch (`src/search.ts`). It reads tool names and capabilities, cluster names and need names.
+
+- **A word matches from its first letters, and with a small typo**: one wrong letter in five. A match on a name ranks above a match on a capability.
+- **Every word of the query must match**, so a second word narrows the results.
+- **Results are grouped as tools, clusters and needs.** A group lists its best 20 tools or 8 clusters or needs, and its heading gives the number found.
+- **Choosing a result selects it** and puts the keyboard focus on the detail card's name.
+
+**The keys.** `?` shows these in the page.
+
+| Where | Key | What it does |
+| --- | --- | --- |
+| Anywhere | `/` | Goes to the search box |
+| Anywhere | `?` | Shows the list of keys |
+| Anywhere | Escape | Closes the detail card, then steps out one distance |
+| Anywhere | Tab | Goes to the next control |
+| Outline | Up, Down | Goes to the row above or below |
+| Outline | Right | Opens a row, or goes to its first row |
+| Outline | Left | Closes a row, or goes to the row it stands under |
+| Outline | Home, End | Goes to the first or the last row |
+| Outline | Enter or Space | Chooses the row |
+| Search box | Up, Down | Goes through the results |
+| Search box | Enter | Chooses the result |
+| Search box | Escape | Clears the search |
+
+- **Focus is always shown.** One rule in `src/styles.css` gives whatever holds the keyboard focus the guide's `map-focus-outline`.
+- **Focus is never lost.** When Escape closes a detail card that holds the focus, the focus goes to the outline, at the row for where the map is.
+- **Changes are announced.** A live region says what is now selected, or where the map has gone when nothing is selected. The search says how many results it found.
+- **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width.
+- **A long tool name is cut short with an ellipsis** in the list above a cell, where the list would not fit between the rail and the open detail card. The outline, the hover label and the detail card give the name in full.
 
 ## The graph validator
 
@@ -135,4 +182,4 @@ The page sets `data-ready="true"` on the `<html>` element once its first render 
 
 ## Adding a screenshot state
 
-Add a name and a URL fragment to `scripts/screenshot-states.mjs`.
+Add a name and a URL fragment to `scripts/screenshot-states.mjs`. A state that needs the keyboard to reach it also lists its keys: `['press', '/']` presses a key and `['type', 'semantic']` types text.

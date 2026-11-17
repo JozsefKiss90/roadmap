@@ -30,6 +30,12 @@ describe('labelFaults', () => {
     expect(labelFaults([rect(-4, 10)], viewport, 60)[0]).toMatch(/out of the window/);
   });
 
+  it('reports a label that runs under the rail, left of the clear part of the window', () => {
+    const clear = { ...viewport, left: 240 };
+    expect(labelFaults([rect(236, 10)], clear, 60)[0]).toMatch(/out of the window/);
+    expect(labelFaults([rect(240, 10)], clear, 60)).toEqual([]);
+  });
+
   it('reports more labels than a state may show', () => {
     const many = Array.from({ length: 61 }, (_, i) => rect(10, 10 + i * 10, 100, 8));
     expect(labelFaults(many, viewport, 60)).toEqual(['61 labels on screen, more than 60']);

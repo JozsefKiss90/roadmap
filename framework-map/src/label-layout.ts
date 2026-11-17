@@ -68,3 +68,37 @@ export function listLayout(
   }
   return { slots, columnWidths, width: Math.max(0, left - columnGapPx), height: rows * rowPx };
 }
+
+/**
+ * The widest a name may be for a list to fit its room: Infinity where the list
+ * fits as it is. `names` are the widths of the names, and `extras` what each
+ * row holds beside its name: its icon, its badge and the gaps between them.
+ * No name is cut below `leastPx`, so a list may still be wider than its room.
+ */
+export function nameCap(
+  names: readonly number[],
+  extras: readonly number[],
+  mostRows: number,
+  columnGapPx: number,
+  roomPx: number,
+  leastPx = 0,
+): number {
+  const widthAt = (cap: number): number =>
+    listLayout(
+      names.map((name, i) => Math.min(name, cap) + (extras[i] ?? 0)),
+      mostRows,
+      0,
+      columnGapPx,
+    ).width;
+  if (widthAt(Infinity) <= roomPx) return Infinity;
+  // The list's width never falls as the cap rises, so the cap is found by halving.
+  let fits = leastPx;
+  let tooWide = Math.max(leastPx, ...names);
+  if (widthAt(fits) > roomPx) return leastPx;
+  while (tooWide - fits > 0.5) {
+    const middle = (fits + tooWide) / 2;
+    if (widthAt(middle) <= roomPx) fits = middle;
+    else tooWide = middle;
+  }
+  return fits;
+}

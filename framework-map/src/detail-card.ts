@@ -10,47 +10,23 @@ import { ArrowUpRight, X, createElement } from 'lucide';
 import type { IconNode } from 'lucide';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
-import { DECISION_STEPS, decisionStep, kindIcon } from './display';
+import { decisionStep, kindIcon } from './display';
+import { element, swatch } from './dom';
+import type { Child } from './dom';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
+import { inGridOrder } from './layout';
 import type { Selection, Store } from './state';
-import { MARK_TOKEN_OF_STEP, ROLES } from './tokens';
 
 /** The decision source of a tool whose decision is a recommendation, not yet the Architect's. */
 const PROPOSED_HERE = 'Proposed here';
 /** Values the data uses for "nothing to say". A field that holds one is left out. */
 const NO_VALUE = new Set(['', 'n/a']);
 
-type Child = Node | string | null | undefined | false;
-
-function element<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className: string | null,
-  ...children: Child[]
-): HTMLElementTagNameMap[K] {
-  const made = document.createElement(tag);
-  if (className) made.className = className;
-  made.append(...children.filter((child): child is Node | string => Boolean(child)));
-  return made;
-}
-
 function icon(node: IconNode): SVGElement {
   const made = createElement(node);
   made.setAttribute('aria-hidden', 'true');
   made.classList.add('card-icon');
-  return made;
-}
-
-/** A small square in the form of a decision-class step, as the marks are drawn. */
-function swatch(decisionClass: string): HTMLElement {
-  const token = MARK_TOKEN_OF_STEP[decisionStep(decisionClass)];
-  const made = element('span', 'swatch');
-  made.setAttribute('aria-hidden', 'true');
-  // The same token the scene draws the mark from, so the two cannot drift apart.
-  made.style.background = token.fill ? ROLES[token.fill] : 'transparent';
-  made.style.border = token.outline
-    ? `${token.widthPx}px ${token.dashed ? 'dashed' : 'solid'} ${ROLES[token.outline]}`
-    : '0';
   return made;
 }
 
@@ -77,13 +53,22 @@ function section(heading: string, ...children: Child[]): HTMLElement | null {
 const paragraph = (text: string | null | undefined): HTMLElement | null =>
   hasValue(text) ? element('p', 'card-text', text) : null;
 
-const stepRank = (tool: ToolNode): number => DECISION_STEPS.indexOf(decisionStep(tool.decision_class));
+export interface DetailCard {
+  /** Puts the keyboard focus on the open card's name, so a partner can read on from there. */
+  focus(): void;
+}
 
-/** Tools in the order a cell lists its marks: from committed to guarded, then by name. */
-const inCellOrder = (tools: readonly ToolNode[]): ToolNode[] =>
-  [...tools].sort((a, b) => stepRank(a) - stepRank(b) || a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }));
-
-export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Store, constants: Constants): void {
+/**
+ * @param onClosedWithFocus Called when the card closes while it holds the keyboard focus, so the
+ *   focus can go somewhere that is still on the page.
+ */
+export function mountDetailCard(
+  app: HTMLElement,
+  index: GraphIndex,
+  store: Store,
+  constants: Constants,
+  onClosedWithFocus: () => void,
+): DetailCard {
   const card = element('aside', 'detail-card');
   card.hidden = true;
   app.append(card);
@@ -228,7 +213,7 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
 
   function clusterForm(cluster: ClusterNode): Child[] {
     const tier = index.tier(cluster.tier);
-    const tools = inCellOrder(index.toolsOf(cluster.id));
+    const tools = inGridOrder(index.toolsOf(cluster.id));
     return [
       head(['Cluster ', cluster.id], cluster.label),
       element(
@@ -279,6 +264,7 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
     card.hidden = form === null;
     if (!form) {
       card.replaceChildren();
+      if (heldFocus) onClosedWithFocus();
       return;
     }
     // The card slides in when it opens, and not when its content changes or the page opens with it.
@@ -292,4 +278,5 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
   store.subscribe((state, before) => {
     if (state.selection !== before.selection) render(state.selection, before.selection === null);
   });
+  return { focus: () => card.querySelector<HTMLElement>('.card-name')?.focus() };
 }

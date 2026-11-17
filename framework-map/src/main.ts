@@ -22,6 +22,7 @@ const root = document.documentElement;
 function applyPageConstants(): void {
   root.style.setProperty('--title-size', `${constants.titleSizePx}px`);
   root.style.setProperty('--detail-card-width', `${constants.detailCardPx}px`);
+  root.style.setProperty('--rail-width', `${constants.railPx}px`);
 }
 
 async function start(): Promise<void> {
@@ -30,8 +31,9 @@ async function start(): Promise<void> {
   const container = document.getElementById('stage');
   if (!app || !container) throw new Error('The page has no #app or no #stage element.');
 
-  // The counts and badges are drawn on a canvas, which needs its typeface loaded first.
-  await loadFonts(['400 1em "Instrument Serif"', TAG_FONT]);
+  // The counts and badges are drawn on a canvas, which needs its typeface loaded first. The
+  // outline scrolls to the selected row, which needs its rows at their final height.
+  await loadFonts(['400 1em "Instrument Serif"', TAG_FONT, '400 1em "Geist"']);
 
   const index = loadGraph();
   // The store starts from the URL fragment, so the page opens at the distance a link names.

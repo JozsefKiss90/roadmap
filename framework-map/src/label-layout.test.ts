@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listLayout, listShape, staircaseHeight, staircaseRise } from './label-layout';
+import { listLayout, listShape, nameCap, staircaseHeight, staircaseRise } from './label-layout';
 
 describe('the staircase of cluster names', () => {
   it('stands the rightmost name nearest the plate and each name to its left one row higher', () => {
@@ -70,5 +70,34 @@ describe('the list of tool names', () => {
         expect(apartDown || apartAcross, `names ${i} and ${j}`).toBe(true);
       });
     });
+  });
+});
+
+describe('nameCap', () => {
+  // Six names in two columns of three, 40 pixels apart. Each row adds 20 pixels for its icon.
+  const names = [100, 200, 120, 90, 180, 60];
+  const extras = [20, 20, 20, 20, 20, 20];
+
+  it('leaves the names alone where the list fits its room', () => {
+    // The columns are 220 and 200 wide, with 40 between them.
+    expect(nameCap(names, extras, 3, 40, 460)).toBe(Infinity);
+  });
+
+  it('gives the widest a name may be for the list to fit', () => {
+    // With no name over 150, the columns are 170 and 170: 380 in all.
+    const cap = nameCap(names, extras, 3, 40, 380);
+    expect(cap).toBeGreaterThan(149);
+    expect(cap).toBeLessThanOrEqual(150);
+  });
+
+  it('holds every column to the one cap', () => {
+    // With no name over 160, the columns are 180 and 180: 400 in all.
+    const cap = nameCap(names, extras, 3, 40, 400);
+    expect(cap).toBeGreaterThan(159);
+    expect(cap).toBeLessThanOrEqual(160);
+  });
+
+  it('never cuts a name below the least width', () => {
+    expect(nameCap(names, extras, 3, 40, 50, 80)).toBe(80);
   });
 });
