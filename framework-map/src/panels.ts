@@ -3,7 +3,7 @@
  *
  * So far: the left rail with the title, the search box, the lens switch, the
  * need list, the filters and the outline; the breadcrumb at the top centre; the detail card on the right;
- * the legend at the bottom left; the list of keys; and the keys that work
+ * the legend at the bottom left; the phase strip at the bottom; the list of keys; and the keys that work
  * anywhere. All read the state store and write
  * to it; none knows the scene.
  */
@@ -19,9 +19,10 @@ import { mountLegend } from './legend';
 import { mountLensPanel } from './lens-panel';
 import { mountNeedList } from './need-list';
 import { mountOutline } from './outline';
+import { mountPhaseStrip } from './phase-strip';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
-import { tracedNeedOf } from './state';
+import { listsNeeds, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
 interface Crumb {
@@ -105,7 +106,7 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   // A card that closes under the partner's hands hands the focus to the outline, at the row for where the map is.
   // While the need list is on show the outline is folded, and the focus goes to the need list.
   const card = mountDetailCard(app, index, store, constants, () =>
-    store.get().lens?.type === 'need' ? needList.focus() : outline.focus(),
+    listsNeeds(store.get().lens) ? needList.focus() : outline.focus(),
   );
 
   const nodes = index.graph.nodes;
@@ -122,6 +123,7 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   mountFilterPanel(rail, outline.element, index, store);
 
   mountLegend(app, store);
+  const phaseStrip = mountPhaseStrip(app, index, store, () => lensPanel.focus());
   // The trace with no need chosen changes nothing on the canvas, so the canvas says that it is on.
   const hint = element('p', 'canvas-hint', 'The need trace is on. Choose a need in the rail to trace it.');
   const showHint = (): void => {
@@ -157,6 +159,10 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
       // The need trace comes back with the need it last showed. With none yet, the need list takes the focus.
       store.showNeedTrace();
       if (tracedNeedOf(store.get().lens) === null) needList.focus();
+    } else if (event.key === '4') {
+      // The phase scrub comes back at the phase it last showed. The strip takes the focus, so the arrow keys step it at once.
+      store.showPhaseScrub();
+      phaseStrip.focus();
     }
   });
 }

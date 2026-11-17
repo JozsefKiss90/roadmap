@@ -52,6 +52,9 @@ const CHECKED_FIELDS: Record<string, VocabularyField[]> = {
 const COUNTED_TYPES: Record<string, string> = { tool: 'tools', cluster: 'clusters', tier: 'tiers', need: 'needs' };
 
 const PHASE_COUNT = 5;
+
+/** The roadmap's phases, in turn: P0 to P4. */
+export const PHASES: readonly string[] = Array.from({ length: PHASE_COUNT }, (_, phase) => `P${phase}`);
 const PHASE_ITEM = /^P(\d)(?:-P(\d))?$/;
 
 type Json = Record<string, unknown>;

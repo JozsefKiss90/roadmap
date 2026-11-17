@@ -47,7 +47,8 @@ Run these from this folder, after `npm install`.
 | `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
 | `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
 | `src/lens-panel.ts` | The lens switch in the rail, with the roles of the role lens and the number of tools in reach |
-| `src/need-list.ts` | The need list in the rail: the 33 needs under their phases, while the need trace is on |
+| `src/need-list.ts` | The need list in the rail: the 33 needs under their phases, while the need trace is on, and the needs of one phase under the phase scrub |
+| `src/phase-strip.ts` | The phase strip at the bottom of the map: the five steps of the phase scrub, each with its counts |
 | `src/rail-fold.ts` | Folds the filters and the outline to their headings while the need list is on show, and lets a heading open or fold its part |
 | `src/filter-panel.ts` | The seven filters in the rail, with the count, "committed only" and "clear" |
 | `src/legend.ts` | The legend of the four decision-class steps, with the faded, traced and best-fit states while they are on show |
@@ -108,7 +109,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline, and the need list while the need trace is on. The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline, and the need list while the need trace or the phase scrub is on. The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -133,6 +134,8 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 | Anywhere | `1` | Switches the lens off |
 | Anywhere | `2` | Switches the role lens on |
 | Anywhere | `3` | Switches the need trace on |
+| Anywhere | `4` | Switches the phase scrub on, and goes to the phase strip |
+| Phase strip | Left, Right | Steps to the phase before or after |
 | Anywhere | Escape | Closes the detail card, then steps out one distance |
 | Anywhere | Tab | Goes to the next control |
 | Outline | Up, Down | Goes to the row above or below |
@@ -152,7 +155,7 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 
 ## The role lens
 
-The lens switch stands in the rail under the search box. It offers no lens, the role lens and the need trace. A later ticket adds the phase scrub to it. One lens is on at a time, and `src/state.ts` holds it.
+The lens switch stands in the rail under the search box. It offers no lens, the role lens, the need trace and the phase scrub. One lens is on at a time, and `src/state.ts` holds it.
 
 - **The role lens brings forward the tools one role uses.** A partner chooses the Architect, the Designer or the Analyst. The tools that role uses keep their form at full strength, in all eight tiers. Every other tool fades in place, as a filtered-out tool does.
 - **It means "used by" only.** A tool the role operates but does not use is faded. "Operated by" is a filter.
@@ -185,10 +188,28 @@ The need trace shows one of the 33 needs and the tools that serve it. Needs are 
 - **Escape closes the detail card and leaves the trace on.** The need stays chosen in the need list, and a click on it opens its card again.
 - **The number of traced tools** stands beside "Lens", as "15 tools in reach". Each tier's count reads "T1 · 11 of 119 in reach", as under the role lens.
 - **The filters apply on top of the trace.** A traced tool the filters leave out is faded, and has no line and no ring.
-- **The legend names the traced mark and the best-fit ring** while the need trace is on, and the selection's ring while a tool or a cluster is selected under a traced need.
+- **The legend names the traced mark and the best-fit ring** while the need trace is on, and the selection's ring while a tool or a cluster is selected under a traced need. Under the phase scrub it names the traced mark, and the selection's ring in the same way.
 - **The need trace comes back with the need it last showed**, as the role lens does with its role. It comes back where the map is, with the need's card closed; the need's row in the need list opens it.
 - **The URL fragment holds the lens and its need**, as `#lens=need&need=N15`. With the need's card open it also has `select=N15`. `lens=need` alone is the trace with no need chosen. A need the graph lacks gives no lens.
 - **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+
+## The phase scrub
+
+The phase scrub steps through the roadmap's phases, P0 to P4, and shows what each one calls for: the needs scheduled in it and the tools that serve them. `src/state.ts` holds the lens and its phase, and `src/phase-strip.ts` is the strip that steps it.
+
+- **`4`, or "Phase" in the lens switch, switches the phase scrub on.** The place and a selected tool stay, as under the other lenses. It starts at P0, and comes back at the phase it last showed. `4` also puts the keyboard focus on the phase strip.
+- **The phase strip stands at the bottom of the map, above the legend**, only while the phase scrub is on. It has five steps. Each gives its phase and the number of needs scheduled in it and of tools that serve them, as "10 needs · 92 tools" for P2. The counts are of the whole phase, whatever the filters.
+- **The left and right arrow keys step the phase** while the strip has the focus, and so do the up and down ones: the steps are radio buttons. From P4 the right arrow goes to P0. A click on a step goes to it.
+- **The strip never advances on its own.** It has no timer and no play control.
+- **A step shows its own phase only.** The tools that serve a need scheduled in the phase take the selected fill, as traced tools do, and every other tool fades in place. A tool that serves no need is faded in every phase.
+- **A need that spans phases is in each of them.** `P2-P3` is in P2 and P3, `P0-P4` in all five, and `P1, P3` in P1 and P3 but not in P2.
+- **There are no lines, no best-fit rings and no home cell.** Those belong to one need, and the scrub shows many.
+- **The need list holds the needs of the phase.** It stands in the rail as under the need trace, cut down to the one phase, and the filters and the outline fold to their headings. Choosing a need opens its need trace: the lens changes to the need trace and the strip goes. `4` comes back to the phase.
+- **A click on a mark of the phase selects its tool**, from any distance. Selected at the stack distance, the tool leaves the map there, so the whole phase stays in the picture beside its card. Stepping to another phase closes that card. The selection is drawn with the `ink` ring, as under a traced need, and the legend names it.
+- **The picture keeps clear of the strip.** The stack, a tier or a cluster stands a little higher while the phase scrub is on, so switching it on or off moves the camera once. Stepping the phase moves nothing.
+- **The number of tools of the phase** stands beside "Lens", as "92 tools in reach", and each tier's count reads "T5 · 32 of 86 in reach". The filters apply on top.
+- **The URL fragment holds the lens and its phase**, as `#lens=phase&phase=P2`. `lens=phase` alone is P0. A phase the roadmap lacks gives no lens.
+- **The change is a cut.** Ticket 14 gives a step the guide's 300 ms.
 
 ## Filters and the legend
 

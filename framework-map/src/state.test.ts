@@ -18,12 +18,14 @@ import {
   select,
   setFilter,
   showNeedTrace,
+  showPhaseScrub,
   showRoleLens,
   stepBack,
   stepOut,
   toFragment,
   toggleFilter,
   traced,
+  traces,
 } from './state';
 import type { FilterName, Filters, MapState, Places, Traits } from './state';
 
@@ -33,7 +35,10 @@ const clusters: Record<string, { id: string; tier: string }> = {
   '1B': { id: '1B', tier: 'T1' },
   '0A': { id: '0A', tier: 'T0' },
 };
-/** The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has two needs, N1 and N2. Only "tool:a" serves a need: N1. */
+/**
+ * The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has two needs, N1 and N2. Only "tool:a" serves a need: N1.
+ * N1 is scheduled in the range "P1-P3" and N2 in the two separate phases "P0, P4".
+ */
 const tools: Record<string, { id: string; cluster: string }> = {
   'tool:a': { id: 'tool:a', cluster: '1A' },
   'tool:b': { id: 'tool:b', cluster: '0A' },
@@ -55,6 +60,8 @@ const places: Places = {
   tool: (id) => (Object.hasOwn(tools, id) ? tools[id] : undefined),
   need: (id) => (['N1', 'N2'].includes(id) ? { id } : undefined),
   serves: (tool, need) => tool === 'tool:a' && need === 'N1',
+  phases: ['P0', 'P1', 'P2', 'P3', 'P4'],
+  scheduled: (tool, phase) => tool === 'tool:a' && ['P1', 'P2', 'P3'].includes(phase),
 };
 
 const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS, lens: null });
@@ -187,6 +194,7 @@ const skill: Traits = {
   gate: ['None'],
   needs: ['N1'],
   bestFitFor: ['N1'],
+  phases: ['P1', 'P2', 'P3'],
 };
 /** An optional model in the cloud that only the Analyst uses. It serves the need N1, and it alone serves N2. */
 const model: Traits = {
@@ -199,9 +207,10 @@ const model: Traits = {
   gate: ['Guarded'],
   needs: ['N1', 'N2'],
   bestFitFor: ['N2'],
+  phases: ['P0', 'P1', 'P2', 'P3', 'P4'],
 };
 /** A ruleset on the Hub that only the Designer uses; the Architect operates it. It serves no need. */
-const ruleset: Traits = { ...skill, used: ['D'], needs: [], bestFitFor: [] };
+const ruleset: Traits = { ...skill, used: ['D'], needs: [], bestFitFor: [], phases: [] };
 const filtersOf = (state: MapState): Filters => state.filters;
 const choose = (...choices: [FilterName, string][]): MapState =>
   choices.reduce((state, [name, value]) => toggleFilter(state, places, name, value), AT_STACK);
@@ -476,6 +485,97 @@ describe('the need trace', () => {
   });
 });
 
+/** The phase scrub for one phase, at the stack. */
+const scrubOf = (phase: string): MapState => ({ ...AT_STACK, lens: { type: 'phase', phase } });
+
+describe('the phase scrub', () => {
+  /** A tool that serves the need N2 alone, which is scheduled in "P0, P4". */
+  const probe: Traits = { ...model, needs: ['N2'], bestFitFor: [], phases: ['P0', 'P4'] };
+  /** Whether the skill, the ruleset, the model and the probe are at full strength under a state, in that order. */
+  const shown = (state: MapState): boolean[] => [skill, ruleset, model, probe].map((tool) => emphasised(state, tool));
+
+  it('starts at the first phase, and keeps the place and a selected tool', () => {
+    expect(showPhaseScrub(AT_STACK, places)).toEqual(scrubOf('P0'));
+    const selected = withTool('T1', '1A', 'tool:a');
+    expect(showPhaseScrub(selected, places, 'P2')).toEqual({ ...selected, lens: { type: 'phase', phase: 'P2' } });
+  });
+
+  it.each([
+    ['P0', [false, false, true, true]],
+    ['P1', [true, false, true, false]],
+    ['P2', [true, false, true, false]],
+    ['P3', [true, false, true, false]],
+    ['P4', [false, false, true, true]],
+  ])('shows for %s the tools that serve a need scheduled in it, and fades the rest', (phase, expected) => {
+    const state = showPhaseScrub(AT_STACK, places, phase);
+    expect(state).toEqual(scrubOf(phase));
+    expect(narrows(state.lens)).toBe(true);
+    expect(shown(state)).toEqual(expected);
+  });
+
+  it('includes a need in a range in each phase the range covers, and in no other', () => {
+    const phasesWithTheSkill = places.phases.filter((phase) => inReach(scrubOf(phase).lens, skill));
+    expect(phasesWithTheSkill).toEqual(['P1', 'P2', 'P3']);
+  });
+
+  it('includes a need in two separate phases in both, and in none between them', () => {
+    const phasesWithTheProbe = places.phases.filter((phase) => inReach(scrubOf(phase).lens, probe));
+    expect(phasesWithTheProbe).toEqual(['P0', 'P4']);
+  });
+
+  it('is not cumulative: a step shows its own phase only', () => {
+    const state = showPhaseScrub(scrubOf('P0'), places, 'P1');
+    expect(state).toEqual(scrubOf('P1'));
+    expect(inReach(state.lens, probe)).toBe(false);
+  });
+
+  it('keeps a tool that serves no need faded throughout', () => {
+    expect(places.phases.some((phase) => emphasised(scrubOf(phase), ruleset))).toBe(false);
+  });
+
+  it('gives its tools the traced fill, as the need trace does, without the best-fit rings', () => {
+    expect(traces(scrubOf('P1').lens)).toBe(true);
+    expect(traced(scrubOf('P1').lens, skill)).toBe(true);
+    expect(traced(scrubOf('P0').lens, skill)).toBe(false);
+    expect(bestFit(scrubOf('P1').lens, skill)).toBe(false);
+    expect(traces(TRACE_UNCHOSEN.lens)).toBe(false);
+    expect(traces(traceOf('N1').lens)).toBe(true);
+    expect(traces(lensOf('D').lens)).toBe(false);
+  });
+
+  it('keeps the phase it shows when it is switched on again with no phase named', () => {
+    expect(showPhaseScrub(scrubOf('P3'), places)).toEqual(scrubOf('P3'));
+  });
+
+  it('keeps what it shows for a phase the roadmap does not have', () => {
+    expect(showPhaseScrub(scrubOf('P3'), places, 'P7')).toEqual(scrubOf('P3'));
+    expect(showPhaseScrub(atTier('T1'), places, 'P7')).toEqual(atTier('T1'));
+  });
+
+  it('takes the place of another lens, and another lens takes its place', () => {
+    expect(showPhaseScrub(lensOf('D'), places, 'P2')).toEqual(scrubOf('P2'));
+    expect(showRoleLens(scrubOf('P2'), places, 'D')).toEqual(lensOf('D'));
+    expect(clearLens(scrubOf('P2'))).toEqual(AT_STACK);
+  });
+
+  it('opens the need trace of a need chosen from the phase', () => {
+    expect(select(scrubOf('P2'), places, 'N1')).toEqual(traceOf('N1'));
+  });
+
+  it('leaves the map at the stack when one of its tools is selected there, and goes to the cluster of any other tool', () => {
+    const state = select(scrubOf('P2'), places, 'tool:a');
+    expect(state).toEqual({ ...scrubOf('P2'), selection: { type: 'tool', id: 'tool:a' } });
+    expect(select(scrubOf('P0'), places, 'tool:a')).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens: { type: 'phase', phase: 'P0' } });
+    // A tool stays selected at the stack only while the phase it was selected under is shown.
+    expect(showPhaseScrub(state, places, 'P3')).toEqual(scrubOf('P3'));
+  });
+
+  it('applies the filters on top: a tool of the phase that the filters leave out is faded', () => {
+    const state = toggleFilter(scrubOf('P1'), places, 'hosting', 'Cloud');
+    expect(shown(state)).toEqual([false, false, true, false]);
+  });
+});
+
 describe('the URL fragment', () => {
   it.each([
     ['the stack', AT_STACK, ''],
@@ -626,6 +726,31 @@ describe('the URL fragment', () => {
     expect(toFragment(stepBack(traceOf('N1')), 'lens=role&role=D')).toBe('lens=need&need=N1');
   });
 
+  it('writes the phase scrub and its phase, and reads back what it wrote', () => {
+    expect(toFragment(scrubOf('P2'))).toBe('lens=phase&phase=P2');
+    for (const state of [
+      scrubOf('P0'),
+      scrubOf('P4'),
+      focusTier(scrubOf('P2'), places, 'T0'),
+      select(toggleFilter(scrubOf('P3'), places, 'used', 'A'), places, 'tool:b'),
+      select(scrubOf('P2'), places, 'tool:a'),
+    ]) {
+      expect(fromFragment(toFragment(state), places)).toEqual(state);
+    }
+  });
+
+  it('reads the phase scrub with no phase as the scrub at the first phase, and shows no lens for a phase it does not know', () => {
+    expect(fromFragment('lens=phase', places)).toEqual(scrubOf('P0'));
+    expect(fromFragment('lens=phase&phase=P7&tier=T1', places)).toEqual(atTier('T1'));
+    expect(fromFragment('phase=P2', places)).toEqual(AT_STACK);
+  });
+
+  it('drops the phase from the fragment when the lens is switched off or changed', () => {
+    expect(toFragment(clearLens(scrubOf('P2')), 'lens=phase&phase=P2')).toBe('');
+    expect(toFragment(lensOf('D'), 'lens=phase&phase=P2')).toBe('lens=role&role=D');
+    expect(toFragment(select(scrubOf('P2'), places, 'N1'), 'lens=phase&phase=P2')).toBe('select=N1&lens=need&need=N1');
+  });
+
   it('keeps the lens when the place or the selection it names is not in the graph', () => {
     expect(fromFragment('tier=T9&lens=role&role=D', places)).toEqual(lensOf('D'));
     expect(fromFragment('cluster=1A&select=tool:zz&lens=role&role=D', places)).toEqual(lensOf('D'));
@@ -733,6 +858,26 @@ describe('the store', () => {
     store.clearLens();
     store.showRoleLens();
     expect(store.get()).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens: { type: 'role', role: 'D' } });
+  });
+
+  it('switches the phase scrub on at the first phase, and afterwards comes back to the phase it last showed', () => {
+    const store = createStore(places);
+    store.showPhaseScrub();
+    expect(store.get()).toEqual(scrubOf('P0'));
+    store.showPhaseScrub('P3');
+    store.select('N1');
+    expect(store.get()).toEqual(traceOf('N1'));
+    store.showPhaseScrub();
+    expect(store.get()).toEqual(scrubOf('P3'));
+    store.showPhaseScrub();
+    expect(store.get()).toEqual(scrubOf('P3'));
+  });
+
+  it('comes back to the phase of a scrub it was handed, as from a link', () => {
+    const store = createStore(places, scrubOf('P2'));
+    store.clearLens();
+    store.showPhaseScrub();
+    expect(store.get()).toEqual(scrubOf('P2'));
   });
 
   it('comes back to the need of a trace it was handed, as from a link', () => {

@@ -3,13 +3,14 @@
  * of the canvas. Each square is drawn from the same mark token as the marks.
  * While a lens or a filter is on, it also shows the faded state of a tool
  * left out, named for what leaves it out. While a need is traced, it shows
- * the traced mark and the best-fit ring too.
+ * the traced mark and the best-fit ring too, and under the phase scrub the
+ * traced mark.
  *
  * It is one of the panels: it reads the state store, and knows nothing of the scene.
  */
 import { DECISION_STEPS, STEP_NAMES, fadedName } from './display';
 import { dressSwatch, element, stepSwatch } from './dom';
-import { isFiltered, narrows, tracedNeedOf } from './state';
+import { isFiltered, narrows, scrubbedPhaseOf, traces } from './state';
 import type { Store } from './state';
 
 export function mountLegend(app: HTMLElement, store: Store): void {
@@ -47,9 +48,11 @@ export function mountLegend(app: HTMLElement, store: Store): void {
     faded.hidden = !narrows(lens) && !isFiltered(filters);
     fadedLabel.textContent = fadedName(narrows(lens), isFiltered(filters));
     // The two of the trace are named as soon as the trace is on, before a need is chosen: they say what a need will mark.
-    traced.hidden = bestFit.hidden = lens?.type !== 'need';
-    // The selection's ring, while a need is traced and the selected fill means "traced".
-    selected.hidden = tracedNeedOf(lens) === null || selection?.type === 'need' || selection === null;
+    bestFit.hidden = lens?.type !== 'need';
+    // The phase scrub gives its tools the traced mark, and no ring.
+    traced.hidden = bestFit.hidden && scrubbedPhaseOf(lens) === null;
+    // The selection's ring, while the selected fill means "traced".
+    selected.hidden = !traces(lens) || selection?.type === 'need' || selection === null;
   };
   show();
   store.subscribe(show);

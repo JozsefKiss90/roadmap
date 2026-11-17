@@ -1,12 +1,13 @@
 /**
  * lens-panel: the lens switch at the head of the rail, and what the lens that
- * is on needs beside it. So far it offers no lens, the role lens and the need
- * trace; the phase scrub adds to it in a later ticket.
+ * is on needs beside it. It offers no lens, the role lens, the need trace and
+ * the phase scrub.
  *
  * With the role lens on, it lists the three roles, one of which is chosen.
- * The needs of the need trace stand in a list of their own, under the switch
- * (src/need-list.ts). Beside its heading, the switch gives the number of
- * tools in reach.
+ * The needs of the need trace and of the phase scrub stand in a list of their
+ * own, under the switch (src/need-list.ts), and the phases on a strip at the
+ * bottom of the map (src/phase-strip.ts). Beside its heading, the switch
+ * gives the number of tools in reach.
  *
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
@@ -21,6 +22,7 @@ const LENSES = [
   ['none', 'None', '1'],
   ['role', 'Role', '2'],
   ['need', 'Need', '3'],
+  ['phase', 'Phase', '4'],
 ] as const;
 
 interface Segments {
@@ -87,6 +89,7 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
   const lenses = segments('lens', LENSES, (value) => {
     if (value === 'role') store.showRoleLens();
     else if (value === 'need') store.showNeedTrace();
+    else if (value === 'phase') store.showPhaseScrub();
     else store.clearLens();
   });
   lenses.element.setAttribute('aria-labelledby', heading.id);

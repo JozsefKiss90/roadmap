@@ -71,7 +71,7 @@ _Avoid_: Highlighted, active
 The lens that shows one need and the tools that serve it.
 
 **Traced**:
-Serving the need the need trace shows; a traced tool's mark takes the selected fill. A selected need is always the traced need. While a need is traced, the selection is marked by an `ink` ring or outline, not by the selected fill.
+Serving the need the need trace shows, or a need scheduled in the phase the phase scrub shows; a traced tool's mark takes the selected fill. A selected need is always the traced need. While tools are traced, the selection is marked by an `ink` ring or outline, not by the selected fill.
 _Avoid_: Highlighted, linked
 
 **Best fit**:
@@ -83,11 +83,15 @@ The cell of the cluster a need belongs to; the lines of a need trace start from 
 _Avoid_: Source, origin
 
 **Need list**:
-The needs in the rail, grouped by phase, shown while the need trace is on; a partner picks the need to trace there. While it is shown, the filters and the outline fold to their headings.
+The needs in the rail, grouped by phase, shown while the need trace is on; a partner picks the need to trace there. Under the phase scrub it holds the needs of the phase shown, and no other. While it is shown, the filters and the outline fold to their headings.
 
 **Phase scrub**:
-The lens that steps through the roadmap phases and shows the needs and tools each one calls for.
+The lens that steps through the roadmap phases and shows the needs and tools each one calls for. A step shows its own phase only, and moves by hand only.
 _Avoid_: Time slider, timeline
+
+**Phase strip**:
+The five steps of the phase scrub, P0 to P4, at the bottom of the map; each gives its phase's number of needs and of tools. It is on the page only while the phase scrub is on.
+_Avoid_: Timeline, slider, stepper
 
 **Detail card**:
 The side panel that describes the selected tool, cluster or need.

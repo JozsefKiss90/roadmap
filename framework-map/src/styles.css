@@ -929,6 +929,18 @@ body {
   display: none;
 }
 
+.need-phase[hidden],
+.needs-none[hidden] {
+  display: none;
+}
+
+.needs-none {
+  margin: 0;
+  padding: 8px;
+  color: var(--muted);
+  font: 400 13px/20px var(--font-sans);
+}
+
 /*
  * The padding leaves room for the focus outline of a row at the edge. The list is the frame of
  * what it hides from sight for assistive technology, so that none of it lies outside the rail.
@@ -1237,6 +1249,110 @@ body {
 .legend .rail-heading {
   flex: none;
   white-space: nowrap;
+}
+
+/*
+ * The phase strip: the five steps of the phase scrub, above the legend and
+ * centred in the room right of the rail. Each step is a phase over its counts.
+ */
+.phase-strip {
+  position: absolute;
+  right: 16px;
+  bottom: 56px;
+  left: calc(var(--rail-width) + 16px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.phase-strip[hidden] {
+  display: none;
+}
+
+/* Beside an open detail card the legend may take a second row, and the strip stands clear of it. */
+#app:has(.detail-card:not([hidden])) .phase-strip {
+  right: calc(var(--detail-card-width) + 16px);
+  bottom: calc(56px + var(--legend-second-row));
+}
+
+.phase-steps {
+  display: flex;
+  /* Cuts the steps' fills to the strip's corners. */
+  overflow: hidden;
+  border: 1px solid var(--soft);
+  border-radius: 4px;
+  background: var(--paper);
+  pointer-events: auto;
+}
+
+.phase-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  min-width: 124px;
+  padding: 4px 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.phase-step + .phase-step {
+  border-left: 1px solid var(--soft);
+}
+
+/* The radio button lies over its step, unseen: it takes the click and holds the focus. */
+.phase-step input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.phase-step-name {
+  font: 600 13px/20px var(--font-sans);
+}
+
+.phase-step-counts {
+  color: var(--muted);
+  font: 400 12px/16px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.phase-step:hover {
+  background: var(--paper-2);
+}
+
+/* The phase that is shown is a choice within a lens, and takes the ring of one, as a role in the role lens does. */
+.phase-step:has(:checked) {
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.phase-step:has(:checked) .phase-step-counts {
+  color: var(--ink);
+}
+
+/* A radio button holds the focus; the strip shows it, as the shown phase moves with the arrow keys. */
+.phase-steps:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .phase-step:has(:checked),
+  .phase-step:has(:checked) .phase-step-counts {
+    background: Highlight;
+    box-shadow: none;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+
+  .phase-steps:has(:focus-visible) {
+    outline-color: CanvasText;
+  }
 }
 
 /* Beside an open detail card the legend keeps left of it, and its steps go to a second row if they must. */

@@ -37,6 +37,10 @@ export const constants = {
   insetRightPx: 40,
   insetBottomPx: 64,
   insetLeftPx: 512,
+  /** The room the phase strip takes above the legend, while the phase scrub is on. The stack keeps clear of it. */
+  phaseStripPx: 60,
+  /** What a second row of the legend adds to that room, beside an open detail card. The strip is lifted by as much. */
+  legendSecondRowPx: 24,
 
   /**
    * The camera at the tier and cluster distances. It tilts toward top-down,

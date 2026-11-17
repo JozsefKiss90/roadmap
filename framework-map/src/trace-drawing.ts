@@ -24,7 +24,7 @@ import type { GraphIndex } from './data';
 import { STACK_METRICS } from './layout';
 import type { CellLayout, MarkLayout, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, markMaterial } from './mark-material';
-import { tracedNeedOf } from './state';
+import { tracedNeedOf, traces } from './state';
 import type { MapState } from './state';
 import { MAP_TOKENS, colourOf } from './tokens';
 import type { MarkToken } from './tokens';
@@ -181,8 +181,8 @@ export function createTraceDrawing(
         add(ring);
         rings.push(ring);
       }
-      // The selected tool is ringed whether the need pulls it in or not, and whatever the filters do to it.
-      const tool = need && state.selection?.type === 'tool' ? state.selection.id : null;
+      // The selected tool is ringed whether the need, or the phase, pulls it in or not, and whatever the filters do to it.
+      const tool = traces(state.lens) && state.selection?.type === 'tool' ? state.selection.id : null;
       selected = tool === null ? null : (markOf.get(tool) ?? null);
       placeRings();
     },

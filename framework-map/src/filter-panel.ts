@@ -13,7 +13,7 @@ import type { GraphIndex } from './data';
 import { COMMITTED_ONLY } from './display';
 import { element, swatch } from './dom';
 import { mountFold } from './rail-fold';
-import { FILTER_NAMES, isFiltered, tracedNeedOf } from './state';
+import { FILTER_NAMES, isFiltered, scrubbedPhaseOf, tracedNeedOf } from './state';
 import type { FilterName, Filters, Lens, MapState, Store } from './state';
 
 /** The name the rail gives each filter. */
@@ -37,6 +37,8 @@ function valueName(index: GraphIndex, name: FilterName, value: string): string {
 /** Why a lens leaves tools in reach, as assistive technology hears it after the count. Null for a lens that leaves none out. */
 function reasonInReach(index: GraphIndex, lens: Lens | null): string | null {
   if (lens?.type === 'role') return `are in reach of the ${index.roleName(lens.role)}`;
+  const phase = scrubbedPhaseOf(lens);
+  if (phase !== null) return `serve a need scheduled in ${phase}`;
   const need = index.need(tracedNeedOf(lens) ?? '');
   return need ? `serve the need ${need.id}, ${need.label}` : null;
 }

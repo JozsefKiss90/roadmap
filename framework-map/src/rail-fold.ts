@@ -1,9 +1,9 @@
 /**
  * rail-fold: lets a part of the rail fold to its heading.
  *
- * The need list needs the rail's height. So while the need trace is on, the
- * filters and the outline fold to their headings, and they open again when
- * the trace is switched off. A heading is a button: a partner can open or
+ * The need list needs the rail's height. So while it is on show, under the
+ * need trace or the phase scrub, the filters and the outline fold to their
+ * headings, and they open again when the list goes. A heading is a button: a partner can open or
  * fold its part at any time, under any lens.
  *
  * A folded part keeps its heading and what stands beside it, such as the
@@ -11,6 +11,7 @@
  */
 import { ChevronRight, createElement } from 'lucide';
 import { element } from './dom';
+import { listsNeeds } from './state';
 import type { Store } from './state';
 
 export interface Fold {
@@ -34,12 +35,11 @@ export function mountFold(part: HTMLElement, heading: HTMLElement, store: Store)
     part.toggleAttribute('data-folded', folded);
     toggle.setAttribute('aria-expanded', String(!folded));
   };
-  const needsListed = (): boolean => store.get().lens?.type === 'need';
-  setFolded(needsListed());
+  setFolded(listsNeeds(store.get().lens));
   toggle.addEventListener('click', () => setFolded(!part.hasAttribute('data-folded')));
   store.subscribe((state, previous) => {
     // The part follows the need list only when the list comes or goes, so a partner's own choice holds in between.
-    if ((state.lens?.type === 'need') !== (previous.lens?.type === 'need')) setFolded(needsListed());
+    if (listsNeeds(state.lens) !== listsNeeds(previous.lens)) setFolded(listsNeeds(state.lens));
   });
 
   return { open: () => setFolded(false) };

@@ -54,7 +54,7 @@ import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
 import { createSelectionDrawing } from './selection-drawing';
 import { createTraceDrawing } from './trace-drawing';
-import { AT_STACK, tracedNeedOf } from './state';
+import { AT_STACK, scrubbedPhaseOf, traces } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
 import type { LineToken, MarkToken } from './tokens';
@@ -271,13 +271,14 @@ export function createStage(
    * The material of a mark for a state: the selected fill for the selected
    * tool, the faded form for a tool the lens or the filters leave out, the
    * selected fill again for a traced tool, and otherwise the form of its step.
-   * While a need is traced the selected fill means "traced" alone: the
-   * selected tool keeps the form the trace gives it, and takes a ring.
+   * While a need is traced, or a phase is shown, the selected fill means
+   * "traced" alone: the selected tool keeps the form the lens gives it, and
+   * takes a ring.
    */
   function materialOf(mark: MarkNode, state: MapState): ShaderMaterial {
     const parts = partsOf(mark.tier);
     const selected = state.selection?.type === 'tool' && state.selection.id === mark.id;
-    if (selected && tracedNeedOf(state.lens) === null) return parts.selected;
+    if (selected && !traces(state.lens)) return parts.selected;
     if (!index.emphasised(state).has(mark.id)) return parts.fadedMarks.get(mark.step)!;
     return index.traced(state.lens).has(mark.id) ? parts.selected : parts.marks.get(mark.step)!;
   }
@@ -427,12 +428,16 @@ export function createStage(
    * stands under the room its tool names need. A selection with `implements`
    * lines has their far ends in the picture too. A need's detail card opens at
    * the stack distance: the whole stack then stands clear of it, so every
-   * traced tool is in the picture, whatever tiers the trace spans.
+   * traced tool is in the picture, whatever tiers the trace spans. While the
+   * phase scrub is on, the picture keeps clear of the phase strip.
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
     // The rail covers the left of the window and an open detail card the right, so the plate or cell stands clear of both.
     const card = state.selection ? constants.detailCardPx : 0;
+    // Beside the card the legend may take a second row, and the strip stands over that.
+    const strip =
+      scrubbedPhaseOf(state.lens) === null ? 0 : constants.phaseStripPx + (card > 0 ? constants.legendSecondRowPx : 0);
     const cell = state.distance === 'cluster' ? cellOf.get(state.cluster ?? '') : undefined;
     if (cell) {
       const names = listShape(index.toolsOf(cell.cluster).length, constants.toolListMostRows);
@@ -446,7 +451,7 @@ export function createStage(
             constants.railPx + constants.nearInsetSidePx,
             constants.annotationTopPx + roomAbove,
             windowSize.width - constants.nearInsetSidePx - card,
-            windowSize.height - constants.insetBottomPx,
+            windowSize.height - constants.insetBottomPx - strip,
           ),
           field,
           constants.clusterTiltDegrees,
@@ -473,7 +478,7 @@ export function createStage(
         constants.railPx + constants.nearInsetSidePx,
         top,
         windowSize.width - constants.tierInsetRightPx - card,
-        windowSize.height - constants.insetBottomPx,
+        windowSize.height - constants.insetBottomPx - strip,
       );
       return placeToFit(flat(plate), frame, region, field, constants.tierTiltDegrees, 0, {
         mostPixelsPerUnit: constants.tierMostPixelsPerUnit,
@@ -484,7 +489,7 @@ export function createStage(
       left: frame.inset.left,
       top: frame.inset.top,
       right: frame.width - frame.inset.right - card,
-      bottom: frame.height - frame.inset.bottom,
+      bottom: frame.height - frame.inset.bottom - strip,
     };
     return placeToFit(layout.bounds, frame, region, field, constants.restTiltDegrees, 0);
   }
@@ -650,17 +655,18 @@ export function createStage(
 
   /**
    * What decides the camera's place and the fade: the distance, the focus,
-   * whether the detail card is open, and which selection it is when the
-   * selection has `implements` lines to frame.
+   * whether the detail card is open, whether the phase strip is on the page,
+   * and which selection it is when the selection has `implements` lines to
+   * frame.
    */
   const placeKey = (state: MapState): string => {
     const { selection } = state;
     const framed = state.distance !== 'stack' && selectionDrawing.endsOf(selection).length > 0 ? selection?.id : null;
-    return [state.distance, state.tier, state.cluster, selection !== null, framed].join('|');
+    return [state.distance, state.tier, state.cluster, selection !== null, framed, scrubbedPhaseOf(state.lens) !== null].join('|');
   };
 
   if (fitWindow()) goTo(store.get(), false);
-  selectionDrawing.show(store.get().selection, tracedNeedOf(store.get().lens) !== null);
+  selectionDrawing.show(store.get().selection, traces(store.get().lens));
   traceDrawing.show(store.get());
   store.subscribe((state, before) => {
     hover(null);
@@ -668,7 +674,7 @@ export function createStage(
       dressMarks(state);
       traceDrawing.show(state);
     }
-    selectionDrawing.show(state.selection, tracedNeedOf(state.lens) !== null);
+    selectionDrawing.show(state.selection, traces(state.lens));
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();
   });

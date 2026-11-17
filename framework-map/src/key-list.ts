@@ -15,9 +15,14 @@ const KEYS: readonly (readonly [string, readonly (readonly [readonly string[], s
       [['1'], 'Switch the lens off'],
       [['2'], 'Switch the role lens on'],
       [['3'], 'Switch the need trace on'],
+      [['4'], 'Switch the phase scrub on, and go to the phase strip'],
       [['Esc'], 'Close the detail card, then step out one distance'],
       [['Tab'], 'Go to the next control'],
     ],
+  ],
+  [
+    'On the phase strip',
+    [[['←', '→'], 'Step to the phase before or after']],
   ],
   [
     'In the outline',

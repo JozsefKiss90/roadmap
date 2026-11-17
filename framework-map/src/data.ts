@@ -16,7 +16,7 @@ import {
   tracedNeedOf,
 } from './state.ts';
 import type { Facets, FilterName, Lens, MapState, Traits } from './state.ts';
-import { parsePhases, validateGraph } from './validate.ts';
+import { PHASES, parsePhases, validateGraph } from './validate.ts';
 import type { Fault, Vocabulary } from './validate.ts';
 
 /** Thrown for a graph the validator rejects. */
@@ -59,6 +59,14 @@ export interface GraphIndex {
   servingToolsOf(needId: string): readonly ToolNode[];
   /** The phases that have needs, in turn, each with its needs in the graph's own order. A need that spans phases is under each of them. */
   readonly needsByPhase: readonly PhaseNeeds[];
+  /** The roadmap's phases, in turn, whether or not a need is scheduled in each: the steps of the phase scrub. */
+  readonly phases: readonly string[];
+  /** The needs scheduled in a phase, in the graph's own order. A need that spans phases is in each of them. */
+  needsIn(phase: string): readonly NeedNode[];
+  /** How many tools serve a need that is scheduled in a phase. */
+  toolCountIn(phase: string): number;
+  /** Whether a tool serves a need that is scheduled in a phase. */
+  scheduled(toolId: string, phase: string): boolean;
   /** A tool's overlap group: its name and its other members. Undefined for a tool in no group. */
   overlapOf(toolId: string): OverlapGroup | undefined;
   /** The clusters a tool implements, and the tools that implement a cluster. */
@@ -87,9 +95,9 @@ export interface GraphIndex {
    * passing the filters. Every other tool is faded.
    */
   emphasised(state: Pick<MapState, 'lens' | 'filters'>): ReadonlySet<string>;
-  /** The ids of the traced tools: those that serve the need the need trace is on for, whatever the filters. */
+  /** The ids of the traced tools, whatever the filters: those that serve the need the need trace is on for, or a need of the phase the phase scrub shows. */
   traced(lens: Lens | null): ReadonlySet<string>;
-  /** The ids of the traced tools that are a best fit for the need. */
+  /** The ids of the traced tools that are a best fit for the need. The phase scrub marks none. */
   bestFit(lens: Lens | null): ReadonlySet<string>;
 }
 
@@ -203,13 +211,13 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     }
   }
 
-  const scheduled = new Map<string, NeedNode[]>();
+  const needsOfPhase = new Map<string, NeedNode[]>();
   for (const need of needs.values()) {
-    for (const phase of parsePhases(need.phase) ?? []) push(scheduled, phase, need);
+    for (const phase of parsePhases(need.phase) ?? []) push(needsOfPhase, phase, need);
   }
-  const needsByPhase: PhaseNeeds[] = [...scheduled.keys()]
+  const needsByPhase: PhaseNeeds[] = [...needsOfPhase.keys()]
     .sort()
-    .map((phase) => ({ phase, needs: scheduled.get(phase) ?? [] }));
+    .map((phase) => ({ phase, needs: needsOfPhase.get(phase) ?? [] }));
 
   const kindFamilyOf = familyOfValue(vocabulary.kind, 'kind');
   const gateFamilyOf = familyOfValue(vocabulary.gate, 'gate');
@@ -255,7 +263,13 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     return made;
   };
 
-  /** What a tool has for the lenses and the filters: its facets and the needs it serves. */
+  /** The phases each need is scheduled in. */
+  const phasesOfNeed = new Map<string, string[]>();
+  for (const [phase, inPhase] of needsOfPhase) {
+    for (const need of inPhase) push(phasesOfNeed, need.id, phase);
+  }
+
+  /** What a tool has for the lenses and the filters: its facets, the needs it serves and their phases. */
   const traits = new Map<string, Traits>();
   const traitsOf = (toolId: string): Traits => {
     let made = traits.get(toolId);
@@ -265,6 +279,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
         ...facetsOf(toolId),
         needs: served.map(({ need }) => need.id),
         bestFitFor: served.filter(({ bestFit }) => bestFit).map(({ need }) => need.id),
+        phases: PHASES.filter((phase) => served.some(({ need }) => phasesOfNeed.get(need.id)?.includes(phase))),
       };
       traits.set(toolId, made);
     }
@@ -286,10 +301,15 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     return shown.ids;
   };
 
-  // A trace has a few tools, so it is read from the need's own edges, and the last answer is kept as the others are.
+  // A need's trace has a few tools, so it is read from the need's own edges, and the last answer is kept as the
+  // others are. A phase's tools are those in reach under the scrub.
+  const NO_TOOLS: ReadonlySet<string> = new Set();
   let lastTrace: { lens: Lens | null; traced: ReadonlySet<string>; bestFit: ReadonlySet<string> } | null = null;
   const trace = (lens: Lens | null): { traced: ReadonlySet<string>; bestFit: ReadonlySet<string> } => {
-    if (lastTrace?.lens !== lens) {
+    if (lastTrace?.lens === lens) return lastTrace;
+    if (lens?.type === 'phase') {
+      lastTrace = { lens, traced: inReach(lens), bestFit: NO_TOOLS };
+    } else {
       const serving = inGraphOrder(toolsByNeed.get(tracedNeedOf(lens) ?? '') ?? []);
       const idsOf = (keep: (traits: Traits) => boolean): ReadonlySet<string> =>
         new Set(serving.filter((tool) => keep(traitsOf(tool.id))).map((tool) => tool.id));
@@ -300,6 +320,17 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
       };
     }
     return lastTrace;
+  };
+
+  /** The count of each phase's tools, made when the phase strip first asks for it. */
+  const phaseCounts = new Map<string, number>();
+  const toolCountIn = (phase: string): number => {
+    let count = phaseCounts.get(phase);
+    if (count === undefined) {
+      count = tools.filter((tool) => traitsOf(tool.id).phases.includes(phase)).length;
+      phaseCounts.set(phase, count);
+    }
+    return count;
   };
 
   return {
@@ -323,6 +354,10 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     bestFitToolsOf: (needId) => inGraphOrder(bestFitByNeed.get(needId) ?? []),
     servingToolsOf: (needId) => inGraphOrder(toolsByNeed.get(needId) ?? []),
     needsByPhase,
+    phases: PHASES,
+    needsIn: (phase) => needsOfPhase.get(phase) ?? [],
+    toolCountIn,
+    scheduled: (toolId, phase) => traitsOf(toolId).phases.includes(phase),
     overlapOf(toolId) {
       const group = groupByTool.get(toolId);
       if (group === undefined) return undefined;

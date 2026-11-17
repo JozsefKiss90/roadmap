@@ -172,6 +172,67 @@ describe('readGraph', () => {
     ]);
   });
 
+  describe('for the phase scrub', () => {
+    /** N01 is in P1 (tool:a). N02 is in P2 (tool:a, tool:b, tool:c). N03 spans a range (tool:d) and N04 two separate phases (tool:b). */
+    const phasedGraph = () => {
+      const graph = wiredGraph();
+      graph.nodes.push(
+        { id: 'N03', type: 'need', label: 'A long need', phase: 'P1-P3' },
+        { id: 'N04', type: 'need', label: 'A need that comes back', phase: 'P0, P4' },
+      );
+      graph.edges.push(
+        { source: 'tool:d', target: 'N03', type: 'serves' },
+        { source: 'tool:b', target: 'N04', type: 'serves' },
+      );
+      graph.meta.counts.needs = 4;
+      graph.meta.counts.edges = graph.edges.length;
+      return graph;
+    };
+    const scrub = (phase: string) => ({ type: 'phase', phase }) as const;
+
+    it('has the five phases of the roadmap as its steps, with or without needs in them', () => {
+      expect(readGraph(validGraph(), vocabulary).phases).toEqual(['P0', 'P1', 'P2', 'P3', 'P4']);
+    });
+
+    it('lists the needs scheduled in each phase: a need in a range in each phase of it, a need in two phases in both', () => {
+      const index = readGraph(phasedGraph(), vocabulary);
+      expect(index.phases.map((phase) => ids(index.needsIn(phase)))).toEqual([
+        ['N04'],
+        ['N01', 'N03'],
+        ['N02', 'N03'],
+        ['N03'],
+        ['N04'],
+      ]);
+    });
+
+    it('reaches in each phase the tools that serve a need scheduled in it, and counts them', () => {
+      const index = readGraph(phasedGraph(), vocabulary);
+      const tools = index.phases.map((phase) => [...index.inReach(scrub(phase))]);
+      expect(tools).toEqual([
+        ['tool:b'],
+        ['tool:a', 'tool:d'],
+        ['tool:a', 'tool:b', 'tool:c', 'tool:d'],
+        ['tool:d'],
+        ['tool:b'],
+      ]);
+      expect(index.phases.map((phase) => index.toolCountIn(phase))).toEqual([1, 2, 4, 1, 1]);
+    });
+
+    it('traces the tools of the phase, with no best fit among them', () => {
+      const index = readGraph(phasedGraph(), vocabulary);
+      expect([...index.traced(scrub('P1'))]).toEqual(['tool:a', 'tool:d']);
+      expect([...index.bestFit(scrub('P2'))]).toEqual([]);
+      expect(index.toolCountOf('T0', scrub('P1'))).toBe(1);
+    });
+
+    it('says whether a tool serves a need scheduled in a phase', () => {
+      const index = readGraph(phasedGraph(), vocabulary);
+      expect(index.scheduled('tool:b', 'P4')).toBe(true);
+      expect(index.scheduled('tool:b', 'P3')).toBe(false);
+      expect(index.scheduled('tool:d', 'P2')).toBe(true);
+    });
+  });
+
   it("names a tool's overlap group and lists its other members", () => {
     const index = readGraph(wiredGraph(), vocabulary);
     const overlap = index.overlapOf('tool:b');

@@ -23,6 +23,7 @@ function applyPageConstants(): void {
   root.style.setProperty('--title-size', `${constants.titleSizePx}px`);
   root.style.setProperty('--detail-card-width', `${constants.detailCardPx}px`);
   root.style.setProperty('--rail-width', `${constants.railPx}px`);
+  root.style.setProperty('--legend-second-row', `${constants.legendSecondRowPx}px`);
 }
 
 async function start(): Promise<void> {
