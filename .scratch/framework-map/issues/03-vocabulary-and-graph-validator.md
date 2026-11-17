@@ -8,7 +8,7 @@ This ticket also proposes the display groupings the map will use: about eight ki
 
 **Blocked by:** 01
 
-**Status:** ready-for-human
+**Status:** ready-for-agent
 
 - [x] A vocabulary file lists the allowed values for kind, decision class, hosting, value stream and gate
 - [x] The validator rejects a graph with an edge pointing to a missing node, or with a duplicate id
@@ -19,7 +19,7 @@ This ticket also proposes the display groupings the map will use: about eight ki
 - [x] Each rejection names the fault and the offending id
 - [x] Each of the five fault types has a test using a small graph that contains only that fault
 - [x] The current graph JSON passes the validator
-- [ ] A table of every raw kind and gate value, the family it is grouped into, and any value changed in the data is written under Comments, and the Architect has signed it off
+- [x] A table of every raw kind and gate value, the family it is grouped into, and any value changed in the data is written under Comments, and the Architect has signed it off
 - [x] The work is committed
 
 ## Comments
@@ -415,3 +415,7 @@ The tables below are generated from the vocabulary file and today's graph.
 | Proposed template repo | 1 | Internal build |
 | Source layer | 1 | Internal build |
 | Synthesis knowledge base | 1 | Internal build |
+
+### 2026-11-17: signed off
+
+The Architect reviewed the choices and the tables above and signed them off as they stand. Every box is ticked, and the status is back to `ready-for-agent`, as on the other finished tickets.
