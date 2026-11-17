@@ -33,7 +33,7 @@ const clusters: Record<string, { id: string; tier: string }> = {
   '1B': { id: '1B', tier: 'T1' },
   '0A': { id: '0A', tier: 'T0' },
 };
-/** The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has two needs, N1 and N2. */
+/** The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has two needs, N1 and N2. Only "tool:a" serves a need: N1. */
 const tools: Record<string, { id: string; cluster: string }> = {
   'tool:a': { id: 'tool:a', cluster: '1A' },
   'tool:b': { id: 'tool:b', cluster: '0A' },
@@ -54,6 +54,7 @@ const places: Places = {
   cluster: (id) => (Object.hasOwn(clusters, id) ? clusters[id] : undefined),
   tool: (id) => (Object.hasOwn(tools, id) ? tools[id] : undefined),
   need: (id) => (['N1', 'N2'].includes(id) ? { id } : undefined),
+  serves: (tool, need) => tool === 'tool:a' && need === 'N1',
 };
 
 const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS, lens: null });
@@ -421,21 +422,42 @@ describe('the need trace', () => {
     expect(showRoleLens(traceOf('N1'), places, 'D')).toEqual(lensOf('D'));
   });
 
-  it('keeps the trace when a traced tool is selected, and when a detail card is closed', () => {
+  it('keeps the trace, and the stack, when a traced tool is selected there: the whole trace stays in the picture', () => {
     const lens = { type: 'need', need: 'N1' };
     const tool = select(traceOf('N1'), places, 'tool:a');
-    expect(tool).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens });
-    expect(stepBack(tool)).toEqual({ ...atCluster('T1', '1A'), lens });
+    expect(tool).toEqual({ ...AT_STACK, lens, selection: { type: 'tool', id: 'tool:a' } });
+    expect(stepBack(tool)).toEqual({ ...AT_STACK, lens });
     expect(stepBack(traceOf('N1'))).toEqual({ ...AT_STACK, lens });
+  });
+
+  it('goes to the cluster of a traced tool that is selected from closer in', () => {
+    const lens = { type: 'need', need: 'N1' };
+    const closeIn = focusTier(traceOf('N1'), places, 'T0');
+    expect(select(closeIn, places, 'tool:a')).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens });
+  });
+
+  it('goes to the cluster of a selected tool that the traced need does not pull in', () => {
+    const lens = { type: 'need', need: 'N1' };
+    expect(select(traceOf('N1'), places, 'tool:b')).toEqual({ ...withTool('T0', '0A', 'tool:b'), lens });
+    expect(select(TRACE_UNCHOSEN, places, 'tool:a')).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens: TRACE_UNCHOSEN.lens });
   });
 
   it('is one step away from a traced tool: selecting the need comes back to its trace', () => {
     expect(select(select(traceOf('N1'), places, 'tool:a'), places, 'N1')).toEqual(traceOf('N1'));
   });
 
-  it('closes the detail card of the need when the lens is switched off, and keeps the card of a tool', () => {
+  it('closes the detail card of the need when the lens is switched off, and keeps the card of a tool in its cluster', () => {
     expect(clearLens(traceOf('N1'))).toEqual(AT_STACK);
-    expect(clearLens(select(traceOf('N1'), places, 'tool:a'))).toEqual(withTool('T1', '1A', 'tool:a'));
+    const closeIn = select(focusTier(traceOf('N1'), places, 'T0'), places, 'tool:a');
+    expect(clearLens(closeIn)).toEqual(withTool('T1', '1A', 'tool:a'));
+  });
+
+  it('closes the card of a traced tool selected at the stack when its trace goes: no tool is selected there without one', () => {
+    const atStack = select(traceOf('N1'), places, 'tool:a');
+    expect(clearLens(atStack)).toEqual(AT_STACK);
+    expect(showRoleLens(atStack, places, 'D')).toEqual(lensOf('D'));
+    expect(showNeedTrace(atStack, places, 'N2')).toEqual({ ...AT_STACK, lens: { type: 'need', need: 'N2' } });
+    expect(showNeedTrace(atStack, places, 'N1')).toBe(atStack);
   });
 
   it('applies the filters on top of the trace: a traced tool the filters leave out is faded', () => {
@@ -463,9 +485,10 @@ describe('the URL fragment', () => {
     ['a traced need', traceOf('N1'), 'select=N1&lens=need&need=N1'],
     ['the need trace with no need chosen', TRACE_UNCHOSEN, 'lens=need'],
     ['a trace with its detail card closed, at a tier', focusTier(traceOf('N2'), places, 'T0'), 'tier=T0&lens=need&need=N2'],
+    ['a traced tool that is selected at the stack', select(traceOf('N1'), places, 'tool:a'), 'select=tool:a&lens=need&need=N1'],
     [
-      'a traced tool that is selected',
-      select(traceOf('N1'), places, 'tool:a'),
+      'a traced tool that is selected close in',
+      select(focusTier(traceOf('N1'), places, 'T0'), places, 'tool:a'),
       'cluster=1A&select=tool:a&lens=need&need=N1',
     ],
   ])('writes %s', (_name, state, fragment) => {

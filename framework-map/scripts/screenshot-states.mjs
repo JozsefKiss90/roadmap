@@ -40,9 +40,11 @@ export const states = [
     fragment: 'cluster=4G&lens=role&role=D&decision=Core+v1&decision=Core+later&decision=Build',
   },
   // The need trace. N15 has the widest trace: 15 tools on five tiers, seven of them best fits. Then the
-  // trace with no need chosen, as key 3 leaves it; and a traced tool selected, with the way back to its need.
+  // trace with no need chosen, as key 3 leaves it. Then a traced tool selected: at the stack, where the
+  // whole trace stays in the picture, and close in, with the way back to its need.
   { name: 'one-need-trace', fragment: 'select=N15&lens=need&need=N15' },
   { name: 'need-trace-unchosen', fragment: '', keys: [['press', '3']] },
+  { name: 'need-trace-tool-selected-stack', fragment: 'select=tool:pr-agent&lens=need&need=N01' },
   { name: 'need-trace-tool-selected', fragment: 'cluster=5F&select=tool:pr-agent&lens=need&need=N01' },
 ];
 

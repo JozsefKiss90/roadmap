@@ -88,3 +88,26 @@ Left:
 - **`src/labels.ts` now decides when the tier names are left out**, beside placing them.
 - **`Traits` is a plain name** for a tool's facets with the needs it serves.
 - **Five modules still ask "did the filters or the lens change"**, each in its own subscriber, as ticket 11 left them.
+
+### 2026-11-17: the critique's open findings, fixed
+
+The nine findings listed under "Left" above are now fixed. The work is not committed yet. 301 unit tests and the generator's 23 pass, and the screenshot script runs clean on eighteen states at both sizes. A headless run at 1366×768 drove the new behaviour: `3`, a need, a best-fit row of its card, Escape, both headings of the rail, `1` and `3`. There was no console error.
+
+Decisions 5, 6 and 10 above are replaced by what follows.
+
+- **Best-fit rings among small marks.** A ring never reaches a neighbouring mark. Where the marks are too small for the token's gap and width, the ring keeps to the space between two marks and its line thins, to no less than 1px. The home cell of N15 at 1366×768 was one blue block, and now shows each mark. The style guide has a row for it under "Map states".
+- **A traced tool selected at the stack distance leaves the map there.** The whole trace stays in the picture beside the tool's card. From closer in, selecting a tool still goes to its cluster, where the lines run out of the picture as any line does close in. The fragment is `#select=tool:…&lens=need&need=N01`. A tool selected this way is closed with its trace, as a need's card is. New state tests cover it, and "need-trace-tool-selected-stack" is a new screenshot state.
+- **The rail at 768 pixels of height.** The filters and the outline fold to their headings while the need list is on show, and open again when the trace is switched off. Each heading is a button that opens or folds its part at any time. The need list now shows about ten needs at 768 pixels, where it showed five. `src/rail-fold.ts` is new.
+- **A need under several phases.** The ticket asks for a row under each phase, so the rows stay. Each row of such a need now ends with the phases it spans, as "P3-P4". The critique would list the need once; that would break the ticket's second box.
+- **The selection under a trace.** A new token, `map-trace-selected`, is a 2px `ink` ring, 2px clear of the mark. The selected tool's mark keeps the form the trace gives it and takes the ring. The legend names it "Selected". The guide has the token, a contrast row and a row under "Map states".
+- **The trace with no need chosen.** A line under the breadcrumb says "The need trace is on. Choose a need in the rail to trace it." The legend names "Traced" and "Best fit" as soon as the trace is on.
+- **The home cell and a selected cell.** While a need is traced a selected cluster's cell takes `map-trace-selected` as its outline, so it is `ink` and the home cell `accent`.
+- **The need's card.** Under "Best-fit tools" it now lists "Other tools that serve it", so every traced mark has a row.
+- **Lines from the home cell.** Each line leaves the cell's outline at a point of its own. A line to a tool on the same plate leaves the nearer side, level with the tool. A line to another plate leaves the back or the front edge, as near under or over the tool as the edge reaches.
+
+For the Architect:
+
+1. **A selected tool that the need does not pull in is drawn faded with the `ink` ring**, where it took the selected fill before. Under a trace the fill means "traced" alone.
+2. **A card that closes with the keyboard focus in it hands the focus to the need list** while the need trace is on, because the outline is folded then.
+3. **No screenshot state shows a selected cluster under a trace**, and no unit test covers the drawing, the fold or the legend. The spec agrees three seams for unit tests.
+

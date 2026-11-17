@@ -61,6 +61,7 @@ export const MAP_TOKENS = {
   'map-bestfit-ring': { line: 'accent', widthPx: 2, gapPx: 2 },
   'map-home-cell': { line: 'accent', widthPx: 2 },
   'map-trace-line': { line: 'accent', widthPx: 1 },
+  'map-trace-selected': { line: 'ink', widthPx: 2, gapPx: 2 },
   'map-faded': { tint: 'ink', alpha: 0.12 },
   'map-text-name': { text: 'ink' },
   'map-text-selected': { text: 'accent' },

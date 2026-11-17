@@ -37,7 +37,7 @@ Run these from this folder, after `npm install`.
 | `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected and traced marks and the faded marks |
 | `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token, in the faded state or not |
 | `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
-| `src/trace-drawing.ts` | What a need trace adds to its marks: the home cell's outline, the lines to the traced tools and the best-fit rings |
+| `src/trace-drawing.ts` | What a need trace adds to its marks: the home cell's outline, the lines to the traced tools, the best-fit rings and the selected tool's ring |
 | `src/pick.ts` | Which plate, cell and mark lie under the pointer |
 | `src/hover-label.ts` | The label beside the pointer that names the mark under it |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
@@ -48,6 +48,7 @@ Run these from this folder, after `npm install`.
 | `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
 | `src/lens-panel.ts` | The lens switch in the rail, with the roles of the role lens and the number of tools in reach |
 | `src/need-list.ts` | The need list in the rail: the 33 needs under their phases, while the need trace is on |
+| `src/rail-fold.ts` | Folds the filters and the outline to their headings while the need list is on show, and lets a heading open or fold its part |
 | `src/filter-panel.ts` | The seven filters in the rail, with the count, "committed only" and "clear" |
 | `src/legend.ts` | The legend of the four decision-class steps, with the faded, traced and best-fit states while they are on show |
 | `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
@@ -90,7 +91,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 | A cluster | Click its cell on the focused plate, between the marks, or click its name. Or choose it in the outline or the search |
 | A need | Choose it in the need list, click its row in a tool's detail card, or choose it in the search |
 
-- **Selecting a tool or a cluster goes to that cluster.** Selecting a need starts its need trace, at the stack distance.
+- **Selecting a tool or a cluster goes to that cluster.** Selecting a need starts its need trace, at the stack distance. A traced tool that is selected at the stack distance leaves the map there.
 - **A need's detail card opens at the stack distance.** The whole stack then stands left of the card. In a narrow window the plates come too close for the tier names, which are left out; each tier keeps its count, which begins with its code.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
 - **Escape closes the detail card first.** The next Escape steps out one distance.
@@ -107,7 +108,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline, and the need list while the need trace is on. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline, and the need list while the need trace is on. The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -169,17 +170,22 @@ The lens switch stands in the rail under the search box. It offers no lens, the 
 
 The need trace shows one of the 33 needs and the tools that serve it. Needs are not objects in space: a partner picks one from the need list in the rail. `src/state.ts` holds the lens and its need, and `src/trace-drawing.ts` draws what the trace adds to the marks.
 
-- **`3`, or "Need" in the lens switch, switches the need trace on.** The place and a selected tool stay, as under the other lenses. The need list then stands in the rail under the lens switch, with the needs under their phases, P0 to P4. A need that spans several phases is listed under each of them. The filters and the outline give the list room.
-- **Until a need is chosen, nothing changes on the canvas.** Every tool stays at full strength. When `3` leaves no need chosen, the keyboard focus goes to the need list.
+- **`3`, or "Need" in the lens switch, switches the need trace on.** The place and a selected tool stay, as under the other lenses. The need list then stands in the rail under the lens switch, with the needs under their phases, P0 to P4. A need that spans several phases is listed under each of them, and each of its rows ends with the phases it spans, as "P3-P4". The filters and the outline fold to their headings, so the list has the rail's height. They open again when the trace is switched off, and a click on a heading opens or folds its part at any time.
+- **Until a need is chosen, no mark changes.** Every tool stays at full strength. A line under the breadcrumb says that the trace is on and asks for a need, and the legend names the traced mark and the best-fit ring. When `3` leaves no need chosen, the keyboard focus goes to the need list.
 - **Choosing a need traces it.** The tools that serve it take the selected fill, and its best-fit tools also take a ring. The need's home cell is outlined, and a line runs from it to each traced tool outside it. Every other tool fades in place.
 - **A traced tool of the home cluster has no line.** It stands inside the outline.
-- **The map goes to the stack distance** when a need is chosen, and the detail card shows the need: its verdict, phase, lead role, approach, gap and best-fit tools. The whole stack stands left of the card, so every traced tool is in the picture.
+- **Each line leaves the home cell at a point of its own.** A line to a tool on the same plate leaves the nearer side of the cell, level with the tool. A line to another plate leaves the back edge for a higher plate and the front edge for a lower one, as near under or over the tool as the edge reaches.
+- **A best-fit ring never reaches a neighbouring mark.** At the stack distance in a small window the marks are a few pixels wide. The ring then keeps to the space between two marks and its line thins, to no less than 1px.
+- **The map goes to the stack distance** when a need is chosen, and the detail card shows the need: its verdict, phase, lead role, approach, gap and best-fit tools, and then the other tools that serve it. The whole stack stands left of the card, so every traced tool is in the picture.
 - **A selected need is always the traced need.** Choosing a need in a tool's detail card or in the search starts its trace. Switching the lens off, or to the role lens, closes the need's card.
 - **A click on a traced mark selects its tool**, from any distance, and the trace stays on. A traced mark the filters have faded takes clicks as any other mark does. The tool's detail card names the traced need at its head, as "Tracing N15 · …". One click there goes back to the need.
+- **A traced tool selected at the stack distance leaves the map there**, so the whole trace stays in the picture beside the tool's card. That holds for a click on its mark and for its row in the need's card, the outline or the search. From closer in, selecting a tool goes to its cluster, as it does without a trace. The fragment is then `#select=tool:…&lens=need&need=N01`, with no cluster.
+- **The selection is drawn in `ink` while a need is traced**, because the selected fill then means "traced". The selected tool's mark keeps the form the trace gives it and takes an `ink` ring, and a selected cluster's cell takes an `ink` outline, which sets it apart from the home cell. The legend names the ring "Selected".
+- **A tool selected at the stack distance is closed with its trace.** Switching the lens off, or to the role lens or another need, closes its card, as it closes a need's card.
 - **Escape closes the detail card and leaves the trace on.** The need stays chosen in the need list, and a click on it opens its card again.
 - **The number of traced tools** stands beside "Lens", as "15 tools in reach". Each tier's count reads "T1 · 11 of 119 in reach", as under the role lens.
 - **The filters apply on top of the trace.** A traced tool the filters leave out is faded, and has no line and no ring.
-- **The legend names the traced mark and the best-fit ring** while a need is traced.
+- **The legend names the traced mark and the best-fit ring** while the need trace is on, and the selection's ring while a tool or a cluster is selected under a traced need.
 - **The need trace comes back with the need it last showed**, as the role lens does with its role. It comes back where the map is, with the need's card closed; the need's row in the need list opens it.
 - **The URL fragment holds the lens and its need**, as `#lens=need&need=N15`. With the need's card open it also has `select=N15`. `lens=need` alone is the trace with no need chosen. A need the graph lacks gives no lens.
 - **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.

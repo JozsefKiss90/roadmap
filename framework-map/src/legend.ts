@@ -32,7 +32,10 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   bestFitSquare.setAttribute('aria-hidden', 'true');
   const bestFit = element('li', null, bestFitSquare, 'Best fit');
   // The faded square stands before the two of the trace, so that those two go to a second row together.
-  steps.append(faded, traced, bestFit);
+  const selectedSquare = element('span', 'swatch swatch-traced swatch-trace-selected');
+  selectedSquare.setAttribute('aria-hidden', 'true');
+  const selected = element('li', null, selectedSquare, 'Selected');
+  steps.append(faded, traced, bestFit, selected);
 
   const legend = element('section', 'legend', heading, steps);
   // Named apart from the filter of the same heading.
@@ -40,10 +43,13 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   app.append(legend);
 
   const show = (): void => {
-    const { lens, filters } = store.get();
+    const { lens, filters, selection } = store.get();
     faded.hidden = !narrows(lens) && !isFiltered(filters);
     fadedLabel.textContent = fadedName(narrows(lens), isFiltered(filters));
-    traced.hidden = bestFit.hidden = tracedNeedOf(lens) === null;
+    // The two of the trace are named as soon as the trace is on, before a need is chosen: they say what a need will mark.
+    traced.hidden = bestFit.hidden = lens?.type !== 'need';
+    // The selection's ring, while a need is traced and the selected fill means "traced".
+    selected.hidden = tracedNeedOf(lens) === null || selection?.type === 'need' || selection === null;
   };
   show();
   store.subscribe(show);

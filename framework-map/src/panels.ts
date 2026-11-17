@@ -103,7 +103,10 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
 
   mountBreadcrumb(app, index, store);
   // A card that closes under the partner's hands hands the focus to the outline, at the row for where the map is.
-  const card = mountDetailCard(app, index, store, constants, () => outline.focus());
+  // While the need list is on show the outline is folded, and the focus goes to the need list.
+  const card = mountDetailCard(app, index, store, constants, () =>
+    store.get().lens?.type === 'need' ? needList.focus() : outline.focus(),
+  );
 
   const nodes = index.graph.nodes;
   const search = createSearch({
@@ -119,6 +122,15 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   mountFilterPanel(rail, outline.element, index, store);
 
   mountLegend(app, store);
+  // The trace with no need chosen changes nothing on the canvas, so the canvas says that it is on.
+  const hint = element('p', 'canvas-hint', 'The need trace is on. Choose a need in the rail to trace it.');
+  const showHint = (): void => {
+    const { lens } = store.get();
+    hint.hidden = !(lens?.type === 'need' && lens.need === null);
+  };
+  app.append(hint);
+  showHint();
+  store.subscribe(showHint);
   mountAnnouncer(app, index, store);
 
   document.addEventListener('keydown', (event) => {

@@ -113,6 +113,23 @@ body {
   justify-content: center;
 }
 
+/* Under the breadcrumb, while the need trace waits for a need: the one sign of the trace on the canvas. */
+.canvas-hint {
+  position: absolute;
+  top: 52px;
+  right: 16px;
+  left: calc(var(--rail-width) + 16px);
+  margin: 0;
+  color: var(--muted);
+  font: 400 12px/16px var(--font-sans);
+  text-align: center;
+  pointer-events: none;
+}
+
+.canvas-hint[hidden] {
+  display: none;
+}
+
 /* Beside an open detail card, the breadcrumb is centred in the room that is left. */
 #app:has(.detail-card:not([hidden])) .breadcrumb {
   right: calc(var(--detail-card-width) + 16px);
@@ -554,6 +571,57 @@ body {
   font-weight: 600;
 }
 
+/*
+ * A heading that folds its part of the rail: the filters and the outline, which fold while the
+ * need list is on show. The padding is the button's hit area, and the margin keeps the text in line.
+ */
+.rail-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px -8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.rail-fold:hover {
+  background: var(--paper-2);
+}
+
+.rail-fold-chevron {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+
+.rail-fold[aria-expanded='true'] .rail-fold-chevron {
+  transform: rotate(90deg);
+}
+
+.filters[data-folded] > :not(.filters-head),
+.outline[data-folded] > .outline-tree {
+  display: none;
+}
+
+/* A folded part is as tall as its heading, and the need list takes the height it leaves. */
+.filters[data-folded] .filters-head {
+  padding-bottom: 8px;
+}
+
+.outline[data-folded],
+.needs:not([hidden]) ~ .outline[data-folded] {
+  flex: none;
+  min-height: 0;
+}
+
 /* The search box. Its results open over the canvas, wider than the rail. */
 .search {
   position: relative;
@@ -927,6 +995,14 @@ body {
   color: var(--accent);
 }
 
+/* The phases of a need that is listed under more than one of them, at the end of each of its rows. */
+.need-span {
+  flex: none;
+  color: var(--muted);
+  font: 500 11px/20px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
 /*
  * The filters: the count of the tools that pass, "committed only" and "clear",
  * then the seven filters. A filter's values open under its name. The list
@@ -1203,6 +1279,13 @@ body {
 .swatch-best-fit {
   margin: 0 4px;
   outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The selected tool while a need is traced takes map-trace-selected: a 2px ink ring, 2px clear of the mark. */
+.swatch-trace-selected {
+  margin: 0 4px;
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 

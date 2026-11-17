@@ -73,8 +73,10 @@ export interface Traits extends Facets {
 /**
  * Where the map is, and what is selected. At the stack distance nothing is
  * focused; at the tier distance a tier is; at the cluster distance a cluster
- * is, with its tier. A selected tool or cluster is always in the focused
- * cluster. A selected need is always the need the need trace shows.
+ * is, with its tier. A selected tool or cluster is in the focused cluster,
+ * but for a traced tool that was selected at the stack distance: it stays
+ * selected there for as long as its trace is on. A selected need is always
+ * the need the need trace shows.
  */
 export interface MapState {
   readonly distance: Distance;
@@ -95,6 +97,8 @@ export interface Places {
   cluster(id: string): { id: string; tier: string } | undefined;
   tool(id: string): { id: string; cluster: string } | undefined;
   need(id: string): { id: string } | undefined;
+  /** Whether a tool serves a need. */
+  serves(toolId: string, needId: string): boolean;
 }
 
 export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS, lens: null };
@@ -127,12 +131,18 @@ export function focusCluster(state: MapState, places: Places, clusterId: string)
 
 /**
  * Selects the tool, cluster or need with this id. A tool or a cluster also
- * takes the map to that cluster; a need starts its need trace. An id the
- * graph lacks changes nothing.
+ * takes the map to that cluster; a need starts its need trace. A traced tool
+ * that is selected at the stack distance leaves the map there, so the whole
+ * trace stays in the picture. An id the graph lacks changes nothing.
  */
 export function select(state: MapState, places: Places, id: string): MapState {
   const tool = places.tool(id);
-  if (tool) return { ...focusCluster(state, places, tool.cluster), selection: { type: 'tool', id: tool.id } };
+  if (tool) {
+    const need = tracedNeedOf(state.lens);
+    const inTheTrace = state.distance === 'stack' && need !== null && places.serves(tool.id, need);
+    const place = inTheTrace ? state : focusCluster(state, places, tool.cluster);
+    return { ...place, selection: { type: 'tool', id: tool.id } };
+  }
   const cluster = places.cluster(id);
   if (cluster) return { ...focusCluster(state, places, cluster.id), selection: { type: 'cluster', id: cluster.id } };
   const need = places.need(id);
@@ -229,11 +239,14 @@ export function clearLens(state: MapState): MapState {
 
 /**
  * Puts a lens in the place of the one that is on. A lens that is on already
- * is kept as it is, with the selection. A selected need goes with its trace.
+ * is kept as it is, with the selection. A selected need goes with its trace,
+ * and so does a tool that is selected at the stack distance, where only a
+ * trace lets a tool be selected.
  */
 function withLens(state: MapState, lens: Lens | null): MapState {
   if (sameLens(state.lens, lens)) return state;
-  return { ...state, lens, selection: state.selection?.type === 'need' ? null : state.selection };
+  const heldByTrace = state.selection?.type === 'need' || (state.selection !== null && state.distance === 'stack');
+  return { ...state, lens, selection: heldByTrace ? null : state.selection };
 }
 
 /** The id of the need a lens traces, or null: for no lens, the role lens, and the need trace with no need chosen. */
@@ -310,7 +323,8 @@ export function toFragment(state: MapState, current = ''): string {
 /**
  * Reads a URL fragment. Anything it cannot read, or an id the graph lacks,
  * gives the stack at rest. A selected tool or cluster decides the place, so
- * the fragment cannot name a selection that is somewhere else. The filters
+ * the fragment cannot name a selection that is somewhere else; a traced tool
+ * may be selected at the stack. The filters
  * are read on their own: a value a filter does not list is left out, and the
  * rest hold wherever the map opens. So is the lens: a lens, a role or a need
  * the fragment names wrongly gives no lens. The role lens with no role is the

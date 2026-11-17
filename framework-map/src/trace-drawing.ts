@@ -6,6 +6,12 @@
  * - A line runs from the home cell to each traced tool outside it. A traced
  *   tool of the home cluster stands inside the outline, and has no line.
  * - A best-fit tool's mark takes a ring, which stands a gap clear of it.
+ * - The selected tool's mark takes a ring of its own, in `ink`. While a need
+ *   is traced the selected fill says "traced", so it cannot say "selected".
+ *
+ * A best-fit ring never reaches a neighbouring mark. Where the marks are drawn
+ * too small for the token's gap and width, the ring keeps to the space between
+ * two marks, and its line thins with it.
  *
  * The filters apply on top of the trace: a traced tool they leave out is
  * faded, and has no line and no ring. The lines cross plates, so no plate
@@ -15,6 +21,7 @@
 import { BufferGeometry, Float32BufferAttribute, LineBasicMaterial, LineSegments, Mesh, PlaneGeometry } from 'three';
 import type { Object3D } from 'three';
 import type { GraphIndex } from './data';
+import { STACK_METRICS } from './layout';
 import type { CellLayout, MarkLayout, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, markMaterial } from './mark-material';
 import { tracedNeedOf } from './state';
@@ -33,10 +40,17 @@ const BEST_FIT_MARK: MarkToken = {
   widthPx: BEST_FIT_RING.widthPx,
   dashed: false,
 };
+/** The ring of the selected tool, while a need is traced. */
+const SELECTED_RING = MAP_TOKENS['map-trace-selected'];
+const SELECTED_MARK: MarkToken = { fill: null, outline: SELECTED_RING.line, widthPx: SELECTED_RING.widthPx, dashed: false };
+/** The space between two neighbouring marks, in layout units: the most a best-fit ring may stand out from its mark. */
+const ROOM_AROUND_A_MARK = STACK_METRICS.pitch - STACK_METRICS.markSize;
+/** The thinnest a best-fit ring's line is drawn, in pixels. */
+const THINNEST_RING_PX = 1;
 
 export interface TraceDrawing {
   /** Draws the trace of a state, and takes away the one before. A state with no need traced draws nothing. */
-  show(state: Pick<MapState, 'lens' | 'filters'>): void;
+  show(state: Pick<MapState, 'lens' | 'filters' | 'selection'>): void;
   /**
    * Sizes the rings so that each stands its gap clear of its mark, in pixels
    * on screen. The scene calls it when the camera moves.
@@ -88,19 +102,42 @@ export function createTraceDrawing(
   let ringed: MarkLayout[] = [];
   let unitsPerPixel: ((x: number, y: number, z: number) => number) | null = null;
 
-  /** Shows a ring on each best-fit mark, once the scene has said how large a pixel is there. */
+  // The ring of the selected tool. It stands outside a best-fit ring.
+  const selectedMaterial = markMaterial(SELECTED_MARK, pixelRatio);
+  const selectedRing = new Mesh(square, selectedMaterial);
+  selectedRing.renderOrder = OVER_THE_MARKS;
+  selectedRing.visible = false;
+  add(selectedRing);
+  let selected: MarkLayout | null = null;
+
+  /** Puts a ring round a mark, standing `reach` layout units out from it. */
+  function ringRound(ring: Mesh, mark: MarkLayout, reach: number): void {
+    ring.position.set(mark.x, mark.y + MARK_LIFT * 1.5, mark.z);
+    ring.scale.setScalar((mark.size + 2 * reach) / MARK_SHARE_OF_QUAD);
+  }
+
+  /** Shows the rings, once the scene has said how large a pixel is at each mark. */
   function placeRings(): void {
     rings.forEach((ring, at) => {
       ring.visible = unitsPerPixel !== null && at < ringed.length;
     });
+    selectedRing.visible = unitsPerPixel !== null && selected !== null;
     if (!unitsPerPixel) return;
+    const pixelAt = (mark: MarkLayout): number => unitsPerPixel!(mark.x, mark.y + MARK_LIFT * 1.5, mark.z);
+    const fullPx = BEST_FIT_RING.gapPx + BEST_FIT_RING.widthPx;
+    /** How far a best-fit ring stands out from its mark: as far as the token says, where there is room for that. */
+    const bestFitReach = (mark: MarkLayout): number => Math.min(fullPx * pixelAt(mark), ROOM_AROUND_A_MARK);
+    // One line width for every ring: the thinnest any of them needs, so that each keeps its gap.
+    let share = 1;
     ringed.forEach((mark, at) => {
-      const ring = rings[at]!;
-      const y = mark.y + MARK_LIFT * 1.5;
-      const side = mark.size + 2 * (BEST_FIT_RING.gapPx + BEST_FIT_RING.widthPx) * unitsPerPixel!(mark.x, y, mark.z);
-      ring.position.set(mark.x, y, mark.z);
-      ring.scale.setScalar(side / MARK_SHARE_OF_QUAD);
+      const reach = bestFitReach(mark);
+      share = Math.min(share, reach / (fullPx * pixelAt(mark)));
+      ringRound(rings[at]!, mark, reach);
     });
+    ringMaterial.uniforms.uOutlinePx!.value = Math.max(THINNEST_RING_PX, BEST_FIT_RING.widthPx * share);
+    if (!selected) return;
+    const inside = ringed.includes(selected) ? bestFitReach(selected) : 0;
+    ringRound(selectedRing, selected, inside + (SELECTED_RING.gapPx + SELECTED_RING.widthPx) * pixelAt(selected));
   }
 
   return {
@@ -119,13 +156,18 @@ export function createTraceDrawing(
 
       const corners: number[] = [];
       if (home) {
+        const [left, right] = [home.x - home.width / 2, home.x + home.width / 2];
         for (const mark of marksOf(index.traced(state.lens))) {
           // A traced tool of the home cluster stands inside the outline, which ties it to the need already.
           if (mark.cluster === home.cluster) continue;
-          // The line leaves the home cell at the middle of an edge, not on one of its marks:
-          // the back edge for a tool on a higher plate, and the front edge for any other.
-          const edgeZ = home.z + (mark.y > home.y ? -1 : 1) * (home.depth / 2);
-          corners.push(home.x, home.y + MARK_LIFT, edgeZ, mark.x, mark.y + MARK_LIFT, mark.z);
+          // Each line leaves the home cell's outline at a point of its own, so the lines spread and none
+          // starts on a mark. To a tool on the same plate it leaves the nearer side, level with the tool.
+          // To a tool on another plate it leaves the back edge for a higher plate and the front edge for
+          // a lower one, as near under or over the tool as the edge reaches.
+          const alongside = mark.y === home.y;
+          const startX = alongside ? (mark.x < home.x ? left : right) : Math.min(right, Math.max(left, mark.x));
+          const startZ = alongside ? mark.z : home.z + (mark.y > home.y ? -1 : 1) * (home.depth / 2);
+          corners.push(startX, home.y + MARK_LIFT, startZ, mark.x, mark.y + MARK_LIFT, mark.z);
         }
       }
       lines.geometry.dispose();
@@ -139,6 +181,9 @@ export function createTraceDrawing(
         add(ring);
         rings.push(ring);
       }
+      // The selected tool is ringed whether the need pulls it in or not, and whatever the filters do to it.
+      const tool = need && state.selection?.type === 'tool' ? state.selection.id : null;
+      selected = tool === null ? null : (markOf.get(tool) ?? null);
       placeRings();
     },
     place(unitsPerPixelAt) {
@@ -148,6 +193,7 @@ export function createTraceDrawing(
     setPixelRatio(ratio) {
       outlineMaterial.uniforms.uPixelRatio!.value = ratio;
       ringMaterial.uniforms.uPixelRatio!.value = ratio;
+      selectedMaterial.uniforms.uPixelRatio!.value = ratio;
     },
   };
 }

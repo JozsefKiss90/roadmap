@@ -238,6 +238,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-bestfit-ring` | 2px `accent` ring, 2px clear of the mark | A best-fit tool in a need trace |
 | `map-home-cell` | 2px `accent` outline | The home cell of a traced need |
 | `map-trace-line` | 1px `accent` line | The line from a home cell to a serving tool, or from an internal skill to its cluster |
+| `map-trace-selected` | 2px `ink` ring, 2px clear of the mark | The selection while a need is traced: a ring on the selected tool's mark, and the outline of a selected cluster's cell |
 | `map-focus-outline` | 2px `accent` outline, with a 2px gap | Keyboard focus, in the panels and on the canvas |
 | `map-faded` | `ink @ 0.12` | A mark outside the active lens or filter |
 | `map-text-name` | `ink` | Tier, cluster and tool names |
@@ -264,6 +265,8 @@ The steps differ by form: filled or not, a heavy or a thin outline, a solid or a
 |---|---|
 | Hover | `map-hover-ring` is added. The mark itself does not change. |
 | Selected or traced | The mark takes `map-selected-fill`, whatever its step. A selected cluster's cell takes `map-selected-cell`. The selected tool's name in the list above its cell takes `map-text-selected`, and so does the selected row's name in the outline. In a need trace, a best-fit tool's mark also takes `map-bestfit-ring`, the need's home cell takes `map-home-cell`, and the traced need's name in the need list takes `map-text-selected`. The traced need's row in the need list, and the row at the head of a tool's detail card that leads back to the need, stand on `paper-2` with a 2px `accent` bar at the left, as the outline's selected row does. |
+| Selected while a need is traced | `map-selected-fill` then means "traced", so the selection is drawn in `ink`. The selected tool's mark keeps the form the trace gives it and takes `map-trace-selected`, outside a best-fit ring if it has one. A selected cluster's cell takes the same line as its outline, so that it is not taken for the home cell. |
+| Best-fit ring among small marks | A best-fit ring never reaches a neighbouring mark. Where the marks are drawn too small for the token's gap and width, the ring keeps to the space between two marks and its line thins with it, to no less than 1px. |
 | Keyboard focus | `map-focus-outline` is added. |
 | Faded | The mark keeps its form. Its `ink`, `soft` or `muted` part turns to `map-faded`, and a `paper` fill stays `paper`. The tool's square in the outline fades the same way, and the text of its row takes `soft`. Its name in the list above its cell takes `map-text-tag`. |
 
@@ -297,6 +300,7 @@ These rows extend the [contrast contract](#contrast-contract) to the map. Each o
 | `map-bestfit-ring` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-home-cell` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-trace-line` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-trace-selected` | `ink` | `paper-2` | non-text | 3:1 | 12.84:1 |
 | `map-trace-line` | `accent` | `paper` | non-text | 3:1 | 5.89:1 |
 | `map-focus-outline` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-focus-outline` | `accent` | `paper` | non-text | 3:1 | 5.89:1 |

@@ -19,6 +19,7 @@ import { decisionStep, fadedName } from './display';
 import { dressSwatch, element, swatch } from './dom';
 import type { ClusterNode, TierNode, ToolNode } from './graph';
 import { inGridOrder } from './layout';
+import { mountFold } from './rail-fold';
 import { narrows } from './state';
 import type { MapState, Store } from './state';
 
@@ -345,9 +346,12 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
   // The tree's height changes as the rail is put together and as the window changes, and the row stays in view.
   new ResizeObserver(scrollToRow).observe(tree);
 
-  const nav = element('nav', 'outline', element('h2', 'rail-heading', 'Outline'), tree);
+  const heading = element('h2', 'rail-heading', 'Outline');
+  const nav = element('nav', 'outline', heading, tree);
   nav.setAttribute('aria-label', 'Outline');
   parent.insertBefore(nav, before);
+  // While the need list is on show the outline folds to its heading, to give the list the rail's height.
+  const fold = mountFold(nav, heading, store);
 
   follow(store.get());
   store.subscribe((state, previous) => {
@@ -362,5 +366,11 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
       state.selection === previous.selection;
     if (!stayed) follow(state);
   });
-  return { element: nav, focus: () => active.focus() };
+  return {
+    element: nav,
+    focus() {
+      fold.open();
+      active.focus();
+    },
+  };
 }

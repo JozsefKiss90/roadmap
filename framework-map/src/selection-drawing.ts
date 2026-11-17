@@ -2,7 +2,8 @@
  * selection-drawing: what the scene draws for the selection, beside the
  * selected mark's own fill.
  *
- * - A selected cluster's cell takes an outline.
+ * - A selected cluster's cell takes an outline. While a need is traced the
+ *   outline is in `ink`, so that it is not taken for the need's home cell.
  * - `implements` lines run from a selected tool to the clusters it implements,
  *   and from a selected cluster to the tools that implement it. The far end of
  *   each line is outlined too, so the line ends on something that can be seen:
@@ -29,6 +30,14 @@ const SELECTED_CELL_MARK: MarkToken = {
   widthPx: SELECTED_CELL.widthPx,
   dashed: false,
 };
+/** The same outline while a need is traced, when `accent` belongs to the trace. */
+const SELECTED_IN_TRACE = MAP_TOKENS['map-trace-selected'];
+const SELECTED_IN_TRACE_MARK: MarkToken = {
+  fill: null,
+  outline: SELECTED_IN_TRACE.line,
+  widthPx: SELECTED_IN_TRACE.widthPx,
+  dashed: false,
+};
 /** How far the outline of a line's far mark stands from the mark, in layout units. */
 const FAR_MARK_MARGIN = 0.1;
 
@@ -45,8 +54,11 @@ export interface SelectionDrawing {
   endsOf(selection: Selection | null): ImplementsEnd[];
   /** The box that holds the far ends of a selection's lines, or null when it has no lines. */
   reachOf(selection: Selection | null): Box | null;
-  /** Draws the outline and the lines of a selection, and takes away those of the one before. */
-  show(selection: Selection | null): void;
+  /**
+   * Draws the outline and the lines of a selection, and takes away those of the one before.
+   * @param inTrace Whether a need is traced, which gives a selected cell the outline of a trace's selection.
+   */
+  show(selection: Selection | null, inTrace: boolean): void;
   /** The outline's width is in screen pixels, so it follows the display's pixel ratio. */
   setPixelRatio(pixelRatio: number): void;
 }
@@ -73,6 +85,7 @@ export function createSelectionDrawing(
   const cellOf = new Map<string, CellLayout>(layout.cells.map((cell) => [cell.cluster, cell]));
 
   const outlineMaterial = markMaterial(SELECTED_CELL_MARK, pixelRatio);
+  const inTraceMaterial = markMaterial(SELECTED_IN_TRACE_MARK, pixelRatio);
   const cellOutline = new Mesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), outlineMaterial);
   cellOutline.renderOrder = OVER_THE_MARKS;
   cellOutline.visible = false;
@@ -138,9 +151,10 @@ export function createSelectionDrawing(
       }
       return reach;
     },
-    show(selection) {
+    show(selection, inTrace) {
       const cell = selection?.type === 'cluster' ? cellOf.get(selection.id) : undefined;
       cellOutline.visible = cell !== undefined;
+      cellOutline.material = inTrace ? inTraceMaterial : outlineMaterial;
       if (cell) {
         cellOutline.position.set(cell.x, cell.y + MARK_LIFT, cell.z);
         cellOutline.scale.set(cell.width / MARK_SHARE_OF_QUAD, 1, cell.depth / MARK_SHARE_OF_QUAD);
@@ -169,6 +183,7 @@ export function createSelectionDrawing(
     },
     setPixelRatio(ratio) {
       outlineMaterial.uniforms.uPixelRatio!.value = ratio;
+      inTraceMaterial.uniforms.uPixelRatio!.value = ratio;
     },
   };
 }

@@ -13,7 +13,8 @@
  *
  * A mark of a tool that the lens or the filters leave out is drawn in the
  * faded state: it keeps its form and its place. A traced mark takes the
- * selected fill, and src/trace-drawing.ts draws the rest of a need trace.
+ * selected fill, and src/trace-drawing.ts draws the rest of a need trace,
+ * with the ring that marks the selected tool while a need is traced.
  *
  * The mark under the pointer gets a ring and a hover label, and the selected
  * tool's mark takes the selected fill. src/selection-drawing.ts draws the
@@ -53,7 +54,7 @@ import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
 import { createSelectionDrawing } from './selection-drawing';
 import { createTraceDrawing } from './trace-drawing';
-import { AT_STACK } from './state';
+import { AT_STACK, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
 import type { LineToken, MarkToken } from './tokens';
@@ -270,10 +271,13 @@ export function createStage(
    * The material of a mark for a state: the selected fill for the selected
    * tool, the faded form for a tool the lens or the filters leave out, the
    * selected fill again for a traced tool, and otherwise the form of its step.
+   * While a need is traced the selected fill means "traced" alone: the
+   * selected tool keeps the form the trace gives it, and takes a ring.
    */
   function materialOf(mark: MarkNode, state: MapState): ShaderMaterial {
     const parts = partsOf(mark.tier);
-    if (state.selection?.type === 'tool' && state.selection.id === mark.id) return parts.selected;
+    const selected = state.selection?.type === 'tool' && state.selection.id === mark.id;
+    if (selected && tracedNeedOf(state.lens) === null) return parts.selected;
     if (!index.emphasised(state).has(mark.id)) return parts.fadedMarks.get(mark.step)!;
     return index.traced(state.lens).has(mark.id) ? parts.selected : parts.marks.get(mark.step)!;
   }
@@ -656,15 +660,15 @@ export function createStage(
   };
 
   if (fitWindow()) goTo(store.get(), false);
-  selectionDrawing.show(store.get().selection);
+  selectionDrawing.show(store.get().selection, tracedNeedOf(store.get().lens) !== null);
   traceDrawing.show(store.get());
   store.subscribe((state, before) => {
     hover(null);
     if (state.selection !== before.selection || state.filters !== before.filters || state.lens !== before.lens) {
       dressMarks(state);
+      traceDrawing.show(state);
     }
-    if (state.filters !== before.filters || state.lens !== before.lens) traceDrawing.show(state);
-    selectionDrawing.show(state.selection);
+    selectionDrawing.show(state.selection, tracedNeedOf(state.lens) !== null);
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();
   });

@@ -5,12 +5,14 @@
  *
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene. Each filter is a list of checkboxes that opens
- * under its name; a filter that has a value chosen starts open.
+ * under its name; a filter that has a value chosen starts open. The whole
+ * panel folds to its heading and its count while the need list is on show.
  */
 import { ChevronRight, createElement } from 'lucide';
 import type { GraphIndex } from './data';
 import { COMMITTED_ONLY } from './display';
 import { element, swatch } from './dom';
+import { mountFold } from './rail-fold';
 import { FILTER_NAMES, isFiltered, tracedNeedOf } from './state';
 import type { FilterName, Filters, Lens, MapState, Store } from './state';
 
@@ -139,6 +141,8 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
   );
   panel.setAttribute('aria-labelledby', heading.id);
   parent.insertBefore(panel, before);
+  // While the need list is on show the filters fold to their heading and their count.
+  mountFold(panel, heading, store);
 
   function render({ lens, filters }: MapState): void {
     // The filters apply on top of the lens, so the count is of the tools at full strength under both.

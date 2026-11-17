@@ -49,6 +49,8 @@ export interface GraphIndex {
   cluster(id: string): ClusterNode | undefined;
   tool(id: string): ToolNode | undefined;
   need(id: string): NeedNode | undefined;
+  /** Whether a tool serves a need. */
+  serves(toolId: string, needId: string): boolean;
   /** The needs a tool serves, in the graph's own order, and whether the tool is a best fit for each. */
   needsOf(toolId: string): readonly ServedNeed[];
   /** The tools that are a best fit for a need. */
@@ -316,6 +318,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     cluster: (id) => clusterById.get(id),
     tool: (id) => toolById.get(id),
     need: (id) => needs.get(id),
+    serves: (toolId, needId) => traitsOf(toolId).needs.includes(needId),
     needsOf: (toolId) => needsByTool.get(toolId) ?? [],
     bestFitToolsOf: (needId) => inGraphOrder(bestFitByNeed.get(needId) ?? []),
     servingToolsOf: (needId) => inGraphOrder(toolsByNeed.get(needId) ?? []),

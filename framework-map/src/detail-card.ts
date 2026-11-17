@@ -241,6 +241,8 @@ export function mountDetailCard(
   }
 
   function needForm(need: NeedNode): Child[] {
+    const bestFits = index.bestFitToolsOf(need.id);
+    const others = index.servingToolsOf(need.id).filter((tool) => !bestFits.includes(tool));
     return [
       head(['Need ', need.id, hasValue(need.domain) && ` · ${need.domain}`], need.label),
       element(
@@ -253,7 +255,9 @@ export function mountDetailCard(
         ]),
         section('Approach', paragraph(need.approach)),
         section('Gap', paragraph(need.gap)),
-        section('Best-fit tools', toolRows(index.bestFitToolsOf(need.id))),
+        section('Best-fit tools', toolRows(bestFits)),
+        // Every traced mark on the canvas has its row here: the best fits above, and the rest of the trace.
+        section('Other tools that serve it', toolRows(others)),
       ),
     ];
   }

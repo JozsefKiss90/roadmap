@@ -3,8 +3,9 @@
  * trace is on. Needs are not objects in space, so this list is where a
  * partner picks the need to trace.
  *
- * A need that spans several phases is listed under each of them. The chosen
- * need is marked in every place it stands.
+ * A need that spans several phases is listed under each of them, and each of
+ * its rows ends with the phases it spans, so that a row met twice is read as
+ * one need. The chosen need is marked in every place it stands.
  *
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
@@ -63,6 +64,14 @@ export function mountNeedList(
     list.setAttribute('aria-labelledby', name.id);
     return element('section', 'need-phase', name, list);
   });
+
+  for (const [id, rows] of rowsOf) {
+    const spans = index.need(id)?.phase;
+    if (rows.length < 2 || !spans) continue;
+    for (const row of rows) {
+      row.append(element('span', 'need-span', element('span', 'visually-hidden', ', spans '), spans));
+    }
+  }
 
   const list = element('div', 'needs-list', ...phases);
   const panel = element('section', 'needs', element('div', 'needs-head', heading, prompt), list);
