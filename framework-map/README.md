@@ -33,7 +33,7 @@ Run these from this folder, after `npm install`.
 | `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
 | `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
 | `src/camera.ts` | The arithmetic for where the camera stands at each distance |
-| `src/state.ts` | The state store: the distance, the focused tier or cluster, the selection and the filters, in step with the URL fragment |
+| `src/state.ts` | The state store: the distance, the focused tier or cluster, the selection, the filters and the lens, in step with the URL fragment |
 | `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected mark and the faded marks |
 | `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token, in the faded state or not |
 | `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
@@ -45,6 +45,7 @@ Run these from this folder, after `npm install`.
 | `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card and the list of keys, and takes the keys that work anywhere |
 | `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
 | `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
+| `src/lens-panel.ts` | The lens switch in the rail, with the roles of the role lens and the number of tools in reach |
 | `src/filter-panel.ts` | The seven filters in the rail, with the count, "committed only" and "clear" |
 | `src/legend.ts` | The legend of the four decision-class steps |
 | `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
@@ -103,7 +104,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box, the filters and the outline. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -125,6 +126,8 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 | --- | --- | --- |
 | Anywhere | `/` | Goes to the search box |
 | Anywhere | `?` | Shows the list of keys |
+| Anywhere | `1` | Switches the lens off |
+| Anywhere | `2` | Switches the role lens on |
 | Anywhere | Escape | Closes the detail card, then steps out one distance |
 | Anywhere | Tab | Goes to the next control |
 | Outline | Up, Down | Goes to the row above or below |
@@ -142,6 +145,22 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 - **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width.
 - **A long tool name is cut short with an ellipsis** in the list above a cell, where the list would not fit between the rail and the open detail card. The outline, the hover label and the detail card give the name in full.
 
+## The role lens
+
+The lens switch stands in the rail under the search box. It offers no lens and the role lens. Later tickets add the need trace and the phase scrub to it. One lens is on at a time, and `src/state.ts` holds it.
+
+- **The role lens brings forward the tools one role uses.** A partner chooses the Architect, the Designer or the Analyst. The tools that role uses keep their form at full strength, in all eight tiers. Every other tool fades in place, as a filtered-out tool does.
+- **It means "used by" only.** A tool the role operates but does not use is faded. "Operated by" is a filter.
+- **A shared tool looks like the role's other tools.** The detail card's "Used by" line lists every role that uses it.
+- **The number of tools in reach** stands beside "Lens", as "269 tools in reach" for the Designer. The count at the head of the filters is the live region that announces a change of lens or role.
+- **Each tier's count is of its tools in reach** while the lens is on, as "T3 · 87 of 154 in reach" on the canvas. A tier with no tool in reach has its name in the colour of a tag. The counts in the outline's tier and cluster rows follow.
+- **The filters apply on top of the lens.** A tool is at full strength when it is in reach and passes the filters. The count at the head of the filters gives those tools. The number in reach and the tiers' counts do not change with the filters.
+- **The one filled segment is the lens that is on.** "None" and the chosen role are shown by a ring.
+- **`1` switches the lens off and `2` switches the role lens on.** If `1` closes the row of roles while it holds the focus, the focus goes to the lens switch. The role lens comes back with the role it last showed, and starts with the Architect.
+- **The URL fragment holds the lens and its role**, as `#lens=role&role=D`. The roles' codes are A, D and M. `lens=role` alone gives the first role. A role the graph lacks gives no lens.
+- **The lens holds** wherever the map goes and whatever is selected.
+- **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+
 ## Filters and the legend
 
 Seven filters stand in the rail between the search box and the outline: decision class, kind, used by, operated by, hosting, value stream and gate. A filter opens under its name and lists its values, each with the number of tools that have it. `src/state.ts` holds what is chosen.
@@ -149,7 +168,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **Values of one filter combine as "or", and filters combine as "and".** Designer and Analyst under "Used by", with Hub under "Hosting", leaves the Hub tools that either role uses.
 - **A tool the filters leave out fades and stays in place.** Its mark keeps its form and takes the guide's `map-faded`. Its row in the outline is dimmed, and so is its name in the list above a focused cell. It can still be hovered, clicked and selected. A selected mark keeps the selected fill.
 - **A cluster or tier row of the outline is dimmed** when the filters leave none of its tools in.
-- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". It is a live region, so a change is announced.
+- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. It is a live region, so a change is announced.
 - **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 327 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
 - **"Clear"** clears every filter. It is there only while a filter is on.
 - **The numbers beside the values do not change.** Each is the number of all tools with that value, whatever else is chosen.
@@ -158,7 +177,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **The filters hold** wherever the map goes and whatever is selected.
 - **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
 
-**The legend** at the bottom left of the canvas shows the four decision-class steps with their names. Its squares are drawn from the same mark tokens as the marks. While a filter is on, it also shows a faded square, named "Filtered out". The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
+**The legend** at the bottom left of the canvas shows the four decision-class steps with their names. Its squares are drawn from the same mark tokens as the marks. While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
 
 ## The graph validator
 

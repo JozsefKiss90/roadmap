@@ -1,11 +1,12 @@
 /**
  * legend: the four decision-class steps with their names, at the bottom left
  * of the canvas. Each square is drawn from the same mark token as the marks.
- * While a filter is on, it also shows the faded state of a tool left out.
+ * While a lens or a filter is on, it also shows the faded state of a tool
+ * left out, named for what leaves it out.
  *
  * It is one of the panels: it reads the state store, and knows nothing of the scene.
  */
-import { DECISION_STEPS, STEP_NAMES } from './display';
+import { DECISION_STEPS, STEP_NAMES, fadedName } from './display';
 import { dressSwatch, element, stepSwatch } from './dom';
 import { isFiltered } from './state';
 import type { Store } from './state';
@@ -20,7 +21,8 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   // The faded state, shown on the committed step, where it changes a mark the most.
   const fadedSquare = stepSwatch('committed');
   dressSwatch(fadedSquare, 'committed', true);
-  const faded = element('li', 'legend-faded', fadedSquare, 'Filtered out');
+  const fadedLabel = element('span', null);
+  const faded = element('li', 'legend-faded', fadedSquare, fadedLabel);
   steps.append(faded);
 
   const legend = element('section', 'legend', heading, steps);
@@ -29,7 +31,9 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   app.append(legend);
 
   const show = (): void => {
-    faded.hidden = !isFiltered(store.get().filters);
+    const { lens, filters } = store.get();
+    faded.hidden = lens === null && !isFiltered(filters);
+    fadedLabel.textContent = fadedName(lens !== null, isFiltered(filters));
   };
   show();
   store.subscribe(show);

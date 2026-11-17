@@ -4,7 +4,9 @@ import {
   FILTER_NAMES,
   NO_FILTERS,
   clearFilters,
+  clearLens,
   createStore,
+  emphasised,
   focusCluster,
   focusTier,
   fromFragment,
@@ -12,6 +14,7 @@ import {
   passes,
   select,
   setFilter,
+  showRoleLens,
   stepBack,
   stepOut,
   toFragment,
@@ -48,13 +51,14 @@ const places: Places = {
   need: (id) => (id === 'N1' ? { id } : undefined),
 };
 
-const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS });
+const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS, lens: null });
 const atCluster = (tier: string, cluster: string): MapState => ({
   distance: 'cluster',
   tier,
   cluster,
   selection: null,
   filters: NO_FILTERS,
+  lens: null,
 });
 const withTool = (tier: string, cluster: string, id: string): MapState => ({
   ...atCluster(tier, cluster),
@@ -181,6 +185,8 @@ const model: Facets = {
   stream: ['Build'],
   gate: ['Guarded'],
 };
+/** A ruleset on the Hub that only the Designer uses; the Architect operates it. */
+const ruleset: Facets = { ...skill, used: ['D'] };
 const filtersOf = (state: MapState): Filters => state.filters;
 const choose = (...choices: [FilterName, string][]): MapState =>
   choices.reduce((state, [name, value]) => toggleFilter(state, places, name, value), AT_STACK);
@@ -245,6 +251,82 @@ describe('filtering across filters, and clearing', () => {
   });
 });
 
+/** The role lens for one role, at the stack. */
+const lensOf = (role: string): MapState => ({ ...AT_STACK, lens: { type: 'role', role } });
+
+describe('the role lens', () => {
+  it('shows no lens until one is switched on, and every tool is at full strength', () => {
+    expect(AT_STACK.lens).toBeNull();
+    expect(emphasised(AT_STACK, skill)).toBe(true);
+    expect(emphasised(AT_STACK, model)).toBe(true);
+  });
+
+  it.each([
+    ['A', { skill: true, ruleset: false, model: false }],
+    ['D', { skill: true, ruleset: true, model: false }],
+    ['M', { skill: false, ruleset: false, model: true }],
+  ])('brings forward the tools that role %s uses, and fades the rest', (role, inReach) => {
+    const state = showRoleLens(AT_STACK, places, role);
+    expect(state).toEqual(lensOf(role));
+    expect({
+      skill: emphasised(state, skill),
+      ruleset: emphasised(state, ruleset),
+      model: emphasised(state, model),
+    }).toEqual(inReach);
+  });
+
+  it('means "used by" only: a tool the role operates but does not use is faded', () => {
+    expect(model.operated).toEqual(['A']);
+    expect(emphasised(lensOf('A'), model)).toBe(false);
+  });
+
+  it('starts with the first role when none is named', () => {
+    expect(showRoleLens(AT_STACK, places)).toEqual(lensOf('A'));
+  });
+
+  it('shows one role at a time: another role takes the place of the first', () => {
+    const state = showRoleLens(lensOf('D'), places, 'M');
+    expect(state).toEqual(lensOf('M'));
+    expect(emphasised(state, skill)).toBe(false);
+  });
+
+  it('keeps the lens it has for a role the graph does not have', () => {
+    expect(showRoleLens(AT_STACK, places, 'Z')).toEqual(AT_STACK);
+    expect(showRoleLens(lensOf('D'), places, 'Z')).toEqual(lensOf('D'));
+  });
+
+  it('brings every tool back when the lens is switched off', () => {
+    const state = clearLens(lensOf('M'));
+    expect(state).toEqual(AT_STACK);
+    expect(emphasised(state, skill)).toBe(true);
+  });
+
+  it('applies the filters on top of the lens: a tool is at full strength only in reach and passing', () => {
+    const cloud = toggleFilter(lensOf('M'), places, 'hosting', 'Cloud');
+    expect(emphasised(cloud, model)).toBe(true);
+    const hub = toggleFilter(lensOf('M'), places, 'hosting', 'Hub');
+    expect(emphasised(hub, model)).toBe(false);
+    expect(emphasised(hub, skill)).toBe(false);
+    expect(emphasised(clearLens(hub), skill)).toBe(true);
+  });
+
+  it('keeps the lens wherever the map goes, and when the filters are cleared', () => {
+    const lens = { type: 'role', role: 'D' };
+    expect(focusTier(lensOf('D'), places, 'T1')).toEqual({ ...atTier('T1'), lens });
+    expect(select(lensOf('D'), places, 'tool:a')).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens });
+    expect(stepOut(focusTier(lensOf('D'), places, 'T1'))).toEqual(lensOf('D'));
+    expect(stepBack(select(lensOf('D'), places, 'tool:a'))).toEqual({ ...atCluster('T1', '1A'), lens });
+    expect(clearFilters(toggleFilter(lensOf('D'), places, 'hosting', 'Hub'))).toEqual(lensOf('D'));
+  });
+
+  it('keeps the place, the selection and the filters when the lens changes', () => {
+    const selected = select(choose(['hosting', 'Hub']), places, 'tool:a');
+    const withLens = showRoleLens(selected, places, 'D');
+    expect(withLens).toEqual({ ...selected, lens: { type: 'role', role: 'D' } });
+    expect(clearLens(withLens)).toEqual(selected);
+  });
+});
+
 describe('the URL fragment', () => {
   it.each([
     ['the stack', AT_STACK, ''],
@@ -289,10 +371,10 @@ describe('the URL fragment', () => {
   });
 
   it('keeps the parts of the current fragment that it does not own', () => {
-    expect(toFragment(atTier('T0'), '#lens=role&cluster=0A')).toBe('lens=role&tier=T0');
-    expect(toFragment(AT_STACK, 'lens=role&tier=T0')).toBe('lens=role');
+    expect(toFragment(atTier('T0'), '#debug=1&cluster=0A')).toBe('debug=1&tier=T0');
+    expect(toFragment(AT_STACK, 'debug=1&tier=T0')).toBe('debug=1');
     expect(toFragment(AT_STACK, '#tier=T9')).toBe('');
-    expect(toFragment(atTier('T0'), 'lens=role&cluster=1A&select=tool:a')).toBe('lens=role&tier=T0');
+    expect(toFragment(atTier('T0'), 'debug=1&cluster=1A&select=tool:a')).toBe('debug=1&tier=T0');
     expect(toFragment(withTool('T1', '1A', 'tool:a'), 'filter=a%3Ab')).toBe('filter=a%3Ab&cluster=1A&select=tool:a');
   });
 
@@ -333,7 +415,41 @@ describe('the URL fragment', () => {
   });
 
   it('reads its own part of a fragment that holds other parts too', () => {
-    expect(fromFragment('lens=role&cluster=0A', places)).toEqual(atCluster('T0', '0A'));
+    expect(fromFragment('debug=1&cluster=0A', places)).toEqual(atCluster('T0', '0A'));
+  });
+
+  it('writes the lens and its role, and nothing for no lens', () => {
+    expect(toFragment(lensOf('D'))).toBe('lens=role&role=D');
+    expect(toFragment(select(toggleFilter(lensOf('M'), places, 'hosting', 'Hub'), places, 'tool:a'))).toBe(
+      'cluster=1A&select=tool:a&hosting=Hub&lens=role&role=M',
+    );
+    expect(toFragment(clearLens(lensOf('D')), 'lens=role&role=D&tier=T1')).toBe('');
+  });
+
+  it.each<[string, MapState]>([
+    ['the Architect', lensOf('A')],
+    ['the Designer', lensOf('D')],
+    ['the Analyst', lensOf('M')],
+    ['a lens at a tier', focusTier(lensOf('D'), places, 'T0')],
+    ['a lens beside a selected tool and a filter', select(toggleFilter(lensOf('M'), places, 'used', 'A'), places, 'tool:b')],
+  ])('reads back the lens it wrote: %s', (_name, state) => {
+    expect(state.lens).not.toBeNull();
+    expect(fromFragment(toFragment(state), places)).toEqual(state);
+  });
+
+  it('reads the role lens with no role as the lens for the first role', () => {
+    expect(fromFragment('lens=role', places)).toEqual(lensOf('A'));
+  });
+
+  it('shows no lens for a lens or a role it does not know, and keeps the rest', () => {
+    expect(fromFragment('lens=role&role=Z&tier=T1', places)).toEqual(atTier('T1'));
+    expect(fromFragment('lens=moon&role=D&tier=T1', places)).toEqual(atTier('T1'));
+    expect(fromFragment('role=D', places)).toEqual(AT_STACK);
+  });
+
+  it('keeps the lens when the place or the selection it names is not in the graph', () => {
+    expect(fromFragment('tier=T9&lens=role&role=D', places)).toEqual(lensOf('D'));
+    expect(fromFragment('cluster=1A&select=tool:zz&lens=role&role=D', places)).toEqual(lensOf('D'));
   });
 });
 
@@ -394,6 +510,44 @@ describe('the store', () => {
       { ...AT_STACK, filters: { ...used, decision: ['Core v1', 'Build'] } },
       AT_STACK,
     ]);
+  });
+
+  it('switches the role lens on and off, and comes back to the role it last showed', () => {
+    const store = createStore(places);
+    const seen: MapState[] = [];
+    store.subscribe((state) => seen.push(state));
+
+    store.showRoleLens();
+    store.showRoleLens('D');
+    store.showRoleLens('D');
+    store.focusTier('T1');
+    store.clearLens();
+    store.clearLens();
+    store.showRoleLens();
+    store.showRoleLens('Z');
+    store.focusStack();
+
+    const designer = { type: 'role', role: 'D' };
+    expect(seen).toEqual([
+      lensOf('A'),
+      lensOf('D'),
+      { ...atTier('T1'), lens: designer },
+      atTier('T1'),
+      { ...atTier('T1'), lens: designer },
+      lensOf('D'),
+    ]);
+  });
+
+  it('comes back to the role of a lens it was handed, as from a link', () => {
+    const store = createStore(places, lensOf('M'));
+    store.clearLens();
+    store.showRoleLens();
+    expect(store.get()).toEqual(lensOf('M'));
+
+    store.set(lensOf('D'));
+    store.set(AT_STACK);
+    store.showRoleLens();
+    expect(store.get()).toEqual(lensOf('D'));
   });
 
   it('says nothing when a change leaves the state as it was', () => {

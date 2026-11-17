@@ -1,12 +1,14 @@
 /**
  * state: one store for what the map shows, synced to the URL fragment.
  *
- * So far it holds the distance, the focused tier or cluster, the selection
- * and the filters. The scene, the labels and the panels all read it and write
- * to it, and never call each other. The lens joins it in a later ticket.
+ * So far it holds the distance, the focused tier or cluster, the selection,
+ * the filters and the lens. The scene, the labels and the panels all read it
+ * and write to it, and never call each other.
  *
  * The transitions are pure functions of the state; the store only holds the
- * current state and tells its subscribers when it changes.
+ * current state and tells its subscribers when it changes. It also remembers
+ * the role the role lens last showed, which is no part of the state or of the
+ * URL fragment.
  */
 
 /** One of the three zoom steps of the map. */
@@ -42,6 +44,16 @@ export const NO_FILTERS: Filters = {
   gate: [],
 };
 
+/** The role lens: brings forward the tools one role uses. */
+export interface RoleLens {
+  readonly type: 'role';
+  /** The role's code, as the "used" filter lists it. */
+  readonly role: string;
+}
+
+/** The lens that is on. The need trace and the phase scrub join it in later tickets. */
+export type Lens = RoleLens;
+
 /**
  * Where the map is, and what is selected. At the stack distance nothing is
  * focused; at the tier distance a tier is; at the cluster distance a cluster
@@ -55,11 +67,13 @@ export interface MapState {
   readonly selection: Selection | null;
   /** The filters hold wherever the map goes and whatever is selected. */
   readonly filters: Filters;
+  /** The one lens that is on, or null for no lens. It holds wherever the map goes, as the filters do. */
+  readonly lens: Lens | null;
 }
 
 /** What the state needs to know of the graph: its tiers, clusters, tools and needs, and what each filter lists. */
 export interface Places {
-  /** The values a filter lists, in its own order. */
+  /** The values a filter lists, in its own order. The values of "used" are the roles the role lens offers. */
   filterValues(name: FilterName): readonly string[];
   tier(id: string): { id: string } | undefined;
   cluster(id: string): { id: string; tier: string } | undefined;
@@ -67,7 +81,7 @@ export interface Places {
   need(id: string): { id: string } | undefined;
 }
 
-export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS };
+export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS, lens: null };
 
 const same = (a: MapState, b: MapState): boolean =>
   a.distance === b.distance &&
@@ -75,6 +89,8 @@ const same = (a: MapState, b: MapState): boolean =>
   a.cluster === b.cluster &&
   a.selection?.type === b.selection?.type &&
   a.selection?.id === b.selection?.id &&
+  a.lens?.type === b.lens?.type &&
+  a.lens?.role === b.lens?.role &&
   (a.filters === b.filters || FILTER_NAMES.every((name) => a.filters[name].join('\n') === b.filters[name].join('\n')));
 
 /** Goes to the tier distance for a tier, with nothing selected. An id the graph lacks changes nothing. */
@@ -109,12 +125,17 @@ export function clearSelection(state: MapState): MapState {
   return state.selection ? { ...state, selection: null } : state;
 }
 
+/** Goes to the stack distance, with nothing selected. The filters and the lens stay. */
+export function focusStack(state: MapState): MapState {
+  return { ...AT_STACK, filters: state.filters, lens: state.lens };
+}
+
 /** Steps out one distance: from a cluster to its tier, from a tier to the stack. */
 export function stepOut(state: MapState): MapState {
   if (state.distance === 'cluster' && state.tier) {
     return { ...state, distance: 'tier', tier: state.tier, cluster: null, selection: null };
   }
-  return { ...AT_STACK, filters: state.filters };
+  return focusStack(state);
 }
 
 /** What Escape does: closes the detail card if it is open, and otherwise steps out one distance. */
@@ -153,6 +174,35 @@ export function passes(filters: Filters, facets: Facets): boolean {
 }
 
 /**
+ * Switches the role lens on for a role, or for the first role when none is
+ * named. It takes the place of any lens that was on. A role the graph lacks
+ * changes nothing.
+ */
+export function showRoleLens(state: MapState, places: Places, role?: string): MapState {
+  const roles = places.filterValues('used');
+  const shown = role === undefined ? roles[0] : roles.includes(role) ? role : undefined;
+  return shown === undefined ? state : { ...state, lens: { type: 'role', role: shown } };
+}
+
+/** Switches the lens off. The place, the selection and the filters stay. */
+export function clearLens(state: MapState): MapState {
+  return state.lens ? { ...state, lens: null } : state;
+}
+
+/** Whether a tool is in reach under a lens. The role lens means "used by" only. No lens leaves every tool in reach. */
+export function inReach(lens: Lens | null, facets: Facets): boolean {
+  return lens === null || facets.used.includes(lens.role);
+}
+
+/**
+ * Whether a tool is drawn at full strength: in reach under the lens, and
+ * passing the filters, which apply on top of it. Every other tool is faded.
+ */
+export function emphasised(state: Pick<MapState, 'lens' | 'filters'>, facets: Facets): boolean {
+  return inReach(state.lens, facets) && passes(state.filters, facets);
+}
+
+/**
  * The state as a URL fragment, without the leading "#". The stack at rest is
  * the empty fragment. Parts of the `current` fragment that the state does not
  * own are kept as they are.
@@ -169,6 +219,12 @@ export function toFragment(state: MapState, current = ''): string {
     parts.delete(name);
     for (const value of state.filters[name]) parts.append(name, value);
   }
+  parts.delete('lens');
+  parts.delete('role');
+  if (state.lens) {
+    parts.set('lens', state.lens.type);
+    parts.set('role', state.lens.role);
+  }
   // A tool's id has a colon in it, which a fragment may hold as it is. The other parts are left as they are.
   return parts.toString().replace(/(^|&)select=[^&]*/, (part) => part.replace(/%3A/gi, ':'));
 }
@@ -178,16 +234,19 @@ export function toFragment(state: MapState, current = ''): string {
  * gives the stack at rest. A selected tool or cluster decides the place, so
  * the fragment cannot name a selection that is somewhere else. The filters
  * are read on their own: a value a filter does not list is left out, and the
- * rest hold wherever the map opens.
+ * rest hold wherever the map opens. So is the lens: a lens or a role the
+ * fragment names wrongly gives no lens, and the role lens with no role is the
+ * lens for the first role.
  */
 export function fromFragment(fragment: string, places: Places): MapState {
   const parts = new URLSearchParams(fragment.replace(/^#/, ''));
   const cluster = parts.get('cluster');
   const tier = parts.get('tier');
+  const withLens = parts.get('lens') === 'role' ? showRoleLens(AT_STACK, places, parts.get('role') ?? undefined) : AT_STACK;
   const atStack = FILTER_NAMES.reduce((filtered, name) => {
     const values = parts.getAll(name);
     return values.length > 0 ? setFilter(filtered, places, name, values) : filtered;
-  }, AT_STACK);
+  }, withLens);
   let state = atStack;
   if (cluster !== null) state = focusCluster(atStack, places, cluster);
   else if (tier !== null) state = focusTier(atStack, places, tier);
@@ -221,15 +280,22 @@ export interface Store {
   /** Replaces what is chosen in one filter. */
   setFilter(name: FilterName, values: readonly string[]): void;
   clearFilters(): void;
+  /** Switches the role lens on: for this role, or for the role it last showed, or for the first role. */
+  showRoleLens(role?: string): void;
+  /** Switches the lens off. */
+  clearLens(): void;
 }
 
 export function createStore(places: Places, initial: MapState = AT_STACK): Store {
   let state = initial;
+  /** The role the role lens last showed, so that switching it off and on again comes back to the same role. */
+  let lastRole = initial.lens?.role;
   const subscribers = new Set<Subscriber>();
   const set = (next: MapState): void => {
     if (same(next, state)) return;
     const before = state;
     state = next;
+    lastRole = state.lens?.role ?? lastRole;
     for (const subscriber of [...subscribers]) subscriber(state, before);
   };
   return {
@@ -239,7 +305,7 @@ export function createStore(places: Places, initial: MapState = AT_STACK): Store
       subscribers.add(subscriber);
       return () => void subscribers.delete(subscriber);
     },
-    focusStack: () => set({ ...AT_STACK, filters: state.filters }),
+    focusStack: () => set(focusStack(state)),
     focusTier: (tierId) => set(focusTier(state, places, tierId)),
     focusCluster: (clusterId) => set(focusCluster(state, places, clusterId)),
     stepOut: () => set(stepOut(state)),
@@ -249,6 +315,8 @@ export function createStore(places: Places, initial: MapState = AT_STACK): Store
     toggleFilter: (name, value) => set(toggleFilter(state, places, name, value)),
     setFilter: (name, values) => set(setFilter(state, places, name, values)),
     clearFilters: () => set(clearFilters(state)),
+    showRoleLens: (role) => set(showRoleLens(state, places, role ?? lastRole)),
+    clearLens: () => set(clearLens(state)),
   };
 }
 
@@ -271,7 +339,7 @@ export function syncWithFragment(store: Store, places: Places): void {
   };
   const read = (): void => {
     store.set(fromFragment(window.location.hash, places));
-    // A fragment that names a tier, cluster, selection or filter value the graph lacks is put right.
+    // A fragment that names a tier, cluster, selection, filter value or role the graph lacks is put right.
     write(store.get());
   };
   read();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GraphRejected, readGraph } from './data';
+import type { Filters } from './state';
 import type { Vocabulary } from './validate';
 
 const vocabulary: Vocabulary = {
@@ -234,13 +235,40 @@ describe('readGraph', () => {
       expect(index.filterValues('operated')).toEqual(['A', 'D', 'M']);
     });
 
-    it('gives the tools that pass the filters: any chosen value within a filter, and every filter', () => {
+    const none: Filters = { decision: [], kind: [], used: [], operated: [], hosting: [], stream: [], gate: [] };
+    const designer = { type: 'role', role: 'D' } as const;
+    const analyst = { type: 'role', role: 'M' } as const;
+
+    it('gives the tools at full strength under the filters: any chosen value within a filter, and every filter', () => {
       const index = readGraph(filterGraph(), filterVocabulary);
-      const none = { decision: [], kind: [], used: [], operated: [], hosting: [], stream: [], gate: [] };
-      expect([...index.passing(none)]).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
-      expect([...index.passing({ ...none, used: ['D', 'M'] })]).toEqual(['tool:a', 'tool:b', 'tool:d']);
-      expect([...index.passing({ ...none, used: ['D', 'M'], kind: ['Skill or command'] })]).toEqual(['tool:a', 'tool:b']);
-      expect([...index.passing({ ...none, gate: ['Guarded'], hosting: ['Hub'] })]).toEqual([]);
+      const under = (filters: Filters): string[] => [...index.emphasised({ lens: null, filters })];
+      expect(under(none)).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
+      expect(under({ ...none, used: ['D', 'M'] })).toEqual(['tool:a', 'tool:b', 'tool:d']);
+      expect(under({ ...none, used: ['D', 'M'], kind: ['Skill or command'] })).toEqual(['tool:a', 'tool:b']);
+      expect(under({ ...none, gate: ['Guarded'], hosting: ['Hub'] })).toEqual([]);
+    });
+
+    it('gives the tools in reach under the role lens: those the role uses, in every tier', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect([...index.inReach(null)]).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
+      expect([...index.inReach(designer)]).toEqual(['tool:a', 'tool:d']);
+      expect([...index.inReach(analyst)]).toEqual(['tool:b']);
+    });
+
+    it('gives the tools at full strength under a lens and the filters on top of it', () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect([...index.emphasised({ lens: designer, filters: none })]).toEqual(['tool:a', 'tool:d']);
+      expect([...index.emphasised({ lens: designer, filters: { ...none, kind: ['Skill or command'] } })]).toEqual(['tool:a']);
+      expect([...index.emphasised({ lens: analyst, filters: { ...none, hosting: ['Hub'] } })]).toEqual([]);
+    });
+
+    it("counts a tier's tools in reach under a lens, whatever the filters", () => {
+      const index = readGraph(filterGraph(), filterVocabulary);
+      expect(index.toolCountOf('T0', designer)).toBe(1);
+      expect(index.toolCountOf('T1', designer)).toBe(1);
+      expect(index.toolCountOf('T0', analyst)).toBe(1);
+      expect(index.toolCountOf('T1', analyst)).toBe(0);
+      expect(index.toolCountOf('T0', null)).toBe(3);
     });
 
     it('counts the tools that have each value of a filter', () => {

@@ -33,6 +33,13 @@ export const states = [
   // Filters: "or" within the roles and "and" with the hosting, across the whole stack; then "committed only" close in.
   { name: 'filtered', fragment: 'used=D&used=M&hosting=Hub' },
   { name: 'filtered-cluster', fragment: 'cluster=4A&decision=Core+v1&decision=Core+later&decision=Build' },
+  // The role lens: the Designer's reach across the whole stack; then close in, with "committed only" on top.
+  // 4G is in the Designer's reach and its neighbours are not, and "committed only" leaves 11 of its 16 tools.
+  { name: 'designer-role-lens', fragment: 'lens=role&role=D' },
+  {
+    name: 'role-lens-filtered-cluster',
+    fragment: 'cluster=4G&lens=role&role=D&decision=Core+v1&decision=Core+later&decision=Build',
+  },
 ];
 
 /** The most labels a state may show at once. The spec asks for "no more than about 60". */

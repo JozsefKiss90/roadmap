@@ -1,6 +1,6 @@
 /**
  * filter-panel: the seven filters in the left rail, with the count of the
- * tools that pass them, the "committed only" control and the control that
+ * tools at full strength under them and the lens, the "committed only" control and the control that
  * clears them all.
  *
  * It is one of the panels: it reads the state store and writes to it, and
@@ -12,7 +12,7 @@ import type { GraphIndex } from './data';
 import { COMMITTED_ONLY } from './display';
 import { element, swatch } from './dom';
 import { FILTER_NAMES, isFiltered } from './state';
-import type { FilterName, Filters, Store } from './state';
+import type { FilterName, Filters, MapState, Store } from './state';
 
 /** The name the rail gives each filter. */
 const FILTER_TITLES: Readonly<Record<FilterName, string>> = {
@@ -40,7 +40,7 @@ const isCommittedOnly = (filters: Filters): boolean =>
 export function mountFilterPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): void {
   const total = index.tools.length;
 
-  // The count is a live region, so a change of filter is said as well as shown.
+  // The count is a live region, so a change of filter or of lens is said as well as shown.
   const count = element('p', 'filters-count');
   count.setAttribute('role', 'status');
 
@@ -133,19 +133,23 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
   panel.setAttribute('aria-labelledby', heading.id);
   parent.insertBefore(panel, before);
 
-  function render(filters: Filters): void {
-    const passing = index.passing(filters).size;
-    count.replaceChildren(
-      `${passing} of ${total} tools`,
-      element('span', 'visually-hidden', isFiltered(filters) ? ' pass the filters' : ', no filter chosen'),
-    );
+  function render({ lens, filters }: MapState): void {
+    // The filters apply on top of the lens, so the count is of the tools at full strength under both.
+    const atFullStrength = index.emphasised({ lens, filters }).size;
+    // What assistive technology hears after the numbers: why these tools are the ones at full strength.
+    const reasons = [
+      lens && `are in reach of the ${index.roleName(lens.role)}`,
+      isFiltered(filters) && 'pass the filters',
+    ].filter(Boolean);
+    const explanation = `${reasons.length > 0 ? ` ${reasons.join(' and ')}` : ''}${isFiltered(filters) ? '' : ', no filter chosen'}`;
+    count.replaceChildren(`${atFullStrength} of ${total} tools`, element('span', 'visually-hidden', explanation));
     committed.checked = isCommittedOnly(filters);
     clear.hidden = !isFiltered(filters);
     for (const update of updates) update(filters);
   }
 
-  render(store.get().filters);
+  render(store.get());
   store.subscribe((state, previous) => {
-    if (state.filters !== previous.filters) render(state.filters);
+    if (state.filters !== previous.filters || state.lens !== previous.lens) render(state);
   });
 }

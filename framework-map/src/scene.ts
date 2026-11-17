@@ -266,13 +266,13 @@ export function createStage(
   const meshes = new Map<string, { mesh: Mesh; node: MarkNode }>();
   /**
    * The material of a mark for a state: the selected fill for the selected
-   * tool, the faded form for a tool the filters leave out, and otherwise the
+   * tool, the faded form for a tool the lens or the filters leave out, and otherwise the
    * form of its step.
    */
   function materialOf(mark: MarkNode, state: MapState): ShaderMaterial {
     const parts = partsOf(mark.tier);
     if (state.selection?.type === 'tool' && state.selection.id === mark.id) return parts.selected;
-    const forms = index.passing(state.filters).has(mark.id) ? parts.marks : parts.fadedMarks;
+    const forms = index.emphasised(state).has(mark.id) ? parts.marks : parts.fadedMarks;
     return forms.get(mark.step)!;
   }
   const nodes: MarkNode[] = layout.marks.map((mark) => {
@@ -646,7 +646,9 @@ export function createStage(
   selectionDrawing.show(store.get().selection);
   store.subscribe((state, before) => {
     hover(null);
-    if (state.selection !== before.selection || state.filters !== before.filters) dressMarks(state);
+    if (state.selection !== before.selection || state.filters !== before.filters || state.lens !== before.lens) {
+      dressMarks(state);
+    }
     selectionDrawing.show(state.selection);
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();

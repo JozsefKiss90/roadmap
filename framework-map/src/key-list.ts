@@ -12,6 +12,8 @@ const KEYS: readonly (readonly [string, readonly (readonly [readonly string[], s
     [
       [['/'], 'Go to the search box'],
       [['?'], 'Show this list'],
+      [['1'], 'Switch the lens off'],
+      [['2'], 'Switch the role lens on'],
       [['Esc'], 'Close the detail card, then step out one distance'],
       [['Tab'], 'Go to the next control'],
     ],

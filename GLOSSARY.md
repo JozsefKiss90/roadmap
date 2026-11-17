@@ -59,6 +59,14 @@ _Avoid_: Zoom level, level of detail
 **Role lens**:
 The lens that brings forward the tools one role uses.
 
+**Reach**:
+The tools the lens that is on brings forward, across all eight tiers; under the role lens, the tools one role uses. With no lens, every tool is in reach.
+_Avoid_: Scope, coverage
+
+**Emphasised**:
+Drawn at full strength: a tool that is in reach under the lens and passes the filters. Every other tool is faded.
+_Avoid_: Highlighted, active
+
 **Need trace**:
 The lens that shows one need and the tools that serve it.
 
@@ -71,7 +79,7 @@ The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
 **Rail**:
-The column down the left of the map that holds the title, the search box, the filters and the outline.
+The column down the left of the map that holds the title, the search box, the lens switch, the filters and the outline.
 _Avoid_: Sidebar, left panel, navigation
 
 **Outline**:

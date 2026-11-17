@@ -242,7 +242,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-faded` | `ink @ 0.12` | A mark outside the active lens or filter |
 | `map-text-name` | `ink` | Tier, cluster and tool names |
 | `map-text-selected` | `accent` | The selected tool's name in the list above its cell, and the selected row's name in the outline |
-| `map-text-tag` | `muted` | Counts and tags. Also a tool's name in the list above its cell, when the filters leave the tool out |
+| `map-text-tag` | `muted` | Counts and tags. Also a tool's name in the list above its cell, when the lens or the filters leave the tool out, and a tier's name when the lens leaves none of its tools in reach |
 | `map-label-leader` | `soft` hairline, 1px | The line from a cluster name down to its cell, and the bracket from a list of tool names to its cell |
 
 ### Decision-class scale
@@ -330,13 +330,13 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-tier-name` | Instrument Serif | 20px | 400 | Tier names |
 | `map-cluster-name` | Geist (sans) | 13px | 600 | Cluster names |
 | `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
-| `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts, on the canvas and in the filters |
+| `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters |
 | `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags |
 | `map-card-name` | Geist (sans) | 20px | 600 | The name at the head of the detail card, and of the list of keys |
 | `map-card-body` | Geist (sans) | 13px | 400; 600 for the decision class | Text in the detail card; its opening line is 14px |
 | `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, and the names of the steps in the legend |
 | `map-card-heading` | Geist Mono | 11px | 600, tracked 0.08em, uppercase | Section headings in the detail card, the rail, the search results, the legend and the list of keys |
-| `map-rail-row` | Geist (sans) | 13px | 600 for a tier, 500 for a cluster, 400 for a tool; 600 when selected | Rows of the outline. A search result's name and the "Keys" button are 13px at 500, the search field and its "nothing matches" line 13px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400 |
+| `map-rail-row` | Geist (sans) | 13px | 600 for a tier, 500 for a cluster, 400 for a tool; 600 when selected | Rows of the outline. A search result's name and the "Keys" button are 13px at 500, the search field and its "nothing matches" line 13px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400. A segment of the lens switch is 13px at 500, and 600 when chosen. The lens that is on is filled with `ink`; "None" and a chosen role take `paper-2` and a 2px `ink` ring |
 | `map-key` | Geist Mono | 11px | 500 | A key of the keyboard, in a 1px `rule-solid` box |
 
 **Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 1280×720. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.

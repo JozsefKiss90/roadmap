@@ -8,8 +8,8 @@
  */
 import { DECISION_STEPS, decisionStep } from './display.ts';
 import type { ClusterNode, Graph, NeedNode, TierNode, ToolNode } from './graph';
-import { passes } from './state.ts';
-import type { Facets, FilterName, Filters } from './state.ts';
+import { emphasised as isEmphasised, inReach as isInReach } from './state.ts';
+import type { Facets, FilterName, Lens, MapState } from './state.ts';
 import { validateGraph } from './validate.ts';
 import type { Fault, Vocabulary } from './validate.ts';
 
@@ -36,8 +36,8 @@ export interface GraphIndex {
   clustersOf(tierId: string): readonly ClusterNode[];
   /** A cluster's tools, in the graph's own order. */
   toolsOf(clusterId: string): readonly ToolNode[];
-  /** How many tools a tier holds across its clusters. */
-  toolCountOf(tierId: string): number;
+  /** How many tools a tier holds across its clusters. Under a lens, how many of them are in reach. */
+  toolCountOf(tierId: string, lens?: Lens | null): number;
   /** The tier, cluster, tool or need with this id, if the graph has one. */
   tier(id: string): TierNode | undefined;
   cluster(id: string): ClusterNode | undefined;
@@ -68,8 +68,13 @@ export interface GraphIndex {
   facetsOf(toolId: string): Facets;
   /** How many tools have a value of a filter. */
   toolCountWith(name: FilterName, value: string): number;
-  /** The ids of the tools that pass the filters. */
-  passing(filters: Filters): ReadonlySet<string>;
+  /** The ids of the tools in reach under a lens, whatever the filters. No lens leaves every tool in reach. */
+  inReach(lens: Lens | null): ReadonlySet<string>;
+  /**
+   * The ids of the tools drawn at full strength: in reach under the lens and
+   * passing the filters. Every other tool is faded.
+   */
+  emphasised(state: Pick<MapState, 'lens' | 'filters'>): ReadonlySet<string>;
 }
 
 export interface ServedNeed {
@@ -218,14 +223,20 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     return made;
   };
 
-  // The scene, the outline and the filters all ask for the same filters after a change, so the last answer is kept.
-  let passed: { filters: Filters; ids: ReadonlySet<string> } | null = null;
-  const passing = (filters: Filters): ReadonlySet<string> => {
-    if (passed?.filters !== filters) {
-      const ids = tools.filter((tool) => passes(filters, facetsOf(tool.id))).map((tool) => tool.id);
-      passed = { filters, ids: new Set(ids) };
+  const idsWhere = (keep: (facets: Facets) => boolean): ReadonlySet<string> =>
+    new Set(tools.filter((tool) => keep(facetsOf(tool.id))).map((tool) => tool.id));
+  // The scene, the outline and the panels all ask for the same lens and filters after a change, so the last answers are kept.
+  let reached: { lens: Lens | null; ids: ReadonlySet<string> } | null = null;
+  const inReach = (lens: Lens | null): ReadonlySet<string> => {
+    if (reached?.lens !== lens) reached = { lens, ids: idsWhere((facets) => isInReach(lens, facets)) };
+    return reached.ids;
+  };
+  let shown: { state: Pick<MapState, 'lens' | 'filters'>; ids: ReadonlySet<string> } | null = null;
+  const emphasised = (state: Pick<MapState, 'lens' | 'filters'>): ReadonlySet<string> => {
+    if (shown?.state.lens !== state.lens || shown.state.filters !== state.filters) {
+      shown = { state, ids: idsWhere((facets) => isEmphasised(state, facets)) };
     }
-    return passed.ids;
+    return shown.ids;
   };
 
   return {
@@ -234,7 +245,12 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     tiers,
     clustersOf: (tierId) => clustersByTier.get(tierId) ?? [],
     toolsOf: (clusterId) => toolsByCluster.get(clusterId) ?? [],
-    toolCountOf: (tierId) => toolsByTier.get(tierId)?.length ?? 0,
+    toolCountOf(tierId, lens = null) {
+      const held = toolsByTier.get(tierId) ?? [];
+      if (lens === null) return held.length;
+      const reach = inReach(lens);
+      return held.filter((tool) => reach.has(tool.id)).length;
+    },
     tier: (id) => tiers.find((tier) => tier.id === id),
     cluster: (id) => clusterById.get(id),
     tool: (id) => toolById.get(id),
@@ -256,6 +272,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     filterValues: (name) => filterValues[name],
     facetsOf,
     toolCountWith: (name, value) => countsOf(name).get(value) ?? 0,
-    passing,
+    inReach,
+    emphasised,
   };
 }

@@ -44,6 +44,15 @@ export const STEP_NAMES: Readonly<Record<DecisionStep, string>> = {
 };
 
 /**
+ * The name of the faded state, for what leaves tools out: a lens that leaves
+ * them out of reach, the filters, or both at once.
+ */
+export function fadedName(outOfReach: boolean, filteredOut: boolean): string {
+  if (outOfReach && filteredOut) return 'Out of reach or filtered out';
+  return outOfReach ? 'Out of reach' : 'Filtered out';
+}
+
+/**
  * The decision classes the "committed only" control chooses (spec, "Spatial
  * model"). They are not the committed step: the control takes in what is
  * planned and built, and leaves out adapters, skills and rules.

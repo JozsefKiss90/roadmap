@@ -6,15 +6,16 @@
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
  *
- * A tool the filters leave out is dimmed, and so is a cluster or a tier with
- * no tool left in. A dimmed row can still be chosen.
+ * A tool the lens or the filters leave out is dimmed, and so is a cluster or
+ * a tier with no tool left in. A dimmed row can still be chosen. While a lens
+ * is on, the count of a tier or a cluster is of its tools in reach.
  *
  * Tiers start open and clusters closed. A cluster's tool rows are made when it
  * is first opened, so the page opens with 63 rows and not 815.
  */
 import { ChevronRight, createElement } from 'lucide';
 import type { GraphIndex } from './data';
-import { decisionStep } from './display';
+import { decisionStep, fadedName } from './display';
 import { dressSwatch, element, swatch } from './dom';
 import type { ClusterNode, TierNode, ToolNode } from './graph';
 import { inGridOrder } from './layout';
@@ -42,20 +43,36 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
   /** Makes a closed cluster's tool rows. */
   const fillOf = new WeakMap<HTMLElement, () => void>();
 
-  /** The tools each row stands for: itself, or those of its cluster or tier. A row dims when the filters leave none in. */
+  /** The tools each row stands for: itself, or those of its cluster or tier. A row dims when the lens and the filters leave none in. */
   const toolsOf = new Map<string, readonly ToolNode[]>();
-  /** Each row's name for assistive technology, before "filtered out" is added to it. */
+  /** Each row's name for assistive technology, before its count and its faded state are added to it. */
   const labelOf = new WeakMap<HTMLElement, string>();
+  /** The count at the end of a tier's or a cluster's row. */
+  const countOf = new WeakMap<HTMLElement, HTMLElement>();
 
-  /** Dims a row, or brings it back, for the tools that pass the filters. */
-  function dim(row: HTMLLIElement, passing: ReadonlySet<string>): void {
+  /**
+   * Brings a row in step with the lens and the filters: dims it or brings it
+   * back, and counts a tier's or a cluster's tools in reach while a lens is on.
+   */
+  function dress(row: HTMLLIElement, state: MapState): void {
     const tools = toolsOf.get(row.dataset.id ?? '') ?? [];
-    const out = !tools.some((tool) => passing.has(tool.id));
-    if (out === (row.dataset.filtered === 'true')) return;
-    if (out) row.dataset.filtered = 'true';
-    else delete row.dataset.filtered;
-    const label = labelOf.get(row) ?? '';
-    row.setAttribute('aria-label', out ? `${label}, filtered out` : label);
+    const shown = index.emphasised(state);
+    const out = !tools.some((tool) => shown.has(tool.id));
+    const reach = index.inReach(state.lens);
+    const inReach = tools.filter((tool) => reach.has(tool.id)).length;
+    let label = labelOf.get(row) ?? '';
+    const counter = countOf.get(row);
+    if (counter) {
+      counter.textContent = String(inReach);
+      label += state.lens ? `, ${inReach} of ${count(tools.length)} in reach` : `, ${count(tools.length)}`;
+    }
+    // The row is named for what leaves it out: the lens, where none of its tools is in reach, or else the filters.
+    const outOfReach = state.lens !== null && inReach === 0;
+    if (out) label += `, ${fadedName(outOfReach, !outOfReach).toLowerCase()}`;
+    row.setAttribute('aria-label', label);
+    if (out === (row.dataset.faded === 'true')) return;
+    if (out) row.dataset.faded = 'true';
+    else delete row.dataset.faded;
     // A tool's square fades as its mark does.
     const square = row.querySelector<HTMLElement>(':scope > .outline-row > .swatch');
     if (square && tools[0]) dressSwatch(square, decisionStep(tools[0].decision_class), out);
@@ -69,23 +86,25 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
     label: string,
     tools: readonly ToolNode[],
     choose: () => void,
+    counter: HTMLElement | null,
     ...row: (Node | string)[]
   ): HTMLLIElement {
+    if (counter) row.push(counter);
     const made = element('li', 'outline-item', element('div', 'outline-row', ...row));
     made.setAttribute('role', 'treeitem');
     made.setAttribute('aria-level', String(level));
     made.setAttribute('aria-posinset', String(position + 1));
     made.setAttribute('aria-setsize', String(setSize));
     made.setAttribute('aria-selected', 'false');
-    made.setAttribute('aria-label', label);
     made.tabIndex = -1;
     made.dataset.id = id;
     itemOf.set(id, made);
     chooseOf.set(made, choose);
     toolsOf.set(id, tools);
     labelOf.set(made, label);
-    // A row made while a filter is on starts dimmed.
-    dim(made, index.passing(store.get().filters));
+    if (counter) countOf.set(made, counter);
+    // A row made while a lens or a filter is on starts in step with it.
+    dress(made, store.get());
     return made;
   }
 
@@ -120,6 +139,7 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
       `${tool.label}, ${decisionStep(tool.decision_class)}`,
       [tool],
       () => store.select(tool.id),
+      null,
       swatch(tool.decision_class),
       element('span', 'outline-name', tool.label),
     );
@@ -132,13 +152,13 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
         2,
         position,
         setSize,
-        `${cluster.id}, ${cluster.label}, ${count(tools.length)}`,
+        `${cluster.id}, ${cluster.label}`,
         tools,
         () => store.select(cluster.id),
+        element('span', 'outline-count'),
         chevron(),
         element('span', 'outline-tag', cluster.id),
         element('span', 'outline-name', cluster.label),
-        element('span', 'outline-count', String(tools.length)),
       ),
       false,
       () => tools.map((tool, at) => toolItem(tool, at, tools.length)),
@@ -147,20 +167,19 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
 
   function tierItem(tier: TierNode, position: number): HTMLLIElement {
     const clusters = index.clustersOf(tier.id);
-    const tools = index.toolCountOf(tier.id);
     return branch(
       item(
         tier.id,
         1,
         position,
         index.tiers.length,
-        `${tier.id}, ${tier.label}, ${count(tools)}`,
+        `${tier.id}, ${tier.label}`,
         clusters.flatMap((cluster) => index.toolsOf(cluster.id)),
         () => store.focusTier(tier.id),
+        element('span', 'outline-count'),
         chevron(),
         element('span', 'outline-tag', tier.id),
         element('span', 'outline-name', tier.label),
-        element('span', 'outline-count', String(tools)),
       ),
       true,
       () => clusters.map((cluster, at) => clusterItem(cluster, at, clusters.length)),
@@ -331,11 +350,10 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
 
   follow(store.get());
   store.subscribe((state, previous) => {
-    if (state.filters !== previous.filters) {
-      const passing = index.passing(state.filters);
-      for (const row of itemOf.values()) dim(row, passing);
+    if (state.filters !== previous.filters || state.lens !== previous.lens) {
+      for (const row of itemOf.values()) dress(row, state);
     }
-    // A change of filter alone leaves the tree where the partner has scrolled it.
+    // A change of lens or filter alone leaves the tree where the partner has scrolled it.
     const stayed =
       state.distance === previous.distance &&
       state.tier === previous.tier &&

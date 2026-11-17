@@ -62,6 +62,9 @@ const OVER_THE_STACK = 2;
 
 const countText = (tierId: string, tools: number): string =>
   `${tierId} · ${tools} ${tools === 1 ? 'tool' : 'tools'}`.toUpperCase();
+/** A tier's count while a lens is on: the tools in reach on its plate, out of all it holds. */
+const reachText = (tierId: string, inReach: number, tools: number): string =>
+  `${tierId} · ${inReach} of ${tools} in reach`.toUpperCase();
 
 /** A rectangle of the window, in pixels from its top left corner. */
 export interface LabelRect {
@@ -130,6 +133,15 @@ export function addLabels(
   };
   const middle = new Vector3(axis.x, (layout.bounds.min.y + layout.bounds.max.y) / 2, axis.z);
   const pending: Promise<void>[] = [];
+  /** Each tier's name and count, with its label and how far its name reaches, to set them again for a lens. */
+  const tierCounts: { tier: string; name: Text; count: SpriteText; label: Label; nameRight: number }[] = [];
+  const tierCountText = (tierId: string, lens: MapState['lens']): string =>
+    lens
+      ? reachText(tierId, index.toolCountOf(tierId, lens), index.toolCountOf(tierId))
+      : countText(tierId, index.toolCountOf(tierId));
+  /** A tier with no tool in reach has its name in the colour of a tag, as its row in the outline is dimmed. */
+  const tierNameColour = (tierId: string, lens: MapState['lens']) =>
+    lens && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
 
   const tierLabels: Label[] = index.tiers.map((tier) => {
     const plate = layout.plates.find((candidate) => candidate.tier === tier.id);
@@ -144,10 +156,10 @@ export function addLabels(
     name.maxWidth = constants.labelColumnPx;
     name.anchorX = 'left';
     name.anchorY = 'top';
-    name.color = nameColour;
+    name.color = tierNameColour(tier.id, store.get().lens);
     group.add(name);
 
-    const count = tag(countText(tier.id, index.toolCountOf(tier.id)));
+    const count = tag(tierCountText(tier.id, store.get().lens));
     count.center.set(0, 0);
     count.position.set(0, constants.countGapPx, 0);
     group.add(count);
@@ -160,11 +172,14 @@ export function addLabels(
       box: { left: 0, bottom: 0, right: count.scale.x, top: constants.countGapPx + count.scale.y },
       action: () => store.focusTier(tier.id),
     };
+    const counted = { tier: tier.id, name, count, label, nameRight: 0 };
+    tierCounts.push(counted);
     pending.push(
       typeset(name).then(() => {
         const [, bottom, right] = blockOf(name);
         label.box.bottom = bottom;
-        label.box.right = Math.max(label.box.right, right);
+        counted.nameRight = right;
+        label.box.right = Math.max(count.scale.x, right);
       }),
     );
     stage.add(group);
@@ -253,20 +268,29 @@ export function addLabels(
   stage.add(bracket);
   let bracketEnds: [Vector3, Vector3] | null = null;
 
+  /** Sets each tier's count for the lens: the tools in reach on its plate, or all of its tools with no lens. */
+  function showTierCounts(lens: MapState['lens']): void {
+    for (const { tier, name, count, label, nameRight } of tierCounts) {
+      name.color = tierNameColour(tier, lens);
+      count.text = tierCountText(tier, lens);
+      label.box.right = Math.max(count.scale.x, nameRight);
+    }
+  }
+
   let toolLabels: Label[] = [];
   /** The names in the list, by tool, so that the selected one can be told apart. */
   let toolNames = new Map<string, Text>();
 
   /**
-   * Gives the selected tool's name its colour, a name the filters leave out
-   * the colour of a tag, and every other name the colour of a name.
+   * Gives the selected tool's name its colour, a name the lens or the filters
+   * leave out the colour of a tag, and every other name the colour of a name.
    */
   function showSelectedName(): void {
-    const { selection, filters } = store.get();
-    const selected = selection?.type === 'tool' ? selection.id : null;
-    const passing = index.passing(filters);
+    const state = store.get();
+    const selected = state.selection?.type === 'tool' ? state.selection.id : null;
+    const emphasised = index.emphasised(state);
     for (const [tool, name] of toolNames) {
-      name.color = tool === selected ? selectedColour : passing.has(tool) ? nameColour : tagColour;
+      name.color = tool === selected ? selectedColour : emphasised.has(tool) ? nameColour : tagColour;
     }
   }
 
@@ -564,7 +588,10 @@ export function addLabels(
   });
 
   show(store.get());
-  store.subscribe(show);
+  store.subscribe((state, before) => {
+    if (state.lens !== before.lens) showTierCounts(state.lens);
+    show(state);
+  });
   stage.onCameraChange(() => {
     // A window that has changed size may have changed the list's room.
     const { distance, cluster } = store.get();

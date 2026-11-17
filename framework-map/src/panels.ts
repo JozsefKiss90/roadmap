@@ -1,8 +1,8 @@
 /**
  * panels: the DOM interface around the canvas.
  *
- * So far: the left rail with the title, the search box, the filters and the
- * outline; the breadcrumb at the top centre; the detail card on the right;
+ * So far: the left rail with the title, the search box, the lens switch, the
+ * filters and the outline; the breadcrumb at the top centre; the detail card on the right;
  * the legend at the bottom left; the list of keys; and the keys that work
  * anywhere. All read the state store and write
  * to it; none knows the scene.
@@ -16,6 +16,7 @@ import { element } from './dom';
 import { mountFilterPanel } from './filter-panel';
 import { mountKeyList } from './key-list';
 import { mountLegend } from './legend';
+import { mountLensPanel } from './lens-panel';
 import { mountOutline } from './outline';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
@@ -74,10 +75,10 @@ function mountBreadcrumb(app: HTMLElement, index: GraphIndex, store: Store): voi
   store.subscribe(render);
 }
 
-/** A key press that belongs to a field the partner is typing in. A checkbox takes no typing. */
+/** A key press that belongs to a field the partner is typing in. A checkbox or a radio button takes no typing. */
 const isTyping = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
-  !(target instanceof HTMLInputElement && target.type === 'checkbox') &&
+  !(target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) &&
   (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 /** Adds the interface around the canvas, and the keys that work anywhere on the page. */
@@ -110,7 +111,8 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   });
   // A chosen result opens its detail card, and the focus goes there to read it.
   const searchBox = mountSearchBox(rail, outline.element, index, search, store, () => card.focus());
-  // The filters stand between the search box and the outline.
+  // The lens switch and then the filters stand between the search box and the outline.
+  mountLensPanel(rail, outline.element, index, store);
   mountFilterPanel(rail, outline.element, index, store);
 
   mountLegend(app, store);
@@ -131,6 +133,11 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
     } else if (event.key === '?') {
       event.preventDefault();
       keyList.open();
+    } else if (event.key === '1') {
+      store.clearLens();
+    } else if (event.key === '2') {
+      // The role lens comes back with the role it last showed.
+      store.showRoleLens();
     }
   });
 }
