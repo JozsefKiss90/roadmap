@@ -95,3 +95,23 @@ Left:
 ### 2026-11-17: decisions accepted
 
 All fifteen decisions above were accepted as built. The items under "Not fixed" and "Left" stay open.
+
+### 2026-11-17: the remaining items
+
+Every item under "Not fixed" and "Left" above has been worked on. This changes decisions 8 and 14.
+
+- **Both ends of an `implements` line are now in the picture.** The camera frames the far ends as well as the focused cell. The far end is outlined in the trace line's colour: a cell for a selected tool, a mark for a selected cluster. The plates between the two ends fade, so a selected cluster on T5 shows its implementing skills on T1.
+- **The selected tool's name is in the accent colour** in the list above its cell. A new token, `map-text-selected`, is in the style guide with two contrast rows.
+- **The hover label gives the name alone at the cluster distance**, when the tool is in the focused cluster.
+- **The decision squares in the detail card are drawn from the mark tokens.**
+- **`src/scene.ts` is split.** `src/mark-material.ts` draws a mark, and `src/selection-drawing.ts` draws a selected cell's outline and the `implements` lines.
+- **"Map type" has rows for the card's notes and section headings**, and the decision class's weight is in the body row. The card's name no longer has its own letter spacing.
+- **The detail card slides in over 200 ms** when it opens. It does not move when its content changes, when the page opens with it, or with reduced motion on. It is a CSS animation, not anime.js.
+- **The list of tool names moves across** where centring it on its cell would take it out of the window or under the detail card. This became necessary once the camera framed a line's far end.
+
+A headless run selected all 51 internal skills and all 16 clusters they implement at 1366×768. No label ran out of the window or under the detail card.
+
+Still open:
+
+- **For a skill in 1A, the outlined cluster stands behind the list of names.** All 51 internal skills are in 1A, whose list is 20 rows tall, and most of the clusters they implement are on higher plates, which the camera sees above the cell. The outline and the line can be seen through the list, and the "Implements" row names the cluster. A tilt nearer level for these selections would lift the far cell clear of the list.
+- **A cluster one plate below its skill is partly under the focused plate.** 0G is the only case. Its outline is drawn over the plate above it.

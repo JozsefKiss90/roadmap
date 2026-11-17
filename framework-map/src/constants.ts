@@ -88,6 +88,8 @@ export const constants = {
   toolColumnGapPx: 40,
   /** From the foot of the list down to the cell. */
   toolListGapPx: 30,
+  /** The least space between the list and the edge of the window, or of the open detail card. */
+  listEdgePx: 24,
   /** The kind icon, and the space between an icon, a name and a gate badge. */
   toolIconPx: 14,
   toolPartGapPx: 7,

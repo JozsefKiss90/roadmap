@@ -108,6 +108,7 @@ export function addLabels(
 ): Labels {
   const nameColour = colourOf(MAP_TOKENS['map-text-name'].text).hex;
   const tagColour = colourOf(MAP_TOKENS['map-text-tag'].text).hex;
+  const selectedColour = colourOf(MAP_TOKENS['map-text-selected'].text).hex;
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   const tagResolution = (sizePx: number): number => Math.round(sizePx * pixelRatio * OVERSAMPLING);
 
@@ -253,6 +254,16 @@ export function addLabels(
   let bracketEnds: [Vector3, Vector3] | null = null;
 
   let toolLabels: Label[] = [];
+  /** The names in the list, by tool, so that the selected one can be told apart. */
+  let toolNames = new Map<string, Text>();
+
+  /** Gives the selected tool's name its colour, and every other name the colour of a name. */
+  function showSelectedName(): void {
+    const { selection } = store.get();
+    const selected = selection?.type === 'tool' ? selection.id : null;
+    for (const [tool, name] of toolNames) name.color = tool === selected ? selectedColour : nameColour;
+  }
+
   let toolsShown: string | null = null;
   let disposeTools: (() => void)[] = [];
   let toolsReady: Promise<void> = Promise.resolve();
@@ -261,6 +272,7 @@ export function addLabels(
     for (const label of toolLabels) stage.remove(label.group);
     for (const dispose of disposeTools) dispose();
     toolLabels = [];
+    toolNames = new Map();
     disposeTools = [];
     toolsShown = null;
     bracket.visible = false;
@@ -336,6 +348,8 @@ export function addLabels(
       action: () => store.select(tool),
     }));
     toolLabels = labels;
+    toolNames = new Map(rows.map(({ tool, name }) => [tool, name]));
+    showSelectedName();
 
     toolsReady = Promise.all(rows.map(({ name }) => typeset(name))).then(() => {
       // The partner may have moved on while the names were being typeset.
@@ -385,6 +399,7 @@ export function addLabels(
     }
     if (state.distance !== 'cluster' || !state.cluster) clearToolLabels();
     else if (toolsShown !== state.cluster) showToolLabels(state.cluster);
+    showSelectedName();
     place();
   }
 
@@ -413,6 +428,24 @@ export function addLabels(
       group.position.copy(anchor).addScaledVector(right, dx * unitsPerPixel).addScaledVector(up, dy * unitsPerPixel);
       group.quaternion.copy(camera.quaternion);
       group.scale.setScalar(unitsPerPixel);
+    }
+
+    // The list is centred on its cell. Where that would take it out of the window,
+    // or under the open detail card, the whole list moves across to stay in view.
+    if (toolLabels.length > 0 && toolLabels[0]!.group.visible) {
+      const least = constants.listEdgePx;
+      const most = stage.window.width - (store.get().selection ? constants.detailCardPx : 0) - constants.listEdgePx;
+      let left = Infinity;
+      let rightmost = -Infinity;
+      for (const label of toolLabels) {
+        const at = stage.toPicture(label.group.position).x + stage.origin.x;
+        left = Math.min(left, at + label.box.left);
+        rightmost = Math.max(rightmost, at + label.box.right);
+      }
+      const across = left < least ? least - left : rightmost > most ? Math.max(most - rightmost, least - left) : 0;
+      if (across !== 0) {
+        for (const { group, anchor } of toolLabels) group.position.addScaledVector(right, across * unitsPerPixelAt(anchor));
+      }
     }
 
     if (bracketEnds) {

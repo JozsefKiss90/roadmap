@@ -54,6 +54,7 @@ export const MAP_TOKENS = {
   'map-selected-cell': { line: 'accent', widthPx: 2 },
   'map-trace-line': { line: 'accent', widthPx: 1 },
   'map-text-name': { text: 'ink' },
+  'map-text-selected': { text: 'accent' },
   'map-text-tag': { text: 'muted' },
   'map-label-leader': { line: 'soft', widthPx: 1 },
 } as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | RingToken | MarkToken>;

@@ -11,18 +11,16 @@
  * mark. It moves the camera and changes colour and opacity; it never moves a
  * plate, a cell or a mark.
  *
- * The mark under the pointer gets a ring and a hover label. The selected
- * tool's mark takes the selected fill, and the selected cluster's cell an
- * outline. `implements` lines run from a selected
- * tool to the clusters it implements, and from a selected cluster to the
- * tools that implement it.
+ * The mark under the pointer gets a ring and a hover label, and the selected
+ * tool's mark takes the selected fill. src/selection-drawing.ts draws the
+ * rest of the selection: a selected cell's outline and the `implements`
+ * lines. The camera frames both ends of those lines, and the plates that lie
+ * between the ends fade.
  */
 import ForceGraph3D from '3d-force-graph';
 import {
   BoxGeometry,
   BufferGeometry,
-  Color,
-  DoubleSide,
   EdgesGeometry,
   Float32BufferAttribute,
   LineBasicMaterial,
@@ -38,7 +36,7 @@ import {
 import type { Object3D, PerspectiveCamera } from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { radians, towardCamera, placeToFit } from './camera';
-import type { Frame, Region, CameraPlace } from './camera';
+import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display';
@@ -46,8 +44,10 @@ import type { DecisionStep } from './display';
 import { createHoverLabel } from './hover-label';
 import { listShape, staircaseHeight } from './label-layout';
 import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
+import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, markMaterial } from './mark-material';
 import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
+import { createSelectionDrawing } from './selection-drawing';
 import { AT_STACK } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
@@ -63,9 +63,6 @@ const SELECTED_MARK: MarkToken = {
 /** The hover ring is drawn as a mark with an outline and no fill, on a square of its own. */
 const HOVER_RING = MAP_TOKENS['map-hover-ring'];
 const HOVER_RING_MARK: MarkToken = { fill: null, outline: HOVER_RING.line, widthPx: HOVER_RING.widthPx, dashed: false };
-/** The outline of a selected cluster's cell is drawn the same way, on a rectangle the size of the cell. */
-const SELECTED_CELL = MAP_TOKENS['map-selected-cell'];
-const SELECTED_CELL_MARK: MarkToken = { fill: null, outline: SELECTED_CELL.line, widthPx: SELECTED_CELL.widthPx, dashed: false };
 
 /** Something the partner can click that is not a plate or a cell: it answers for a point of the picture. */
 export type Pickable = (x: number, y: number) => (() => void) | null;
@@ -78,6 +75,8 @@ export interface Stage {
   readonly camera: PerspectiveCamera;
   /** The picture the camera draws, in pixels, and the margins the stack keeps clear inside it at rest. */
   readonly frame: Frame;
+  /** The window the picture is seen through, in pixels. */
+  readonly window: { readonly width: number; readonly height: number };
   /** Where the picture's top left corner lies in the window, in pixels. The picture is larger than the window. */
   readonly origin: { readonly x: number; readonly y: number };
   /** Where a point of the scene is drawn, in pixels from the picture's top left corner. */
@@ -104,87 +103,10 @@ interface MarkNode {
   fz: number;
 }
 
-/** How far a mark is lifted off its plate, so the two never share a depth. */
-const MARK_LIFT = 0.02;
-/** The mark's square is drawn inside a larger one, which leaves room to soften its edge. */
-const MARK_SHARE_OF_QUAD = 0.8;
 /** A faded tier is drawn before the others, so its marks never lie over the marks of the focused plate. */
 const UNDER_THE_REST = -1;
-/** The hover ring and the `implements` lines are drawn after the plates and marks. */
-const OVER_THE_MARKS = 1;
 /** A press that moves the pointer further than this is a drag, not a click. */
 const CLICK_SLOP_PX = 5;
-
-const MARK_VERTEX = /* glsl */ `
-  varying vec2 vAt;
-  void main() {
-    vAt = uv * 2.0 - 1.0;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-// Draws one mark: a square with a fill, an outline, or both. The outline's
-// width is in pixels on screen, whatever the camera's distance and tilt.
-const MARK_FRAGMENT = /* glsl */ `
-  uniform vec3 uFill;
-  uniform float uFillAlpha;
-  uniform vec3 uOutline;
-  uniform float uOutlinePx;
-  uniform float uDashed;
-  uniform float uPixelRatio;
-  uniform float uOpacity;
-  varying vec2 vAt;
-
-  // Where the mark's edge lies, with the quad's own edge at 1.
-  const float MARK_EDGE = ${MARK_SHARE_OF_QUAD.toFixed(3)};
-  // A dashed side is drawn at its two ends and left open in the middle.
-  const float DASH_GAP = 0.36;
-
-  void main() {
-    vec2 perPixel = vec2(length(vec2(dFdx(vAt.x), dFdy(vAt.x))), length(vec2(dFdx(vAt.y), dFdy(vAt.y))));
-    // Pixels from here to the mark's edge, along each axis. Positive inside.
-    vec2 toEdge = (MARK_EDGE - abs(vAt)) / perPixel;
-    float inset = min(toEdge.x, toEdge.y);
-    float shape = clamp(inset + 0.5, 0.0, 1.0);
-    float outlinePx = uOutlinePx * uPixelRatio;
-    float inner = clamp(inset - outlinePx + 0.5, 0.0, 1.0);
-
-    // Along the nearest side: 0 at its middle, 1 at its ends.
-    bool nearestIsUpright = toEdge.x < toEdge.y;
-    float along = (nearestIsUpright ? abs(vAt.y) : abs(vAt.x)) / MARK_EDGE;
-    float alongPerPixel = (nearestIsUpright ? perPixel.y : perPixel.x) / MARK_EDGE;
-    float dash = clamp((along - DASH_GAP) / alongPerPixel + 0.5, 0.0, 1.0);
-
-    float outline = (shape - inner) * mix(1.0, dash, uDashed);
-    float fill = inner * uFillAlpha;
-    float alpha = outline + fill;
-    if (alpha < 0.004) discard;
-    gl_FragColor = vec4((uOutline * outline + uFill * fill) / alpha, alpha * uOpacity);
-    #include <colorspace_fragment>
-  }
-`;
-
-function markMaterial(token: MarkToken, pixelRatio: number): ShaderMaterial {
-  // A mark with no outline is all fill; one with no fill lets the plate show.
-  const fill = token.fill ? colourOf(token.fill) : null;
-  const outline = token.outline ? colourOf(token.outline) : null;
-  return new ShaderMaterial({
-    vertexShader: MARK_VERTEX,
-    fragmentShader: MARK_FRAGMENT,
-    uniforms: {
-      uFill: { value: new Color(fill?.hex ?? '#000000') },
-      uFillAlpha: { value: fill?.alpha ?? 0 },
-      uOutline: { value: new Color(outline?.hex ?? '#000000') },
-      uOutlinePx: { value: outline ? token.widthPx : 0 },
-      uDashed: { value: token.dashed ? 1 : 0 },
-      uPixelRatio: { value: pixelRatio },
-      uOpacity: { value: 1 },
-    },
-    transparent: true,
-    depthWrite: false,
-    side: DoubleSide,
-  });
-}
 
 /** A 1px line in a token's colour. `fullOpacity` is its opacity on a plate that is not faded. */
 interface Line {
@@ -387,52 +309,13 @@ export function createStage(
     filled = next;
   }
 
-  // The `implements` lines of the selection. They cross plates, so no plate hides them.
-  const traceLine = line(MAP_TOKENS['map-trace-line']);
-  traceLine.material.depthTest = false;
-  const traces = new LineSegments(new BufferGeometry(), traceLine.material);
-  traces.renderOrder = OVER_THE_MARKS;
-  traces.frustumCulled = false;
-  traces.visible = false;
-  graph.scene().add(traces);
-
-  // The outline of the selected cluster's cell.
-  const cellOutlineMaterial = markMaterial(SELECTED_CELL_MARK, renderer.getPixelRatio());
-  const cellOutline = new Mesh(square, cellOutlineMaterial);
-  cellOutline.renderOrder = OVER_THE_MARKS;
-  cellOutline.visible = false;
-  graph.scene().add(cellOutline);
-
-  function showSelectedCell(): void {
-    const { selection } = store.get();
-    const cell = selection?.type === 'cluster' ? cellOf.get(selection.id) : undefined;
-    cellOutline.visible = cell !== undefined;
-    if (!cell) return;
-    cellOutline.position.set(cell.x, cell.y + MARK_LIFT, cell.z);
-    cellOutline.scale.set(cell.width / MARK_SHARE_OF_QUAD, 1, cell.depth / MARK_SHARE_OF_QUAD);
-  }
-
-  /** Draws a line for each `implements` edge of the selected tool or cluster, and none for any other selection. */
-  function showImplementsLines(): void {
-    const { selection } = store.get();
-    const ends: [MarkLayout | undefined, CellLayout | undefined][] =
-      selection?.type === 'tool'
-        ? index.implementsOf(selection.id).map((cluster) => [markOf.get(selection.id), cellOf.get(cluster.id)])
-        : selection?.type === 'cluster'
-          ? index.implementedBy(selection.id).map((tool) => [markOf.get(tool.id), cellOf.get(selection.id)])
-          : [];
-    const corners: number[] = [];
-    for (const [mark, cell] of ends) {
-      if (!mark || !cell) continue;
-      // The line meets the cell at the middle of an edge, not on one of its marks:
-      // the back edge for a tool on a higher plate, and the front edge for any other.
-      const edgeZ = cell.z + (mark.y > cell.y ? -1 : 1) * (cell.depth / 2);
-      corners.push(mark.x, mark.y + MARK_LIFT, mark.z, cell.x, cell.y + MARK_LIFT, edgeZ);
-    }
-    traces.geometry.dispose();
-    traces.geometry = new BufferGeometry().setAttribute('position', new Float32BufferAttribute(corners, 3));
-    traces.visible = corners.length > 0;
-  }
+  // The rest of the selection: a selected cell's outline, and the `implements` lines.
+  const selectionDrawing = createSelectionDrawing(
+    (object) => void graph.scene().add(object),
+    index,
+    layout,
+    renderer.getPixelRatio(),
+  );
 
   // Hover: a ring on the mark under the pointer, and a label beside the pointer.
   const ringMaterial = markMaterial(HOVER_RING_MARK, renderer.getPixelRatio());
@@ -468,7 +351,9 @@ export function createStage(
     placeHoverRing();
     // An open detail card covers the right of the window, so the label keeps left of it.
     const rightEdge = windowSize.width - (store.get().selection ? constants.detailCardPx : 0);
-    hoverLabel.show(at.x + origin.x, at.y + origin.y, rightEdge, tool.label, index.cluster(tool.cluster)?.label ?? '');
+    // At the cluster distance the breadcrumb already names the focused cluster.
+    const cluster = tool.cluster === store.get().cluster ? null : (index.cluster(tool.cluster)?.label ?? null);
+    hoverLabel.show(at.x + origin.x, at.y + origin.y, rightEdge, tool.label, cluster);
   }
 
   controls.enablePan = false;
@@ -501,11 +386,21 @@ export function createStage(
     max: { x: rectangle.x + rectangle.width / 2, y: rectangle.y, z: rectangle.z + rectangle.depth / 2 },
   });
 
+  /** A box grown to hold another. */
+  const holding = (box: Box, other: Box | null): Box =>
+    other
+      ? {
+          min: { x: Math.min(box.min.x, other.min.x), y: Math.min(box.min.y, other.min.y), z: Math.min(box.min.z, other.min.z) },
+          max: { x: Math.max(box.max.x, other.max.x), y: Math.max(box.max.y, other.max.y), z: Math.max(box.max.z, other.max.z) },
+        }
+      : box;
+
   /**
    * Where the camera stands for a state. At rest the whole stack fits inside
    * the insets. At the tier distance the focused plate stands under the room
    * its cluster names need, and at the cluster distance the focused cell
-   * stands under the room its tool names need.
+   * stands under the room its tool names need. A selection with `implements`
+   * lines has their far ends in the picture too.
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
@@ -514,17 +409,33 @@ export function createStage(
     const cell = state.distance === 'cluster' ? cellOf.get(state.cluster ?? '') : undefined;
     if (cell) {
       const names = listShape(index.toolsOf(cell.cluster).length, constants.toolListMostRows);
-      const top = constants.annotationTopPx + names.rows * constants.toolRowPx + constants.toolListGapPx;
-      const region = inPicture(
-        constants.nearInsetSidePx,
-        top,
-        windowSize.width - constants.nearInsetSidePx - card,
-        windowSize.height - constants.insetBottomPx,
-      );
-      return placeToFit(flat(cell), frame, region, field, constants.clusterTiltDegrees, 0, {
-        mostPixelsPerUnit: constants.clusterMostPixelsPerUnit,
-        align: 'top',
-      });
+      const listRoom = names.rows * constants.toolRowPx + constants.toolListGapPx;
+      const framed = holding(flat(cell), selectionDrawing.reachOf(state.selection));
+      const fit = (roomAbove: number): CameraPlace =>
+        placeToFit(
+          framed,
+          frame,
+          inPicture(
+            constants.nearInsetSidePx,
+            constants.annotationTopPx + roomAbove,
+            windowSize.width - constants.nearInsetSidePx - card,
+            windowSize.height - constants.insetBottomPx,
+          ),
+          field,
+          constants.clusterTiltDegrees,
+          0,
+          { mostPixelsPerUnit: constants.clusterMostPixelsPerUnit, align: 'top' },
+        );
+      // The names need their room above the cell, not above everything framed. Where a
+      // line's far end stands higher in the picture than the cell, it stands in that room.
+      const tilt = radians(constants.clusterTiltDegrees);
+      const height = (y: number, z: number): number => y * Math.sin(tilt) - z * Math.cos(tilt);
+      const above = height(framed.max.y, framed.min.z) - height(cell.y, cell.z - cell.depth / 2);
+      const cautious = fit(listRoom);
+      if (above <= 0) return cautious;
+      // The cautious fit is the farthest the camera stands, so its scale is the least the far end's rise can have.
+      const pixelsPerUnit = frame.height / 2 / Math.tan(radians(field) / 2) / cautious.range;
+      return fit(Math.max(0, listRoom - above * pixelsPerUnit));
     }
     const plate = state.distance === 'stack' ? undefined : tiers.get(state.tier ?? '')?.plate;
     if (plate) {
@@ -584,12 +495,20 @@ export function createStage(
   let move = 0;
   let moveFrame = 0;
 
-  /** The plates above the focused one fade; every other plate is whole. */
+  /**
+   * The plates above the focused one fade, and so do the plates that lie
+   * between the two ends of an `implements` line, which would hide its far
+   * end. Every other plate is whole.
+   */
   function fadeTargets(state: MapState): void {
     const focused = state.distance === 'stack' ? undefined : tiers.get(state.tier ?? '')?.plate;
+    const ends = focused ? selectionDrawing.endsOf(state.selection) : [];
+    const between = (y: number): boolean =>
+      ends.some(({ mark, cell }) => y > Math.min(mark.y, cell.y) && y < Math.max(mark.y, cell.y));
     for (const parts of tiers.values()) {
       parts.from = parts.opacity;
-      parts.to = focused && parts.plate.y > focused.y ? constants.fadedPlateOpacity : 1;
+      const faded = focused !== undefined && (parts.plate.y > focused.y || between(parts.plate.y));
+      parts.to = faded ? constants.fadedPlateOpacity : 1;
     }
   }
 
@@ -676,7 +595,7 @@ export function createStage(
       }
     }
     ringMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
-    cellOutlineMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
+    selectionDrawing.setPixelRatio(renderer.getPixelRatio());
 
     restRange = placeOf(AT_STACK).range;
     // One depth range for every distance. It is tight enough to keep marks
@@ -704,20 +623,22 @@ export function createStage(
   }
 
   /**
-   * What decides the camera's place: the distance, the focus, and whether the
-   * detail card is open beside a focused plate or cell.
+   * What decides the camera's place and the fade: the distance, the focus,
+   * whether the detail card is open beside a focused plate or cell, and which
+   * selection it is when the selection has `implements` lines to frame.
    */
-  const placeKey = (state: MapState): string =>
-    [state.distance, state.tier, state.cluster, state.distance !== 'stack' && state.selection !== null].join('|');
+  const placeKey = (state: MapState): string => {
+    const { selection } = state;
+    const framed = state.distance !== 'stack' && selectionDrawing.endsOf(selection).length > 0 ? selection?.id : null;
+    return [state.distance, state.tier, state.cluster, state.distance !== 'stack' && selection !== null, framed].join('|');
+  };
 
   if (fitWindow()) goTo(store.get(), false);
-  showSelectedCell();
-  showImplementsLines();
+  selectionDrawing.show(store.get().selection);
   store.subscribe((state, before) => {
     hover(null);
     showSelectedMark();
-    showSelectedCell();
-    showImplementsLines();
+    selectionDrawing.show(state.selection);
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();
   });
@@ -796,6 +717,7 @@ export function createStage(
     remove: (object) => void graph.scene().remove(object),
     camera,
     frame,
+    window: windowSize,
     origin,
     toPicture(point) {
       camera.updateMatrixWorld();

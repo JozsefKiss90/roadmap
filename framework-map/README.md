@@ -34,7 +34,9 @@ Run these from this folder, after `npm install`.
 | `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
 | `src/camera.ts` | The arithmetic for where the camera stands at each distance |
 | `src/state.ts` | The state store: the distance, the focused tier or cluster, and the selection, in step with the URL fragment |
-| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected mark and the `implements` lines |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring and the selected mark |
+| `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token |
+| `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
 | `src/pick.ts` | Which plate, cell and mark lie under the pointer |
 | `src/hover-label.ts` | The label beside the pointer that names the mark under it |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
@@ -80,9 +82,13 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 - **Selecting a tool or a cluster goes to that cluster.** Selecting a need leaves the map where it is.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
 - **Escape closes the detail card first.** The next Escape steps out one distance.
-- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. From the stack, a click still goes to the tier.
-- **The selected mark takes the accent fill.** It no longer shows its decision class, so the detail card states it, with a square in the mark's own form.
+- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. At the cluster distance the label gives the name alone, because the breadcrumb names the cluster. From the stack, a click still goes to the tier.
+- **The selected mark takes the accent fill.** It no longer shows its decision class, so the detail card states it, with a square in the mark's own form. The square is drawn from the same mark token as the mark.
+- **The selection shows in three places in the scene.** The selected tool's mark is filled, its name in the list above the cell is in the accent colour, and a selected cluster's cell is outlined.
 - **`implements` lines.** A selected tool has a line to each cluster it implements. A selected cluster has a line to each tool that implements it. The detail card lists the same clusters and tools.
+- **Both ends of a line are in the picture.** The far end is outlined: a cell for a selected tool, a mark for a selected cluster. The camera stands back far enough to frame it, and the plates between the two ends fade.
+- **The list of tool names stays in view.** It is centred on its cell, and moves across where that would take it out of the window or under the detail card.
+- **The detail card slides in over 200 ms** when it opens, and not at all with reduced motion on. It is a CSS animation; ticket 14 decides whether anime.js takes it over.
 - **The camera keeps clear of the detail card.** At the tier and cluster distances the focused plate or cell is centred in the room left of the card.
 - **A field with no value is left out.** A tool with no repository shows no repository, stars, last commit or licence.
 - **The link to the tool matrix** leads to `Hermes OS tool matrix.xlsx` beside the map's file. Its address is `toolMatrixHref` in `src/constants.ts`.

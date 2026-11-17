@@ -14,6 +14,7 @@ import { DECISION_STEPS, decisionStep, kindIcon } from './display';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
 import type { Selection, Store } from './state';
+import { MARK_TOKEN_OF_STEP, ROLES } from './tokens';
 
 /** The decision source of a tool whose decision is a recommendation, not yet the Architect's. */
 const PROPOSED_HERE = 'Proposed here';
@@ -42,8 +43,14 @@ function icon(node: IconNode): SVGElement {
 
 /** A small square in the form of a decision-class step, as the marks are drawn. */
 function swatch(decisionClass: string): HTMLElement {
-  const made = element('span', `swatch swatch-${decisionStep(decisionClass)}`);
+  const token = MARK_TOKEN_OF_STEP[decisionStep(decisionClass)];
+  const made = element('span', 'swatch');
   made.setAttribute('aria-hidden', 'true');
+  // The same token the scene draws the mark from, so the two cannot drift apart.
+  made.style.background = token.fill ? ROLES[token.fill] : 'transparent';
+  made.style.border = token.outline
+    ? `${token.widthPx}px ${token.dashed ? 'dashed' : 'solid'} ${ROLES[token.outline]}`
+    : '0';
   return made;
 }
 
@@ -265,7 +272,7 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
     return need ? { label: `Need: ${need.label}`, content: needForm(need) } : null;
   }
 
-  function render(selection: Selection | null): void {
+  function render(selection: Selection | null, opening = false): void {
     const form = selection ? formOf(selection) : null;
     // A row of the card that was clicked is about to go; the focus must not go with it.
     const heldFocus = card.contains(document.activeElement);
@@ -274,6 +281,8 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
       card.replaceChildren();
       return;
     }
+    // The card slides in when it opens, and not when its content changes or the page opens with it.
+    card.classList.toggle('detail-card-opening', opening);
     card.setAttribute('aria-label', form.label);
     card.replaceChildren(...form.content.filter((child): child is Node => child instanceof Node));
     if (heldFocus) card.querySelector<HTMLElement>('.card-name')?.focus();
@@ -281,6 +290,6 @@ export function mountDetailCard(app: HTMLElement, index: GraphIndex, store: Stor
 
   render(store.get().selection);
   store.subscribe((state, before) => {
-    if (state.selection !== before.selection) render(state.selection);
+    if (state.selection !== before.selection) render(state.selection, before.selection === null);
   });
 }
