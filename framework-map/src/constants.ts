@@ -1,6 +1,6 @@
 /**
- * Sizes and spacings settled by eye. The dev-only tuning panel changes the
- * title, camera and inset values live; once a value is settled it is copied
+ * Sizes, spacings and durations settled by eye. The dev-only tuning panel changes the
+ * title, camera, inset, motion and depth-blur values live; once a value is settled it is copied
  * back into this file by hand. The plate and label values are read once, so
  * changing one means a reload.
  *
@@ -67,9 +67,26 @@ export const constants = {
 
   /** How opaque the plates above the focused one are. */
   fadedPlateOpacity: 0.04,
-  /** Durations, from the style guide's "Map motion" table. */
+  /**
+   * Durations, from the style guide's "Map motion" table: a camera flight; a
+   * change of lens or filters, and the fading of a plate; a panel opening or
+   * closing; and a step of the phase strip. With reduced motion on, all are zero.
+   */
   flightMs: 700,
   fadeMs: 250,
+  panelMs: 200,
+  phaseStepMs: 300,
+
+  /**
+   * Depth blur, at the tier and cluster distances: the plates under the
+   * focused one are blurred a little. `depthBlur` is the one switch that turns
+   * it off, for a machine whose frames run slow.
+   */
+  depthBlur: true,
+  /** The widest the blur spreads, in pixels on screen. */
+  depthBlurPx: 1,
+  /** How far under the focused plate the blur is at its widest, in layout units. Plates stand 6.5 apart. */
+  depthBlurFullAt: 13,
 
   /** How thick a plate is, in layout units. */
   plateThickness: 0.16,

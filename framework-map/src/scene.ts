@@ -21,6 +21,12 @@
  * rest of the selection: a selected cell's outline and the `implements`
  * lines. The camera frames both ends of those lines, and the plates that lie
  * between the ends fade.
+ *
+ * Every change takes its duration from src/motion.ts. The renderer's own
+ * camera transition flies the camera. A plate fades, and a mark changes form,
+ * as a fade: a mark that changes form is drawn as a mix of the two forms, in
+ * place. At the tier and cluster distances src/depth-blur.ts blurs the plates
+ * under the focused one a little.
  */
 import ForceGraph3D from '3d-force-graph';
 import {
@@ -43,18 +49,20 @@ import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { radians, towardCamera, placeToFit } from './camera';
 import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
+import { createDepthBlur } from './depth-blur';
 import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { createHoverLabel } from './hover-label';
 import { listShape, staircaseHeight } from './label-layout';
 import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
-import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, markMaterial } from './mark-material';
+import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, blendMaterial, markMaterial } from './mark-material';
+import { AT_ONCE, durationsNow, fadeMsBetween, hold, run } from './motion';
 import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
 import { createSelectionDrawing } from './selection-drawing';
 import { createTraceDrawing } from './trace-drawing';
-import { AT_STACK, scrubbedPhaseOf, traces } from './state';
+import { AT_STACK, scrubbedPhaseOf, tracedNeedOf, traces } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
 import type { LineToken, MarkToken } from './tokens';
@@ -148,6 +156,12 @@ interface TierParts {
   opacity: number;
   from: number;
   to: number;
+  /** How blurred the tier's plate is now, from 0 to 1, and where that change started and ends. */
+  blur: number;
+  blurFrom: number;
+  blurTo: number;
+  /** The materials of marks that are changing form, by the material they had and the one they take. */
+  blends: Map<ShaderMaterial, Map<ShaderMaterial, ShaderMaterial>>;
 }
 
 /** Every material a tier's marks are drawn with. */
@@ -232,6 +246,10 @@ export function createStage(
       opacity: 1,
       from: 1,
       to: 1,
+      blur: 0,
+      blurFrom: 0,
+      blurTo: 0,
+      blends: new Map(),
     });
 
     const thickness = constants.plateThickness;
@@ -257,6 +275,14 @@ export function createStage(
     objects.push(cellOutlines);
     graph.scene().add(cellOutlines);
   }
+  // The depth blur draws the scene itself, straight to the screen, so the renderer's own
+  // render pass stands aside. Drawn through the composer's buffers, the scene would lose
+  // its antialiasing, and its see-through colours would be mixed in another colour space.
+  const depthBlur = createDepthBlur(graph.scene(), camera, layout.plates, constants.plateThickness);
+  const composer = graph.postProcessingComposer();
+  for (const pass of composer.passes) pass.enabled = false;
+  composer.addPass(depthBlur.pass);
+
   const partsOf = (tier: string): TierParts => {
     const parts = tiers.get(tier);
     if (!parts) throw new Error(`The layout has no plate for the tier "${tier}".`);
@@ -322,9 +348,55 @@ export function createStage(
     })
     .graphData({ nodes, links: [] });
 
-  /** Gives every mark the material the state asks for. Ticket 14 gives the change its fade. */
-  function dressMarks(state: MapState): void {
-    for (const { mesh, node } of meshes.values()) mesh.material = materialOf(node, state);
+  // A need trace: the home cell's outline, the lines to the traced tools and the best-fit rings.
+  const traceDrawing = createTraceDrawing((object) => void graph.scene().add(object), index, layout, renderer.getPixelRatio());
+
+  /** How far the marks that are changing form have come, from 0 to 1. Every one of them reads it. */
+  const markMix = { value: 0 };
+  /** The marks that are changing form, and the material each of them ends in. */
+  let changing: { mesh: Mesh; to: ShaderMaterial }[] = [];
+  let stopMarkFade = (): void => {};
+
+  /** The material of a mark of a tier on its way from one material to another. */
+  function blendOf(parts: TierParts, from: ShaderMaterial, to: ShaderMaterial): ShaderMaterial {
+    let fromHere = parts.blends.get(from);
+    if (!fromHere) parts.blends.set(from, (fromHere = new Map()));
+    let blend = fromHere.get(to);
+    if (!blend) fromHere.set(to, (blend = blendMaterial(from, to, markMix)));
+    return blend;
+  }
+
+  /** Gives every mark that was changing form the material it ends in. */
+  function landMarks(): void {
+    for (const { mesh, to } of changing) mesh.material = to;
+    changing = [];
+  }
+
+  /**
+   * Gives every mark the material the state asks for, and draws the state's
+   * need trace. A mark that changes form fades from the one to the other over
+   * `ms`, in place. A change still under way is finished first.
+   * @param retraced Whether the trace is another one than before, which fades in with the marks.
+   */
+  function dressMarks(state: MapState, ms: number, retraced: boolean): void {
+    stopMarkFade();
+    landMarks();
+    for (const { mesh, node } of meshes.values()) {
+      const from = mesh.material as ShaderMaterial;
+      const to = materialOf(node, state);
+      if (from === to) continue;
+      mesh.material = blendOf(partsOf(node.tier), from, to);
+      changing.push({ mesh, to });
+    }
+    traceDrawing.show(state);
+    stopMarkFade = run(
+      ms,
+      (progress) => {
+        markMix.value = progress;
+        traceDrawing.setOpacity(retraced ? progress : 1);
+      },
+      landMarks,
+    );
   }
 
   // The rest of the selection: a selected cell's outline, and the `implements` lines.
@@ -334,9 +406,6 @@ export function createStage(
     layout,
     renderer.getPixelRatio(),
   );
-
-  // A need trace: the home cell's outline, the lines to the traced tools and the best-fit rings.
-  const traceDrawing = createTraceDrawing((object) => void graph.scene().add(object), index, layout, renderer.getPixelRatio());
 
   // Hover: a ring on the mark under the pointer, and a label beside the pointer.
   const ringMaterial = markMaterial(HOVER_RING_MARK, renderer.getPixelRatio());
@@ -526,11 +595,16 @@ export function createStage(
   // The move under way, if any: a camera flight, a fade of the plates, or both.
   let move = 0;
   let moveFrame = 0;
+  let stopPlateFade = (): void => {};
+  let landFlight = (): void => {};
 
   /**
    * The plates above the focused one fade, and so do the plates that lie
    * between the two ends of an `implements` line, which would hide its far
-   * end. Every other plate is whole.
+   * end. Every other plate is whole. A whole plate under the focused one is
+   * blurred, the more the further under it lies, unless a line ends on it.
+   * While a need is traced no plate is blurred: the trace's lines cross the
+   * plates under the focused one, and a blurred line is too pale to follow.
    */
   function fadeTargets(state: MapState): void {
     const focused = state.distance === 'stack' ? undefined : tiers.get(state.tier ?? '')?.plate;
@@ -541,26 +615,47 @@ export function createStage(
       parts.from = parts.opacity;
       const faded = focused !== undefined && (parts.plate.y > focused.y || between(parts.plate.y));
       parts.to = faded ? constants.fadedPlateOpacity : 1;
+      parts.blurFrom = parts.blur;
+      const under = focused === undefined ? 0 : focused.y - parts.plate.y;
+      const holdsAnEnd = ends.some(({ mark, cell }) => mark.y === parts.plate.y || cell.y === parts.plate.y);
+      const blurred = constants.depthBlur && under > 0 && !faded && !holdsAnEnd && tracedNeedOf(state.lens) === null;
+      parts.blurTo = blurred ? Math.min(1, under / constants.depthBlurFullAt) : 0;
     }
   }
 
+  /** Takes every plate to the opacity and the blur a state gives it, over `ms`. A fade still under way stops where it is. */
+  function fadePlates(state: MapState, ms: number): void {
+    stopPlateFade();
+    fadeTargets(state);
+    stopPlateFade = run(ms, (progress) => {
+      for (const parts of tiers.values()) {
+        setTierOpacity(parts, parts.from + (parts.to - parts.from) * progress);
+        parts.blur = parts.blurFrom + (parts.blurTo - parts.blurFrom) * progress;
+        // Only a whole plate hides what is under it. A plate that is fading, in or out, is not
+        // blurred and leaves the blur of the plates under it as it is.
+        depthBlur.setAmount(parts.plate.tier, parts.opacity < 1 ? null : parts.blur);
+      }
+    });
+  }
+
   /**
-   * Takes the camera to its place for a state, and fades the plates above the
-   * focused one. With `animate` off, or reduced motion on, both happen at once.
+   * Takes the camera to its place for a state, fades the plates above the
+   * focused one and blurs the plates under it. With `animate` off, or reduced
+   * motion on, all of it happens at once.
    */
   function goTo(state: MapState, animate: boolean): void {
     move += 1;
     const thisMove = move;
     cancelAnimationFrame(moveFrame);
-    const still = !animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const flightMs = still ? 0 : constants.flightMs;
-    const fadeMs = still ? 0 : constants.fadeMs;
+    landFlight();
+    const { flightMs, fadeMs } = animate ? durationsNow() : AT_ONCE;
 
     const place = placeOf(state);
     const out = towardCamera(place.tiltDegrees, place.turnDegrees);
     const target = new Vector3(place.target.x, place.target.y, place.target.z);
     const position = target.clone().addScaledVector(new Vector3(out.x, out.y, out.z), place.range);
-    fadeTargets(state);
+
+    fadePlates(state, fadeMs);
 
     // The controls would hold a flying camera to their limits, so they stand
     // aside until it lands. A flight still under way stops where it is.
@@ -571,16 +666,17 @@ export function createStage(
     type Place = { x: number; y: number; z: number };
     const here = graph.cameraPosition() as Place & { lookAt: Place };
     graph.cameraPosition({ x: here.x, y: here.y, z: here.z }, here.lookAt, 0);
-    if (flightMs > 0) graph.cameraPosition(position, target, flightMs);
+    if (flightMs > 0) {
+      graph.cameraPosition(position, target, flightMs);
+      landFlight = hold();
+    }
 
     const start = performance.now();
     const step = (): void => {
       if (thisMove !== move) return;
       const elapsed = performance.now() - start;
-      const faded = fadeMs > 0 ? Math.min(1, elapsed / fadeMs) : 1;
-      for (const parts of tiers.values()) setTierOpacity(parts, parts.from + (parts.to - parts.from) * faded);
-      if (elapsed < Math.max(flightMs, fadeMs)) {
-        if (flightMs > 0 && elapsed >= flightMs / 3) camera.lookAt(target);
+      if (elapsed < flightMs) {
+        if (elapsed >= flightMs / 3) camera.lookAt(target);
         notify();
         moveFrame = requestAnimationFrame(step);
         return;
@@ -591,6 +687,7 @@ export function createStage(
       applyLimits(limitsOf(state, place));
       controls.enabled = true;
       controls.update();
+      landFlight();
       notify();
     };
     step();
@@ -620,6 +717,7 @@ export function createStage(
     graph.width(frame.width).height(frame.height);
 
     camera.fov = constants.fieldOfViewDegrees;
+    depthBlur.setSpreadPx(constants.depthBlurPx);
     // The outline widths are in screen pixels, so they follow the display's pixel ratio.
     for (const parts of tiers.values()) {
       for (const material of markMaterialsOf(parts)) material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
@@ -671,12 +769,17 @@ export function createStage(
   store.subscribe((state, before) => {
     hover(null);
     if (state.selection !== before.selection || state.filters !== before.filters || state.lens !== before.lens) {
-      dressMarks(state);
-      traceDrawing.show(state);
+      const fadeMs = fadeMsBetween(before.lens, state.lens, durationsNow());
+      dressMarks(state, fadeMs, tracedNeedOf(state.lens) !== tracedNeedOf(before.lens));
     }
     selectionDrawing.show(state.selection, traces(state.lens));
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
-    else notify();
+    else {
+      // A need that comes or goes where the camera stays still takes the blur off the plates, or gives it back.
+      const traced = tracedNeedOf(state.lens) !== null;
+      if (traced !== (tracedNeedOf(before.lens) !== null)) fadePlates(state, durationsNow().fadeMs);
+      notify();
+    }
   });
 
   controls.addEventListener('change', notify);

@@ -93,6 +93,10 @@ _Avoid_: Time slider, timeline
 The five steps of the phase scrub, P0 to P4, at the bottom of the map; each gives its phase's number of needs and of tools. It is on the page only while the phase scrub is on.
 _Avoid_: Timeline, slider, stepper
 
+**Depth blur**:
+The slight blur on the plates under the focused one, at the tier and cluster distances. The focused plate is never blurred.
+_Avoid_: Depth of field, bokeh, defocus
+
 **Detail card**:
 The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar

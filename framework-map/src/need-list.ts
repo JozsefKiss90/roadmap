@@ -15,6 +15,7 @@
  */
 import type { GraphIndex } from './data';
 import { element } from './dom';
+import { showRailPart } from './motion';
 import { listsNeeds, scrubbedPhaseOf, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
@@ -98,7 +99,7 @@ export function mountNeedList(
     const on = listsNeeds(lens);
     // A list that closes under the partner's hands, as with the key `1`, hands the focus on.
     const heldFocus = panel.contains(document.activeElement);
-    panel.hidden = !on;
+    showRailPart(panel, on);
     if (heldFocus && !on) onClosedWithFocus();
     const need = tracedNeedOf(lens);
     prompt.hidden = need !== null;

@@ -11,6 +11,7 @@
  */
 import { ChevronRight, createElement } from 'lucide';
 import { element } from './dom';
+import { fadeIn } from './motion';
 import { listsNeeds } from './state';
 import type { Store } from './state';
 
@@ -32,8 +33,16 @@ export function mountFold(part: HTMLElement, heading: HTMLElement, store: Store)
   heading.replaceChildren(toggle);
 
   const setFolded = (folded: boolean): void => {
+    const opens = !folded && part.hasAttribute('data-folded');
     part.toggleAttribute('data-folded', folded);
     toggle.setAttribute('aria-expanded', String(!folded));
+    // What the part holds under its heading fades in as a panel does. A part that folds leaves at once,
+    // because the rest of the rail takes its room.
+    if (!opens) return;
+    const underHeading = [...part.children].filter(
+      (child): child is HTMLElement => child instanceof HTMLElement && !child.contains(heading),
+    );
+    fadeIn(underHeading);
   };
   setFolded(listsNeeds(store.get().lens));
   toggle.addEventListener('click', () => setFolded(!part.hasAttribute('data-folded')));

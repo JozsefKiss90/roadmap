@@ -14,6 +14,7 @@
  */
 import type { GraphIndex } from './data';
 import { element } from './dom';
+import { showRailPart } from './motion';
 import { narrows } from './state';
 import type { MapState, Store } from './state';
 
@@ -111,7 +112,7 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
     lenses.choose(lens?.type ?? 'none');
     // A row of roles that closes under the partner's hands, as with the key `1`, hands the focus to the lens switch.
     const heldFocus = roles.element.contains(document.activeElement);
-    roles.element.hidden = lens?.type !== 'role';
+    showRailPart(roles.element, lens?.type === 'role');
     if (heldFocus && roles.element.hidden) lenses.focus();
     roles.choose(lens?.type === 'role' ? lens.role : null);
     if (narrows(lens)) {

@@ -47,14 +47,14 @@ export const states = [
   { name: 'need-trace-tool-selected-stack', fragment: 'select=tool:pr-agent&lens=need&need=N01' },
   { name: 'need-trace-tool-selected', fragment: 'cluster=5F&select=tool:pr-agent&lens=need&need=N01' },
   // The phase scrub. P2 has ten needs and 92 tools. Then P3, the widest phase, reached with the keyboard: key 4
-  // goes to the strip and three presses step it to the right. That state opens with the scrub on, because
-  // switching it on flies the camera clear of the strip, and the script does not wait for a flight. Then a tool
+  // switches the scrub on and goes to the strip, and three presses step it to the right. Switching it on opens
+  // the strip and flies the camera clear of it, and the script waits for both. Then a tool
   // of the phase selected at the stack, where the strip, the legend and the card share the bottom of the
   // window; and a tier under the scrub.
   { name: 'phase-p2', fragment: 'lens=phase&phase=P2' },
   {
     name: 'phase-p3-by-keyboard',
-    fragment: 'lens=phase',
+    fragment: '',
     keys: [['press', '4'], ['press', 'ArrowRight'], ['press', 'ArrowRight'], ['press', 'ArrowRight']],
   },
   { name: 'phase-tool-selected-stack', fragment: 'select=tool:plannotator&lens=phase&phase=P2' },

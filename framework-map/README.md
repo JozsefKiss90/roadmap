@@ -12,7 +12,7 @@ Run these from this folder, after `npm install`.
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
 | `npm run contrast` | Measures the map's contrast rows in the style guide; add `-- path/to/style-guide.md` to check another file |
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
-| `npm run screenshots` | Opens the built file in each named state and saves a screenshot to `../screenshots/` |
+| `npm run screenshots` | Opens the built file in each named state, with reduced motion off and on, and saves a screenshot to `../screenshots/` |
 | `npm test` | Runs the unit tests, then the generator's tests in `../tool-discovery/` |
 | `npm run typecheck` | Type-checks without building |
 | `npm run dev` | Starts the dev server with the tuning panel |
@@ -21,7 +21,7 @@ Run these from this folder, after `npm install`.
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card. It uses the installed Chrome or Edge.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It opens each state with the system's reduced-motion setting off and then on, and fails if a state does not come to rest, or if anything is under way with reduced motion on. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -102,7 +102,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 - **`implements` lines.** A selected tool has a line to each cluster it implements. A selected cluster has a line to each tool that implements it. The detail card lists the same clusters and tools.
 - **Both ends of a line are in the picture.** The far end is outlined: a cell for a selected tool, a mark for a selected cluster. The camera stands back far enough to frame it, and the plates between the two ends fade.
 - **The list of tool names stays in view.** It is centred on its cell, and moves across where that would take it out of the window or under the detail card.
-- **The detail card slides in over 200 ms** when it opens, and not at all with reduced motion on. It is a CSS animation; ticket 14 decides whether anime.js takes it over.
+- **The detail card fades in and out over the panel duration.** See "Motion and depth blur".
 - **The camera keeps clear of the detail card.** At the tier and cluster distances the focused plate or cell is centred in the room left of the card.
 - **A field with no value is left out.** A tool with no repository shows no repository, stars, last commit or licence.
 - **The link to the tool matrix** leads to `Hermes OS tool matrix.xlsx` beside the map's file. Its address is `toolMatrixHref` in `src/constants.ts`.
@@ -167,7 +167,7 @@ The lens switch stands in the rail under the search box. It offers no lens, the 
 - **`1` switches the lens off and `2` switches the role lens on.** If `1` closes the row of roles while it holds the focus, the focus goes to the lens switch. The role lens comes back with the role it last showed, and starts with the Architect.
 - **The URL fragment holds the lens and its role**, as `#lens=role&role=D`. The roles' codes are A, D and M. `lens=role` alone gives the first role. A role the graph lacks gives no lens.
 - **The lens holds** wherever the map goes and whatever is selected.
-- **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+- **The change is a fade.** The marks change form in place over the fade duration. See "Motion and depth blur".
 
 ## The need trace
 
@@ -191,7 +191,7 @@ The need trace shows one of the 33 needs and the tools that serve it. Needs are 
 - **The legend names the traced mark and the best-fit ring** while the need trace is on, and the selection's ring while a tool or a cluster is selected under a traced need. Under the phase scrub it names the traced mark, and the selection's ring in the same way.
 - **The need trace comes back with the need it last showed**, as the role lens does with its role. It comes back where the map is, with the need's card closed; the need's row in the need list opens it.
 - **The URL fragment holds the lens and its need**, as `#lens=need&need=N15`. With the need's card open it also has `select=N15`. `lens=need` alone is the trace with no need chosen. A need the graph lacks gives no lens.
-- **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+- **The change is a fade.** The marks change form in place over the fade duration. See "Motion and depth blur".
 
 ## The phase scrub
 
@@ -209,7 +209,7 @@ The phase scrub steps through the roadmap's phases, P0 to P4, and shows what eac
 - **The picture keeps clear of the strip.** The stack, a tier or a cluster stands a little higher while the phase scrub is on, so switching it on or off moves the camera once. Stepping the phase moves nothing.
 - **The number of tools of the phase** stands beside "Lens", as "92 tools in reach", and each tier's count reads "T5 · 32 of 86 in reach". The filters apply on top.
 - **The URL fragment holds the lens and its phase**, as `#lens=phase&phase=P2`. `lens=phase` alone is P0. A phase the roadmap lacks gives no lens.
-- **The change is a cut.** Ticket 14 gives a step the guide's 300 ms.
+- **A step is a fade.** The marks change form in place over the phase-step duration. See "Motion and depth blur".
 
 ## Filters and the legend
 
@@ -225,9 +225,41 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **Kind and gate are filtered by family.** The families and their order come from `../tool-discovery/vocabulary.json`. Decision classes are listed from the committed step to the guarded one.
 - **The URL fragment holds the filters**, one part for each chosen value: `#used=D&used=M&hosting=Hub`. The names are `decision`, `kind`, `used`, `operated`, `hosting`, `stream` and `gate`. Roles and value streams are given by their codes. A value a filter does not list is dropped.
 - **The filters hold** wherever the map goes and whatever is selected.
-- **The change is a cut.** Ticket 14 gives it the guide's 250 ms fade.
+- **The change is a fade.** The marks change form in place over the fade duration. See "Motion and depth blur".
 
 **The legend** at the bottom left of the canvas shows the four decision-class steps with their names. Its squares are drawn from the same mark tokens as the marks. While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. While a need is traced, it shows "Traced" and "Best fit" as well. Beside an open detail card the legend keeps left of it, on two rows if it must. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
+
+## Motion and depth blur
+
+Every change on the map takes one of four durations. They are the style guide's "Map motion" table, and they are settled in `src/constants.ts`. `src/motion.ts` hands them out and runs the fades.
+
+| What changes | Duration | Constant |
+|---|---|---|
+| A camera flight: between distances, to a selection, or to frame a need trace | 700 ms | `flightMs` |
+| A change of lens or filters, and the fading of a plate | 250 ms | `fadeMs` |
+| The detail card, the phase strip, or a part of the rail opening or closing | 200 ms | `panelMs` |
+| A step from one phase to another | 300 ms | `phaseStepMs` |
+
+- **The renderer flies the camera.** anime.js runs everything else, and it changes opacity only: the opacity of a plate or a panel, and the mix between two forms of a mark.
+- **Nothing changes position but the camera.** A mark that changes form is drawn as a mix of the form it had and the form it takes, on the same square. A panel fades and does not slide.
+- **A new need trace fades in with its marks.** Its lines, rings and home-cell outline take the fade duration. A change of filters or of selection under the same need leaves them as they are.
+- **A change that starts during another finishes the first at once.** The marks take the form the first change gave them, and fade from there.
+- **A panel that closes keeps its content while it fades**, and takes no click and no focus. It leaves the page when the fade ends, so the legend and the phase strip take its room then.
+- **A part of the rail fades in and leaves at once.** That holds for the need list, the row of roles, and the filters and the outline when they unfold. A part that closes gives its room to the part that opens, so the two cannot be on the page together.
+- **With the system's reduced-motion setting on, every duration is zero.** The camera cuts, and every fade is made at once. The setting is read at each change, so it holds without a reload.
+- **Nothing moves while the partner does nothing.** No timer and no loop starts a change.
+- **The page says whether it is moving.** `window.frameworkMap.isMoving()` is true while a flight, a fade or a panel is under way. The screenshot script waits for it to be false.
+
+**Depth blur.** At the tier and cluster distances the plates under the focused one are blurred a little: the more, the further under it they lie. `src/depth-blur.ts` draws it.
+
+- **The focused plate is never blurred.** The blur follows the plates, not the depth buffer. Each plate under the focused one is blurred as a whole, and only where it is in the picture. Every name stands on or above the focused plate, so every name stays sharp.
+- **A plate that holds the far end of an `implements` line is not blurred**, so the outlined end stays sharp.
+- **There is no blur at the stack distance**, and it fades in and out with the plates.
+- **There is no blur while a need is traced.** The trace's lines cross the plates under the focused one, and a blurred line is too pale to follow.
+- **`depthBlur` in `src/constants.ts` is the one switch.** Set to `false`, no plate is blurred and the picture is drawn as the renderer draws it. It is the first thing to switch off where frames run slow.
+- **`depthBlurPx` is the widest spread**, in pixels on screen, and `depthBlurFullAt` is how far under the focused plate the blur reaches it, in layout units.
+- **There is no glow and no vignette.** The blur is the map's only postprocessing. Antialiasing is the renderer's own and is always on.
+- **The tuning panel has a "Motion" and a "Depth blur" folder.** A value settled there is copied into `src/constants.ts` by hand.
 
 ## The graph validator
 
@@ -267,7 +299,7 @@ The rows of the guide's "Semantic roles" table are not checked here. The diagram
 
 ## The "ready" signal
 
-The page sets `data-ready="true"` on the `<html>` element once its first render is done. The screenshot script waits for it.
+The page sets `data-ready="true"` on the `<html>` element once its first render is done. The screenshot script waits for it, and then for `window.frameworkMap.isMoving()` to be false, so every screenshot is of a state at rest.
 
 ## Adding a screenshot state
 

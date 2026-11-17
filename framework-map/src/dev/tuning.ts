@@ -2,6 +2,9 @@
  * The tuning panel. Loaded only by the dev server (see main.ts); the built
  * file must not contain it, and scripts/publish.mjs checks that.
  *
+ * A duration changed here holds from the next change on the map. The depth
+ * blur is drawn again at once.
+ *
  * The layout's own spacings (STACK_METRICS in src/layout.ts) are not here: the
  * build computes the layout, so changing one means editing that file.
  */
@@ -28,6 +31,17 @@ export function mountTuning(constants: Constants, onChange: () => void): void {
   focus.addBinding(constants, 'tierInsetRightPx', { label: 'tier right', min: 0, max: 500, step: 4 });
   focus.addBinding(constants, 'annotationTopPx', { label: 'names from top', min: 40, max: 200, step: 4 });
   focus.addBinding(constants, 'fadedPlateOpacity', { label: 'faded plates', min: 0, max: 0.4, step: 0.01 });
+
+  const motion = pane.addFolder({ title: 'Motion' });
+  motion.addBinding(constants, 'flightMs', { label: 'flight', min: 0, max: 2000, step: 50 });
+  motion.addBinding(constants, 'fadeMs', { label: 'fade', min: 0, max: 1000, step: 10 });
+  motion.addBinding(constants, 'panelMs', { label: 'panel', min: 0, max: 1000, step: 10 });
+  motion.addBinding(constants, 'phaseStepMs', { label: 'phase step', min: 0, max: 1000, step: 10 });
+
+  const blur = pane.addFolder({ title: 'Depth blur' });
+  blur.addBinding(constants, 'depthBlur', { label: 'on' });
+  blur.addBinding(constants, 'depthBlurPx', { label: 'spread', min: 0, max: 8, step: 0.25 });
+  blur.addBinding(constants, 'depthBlurFullAt', { label: 'widest at', min: 1, max: 40, step: 0.5 });
 
   const insets = pane.addFolder({ title: 'Insets' });
   insets.addBinding(constants, 'insetTopPx', { label: 'top', min: 0, max: 300, step: 4 });

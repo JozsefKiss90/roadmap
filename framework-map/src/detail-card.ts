@@ -16,6 +16,7 @@ import type { Child } from './dom';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
 import { inGridOrder } from './layout';
+import { showPanel } from './motion';
 import { tracedNeedOf } from './state';
 import type { Selection, Store } from './state';
 
@@ -275,30 +276,32 @@ export function mountDetailCard(
     return need ? { label: `Need: ${need.label}`, content: needForm(need) } : null;
   }
 
-  function render(selection: Selection | null, opening = false): void {
+  /**
+   * The card opens and closes as a panel does. A card whose content changes stays as it is.
+   * @param atOnce Opens the card with no fade, as when the page opens with it.
+   */
+  function render(selection: Selection | null, atOnce = false): void {
     const form = selection ? formOf(selection) : null;
     // A row of the card that was clicked is about to go; the focus must not go with it.
     const heldFocus = card.contains(document.activeElement);
-    card.hidden = form === null;
     if (!form) {
-      card.replaceChildren();
+      // The card keeps its content while it fades, and loses it as it leaves the page.
+      showPanel(card, false, { atOnce, onClosed: () => card.replaceChildren() });
       if (heldFocus) onClosedWithFocus();
       return;
     }
-    // The card slides in when it opens, and not when its content changes or the page opens with it.
-    card.classList.toggle('detail-card-opening', opening);
     card.setAttribute('aria-label', form.label);
     card.replaceChildren(...form.content.filter((child): child is Node => child instanceof Node));
+    showPanel(card, true, { atOnce });
     if (heldFocus) card.querySelector<HTMLElement>('.card-name')?.focus();
   }
 
-  render(store.get().selection);
+  // The page may open with the card, which is then there at once.
+  render(store.get().selection, true);
   store.subscribe((state, before) => {
     // A tool's card names the traced need, so it is made again when another need, or none, is traced under it.
     const retraced = state.selection?.type === 'tool' && tracedNeedOf(state.lens) !== tracedNeedOf(before.lens);
-    if (state.selection !== before.selection || retraced) {
-      render(state.selection, before.selection === null);
-    }
+    if (state.selection !== before.selection || retraced) render(state.selection);
   });
   return { focus: () => card.querySelector<HTMLElement>('.card-name')?.focus() };
 }

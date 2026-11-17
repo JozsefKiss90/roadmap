@@ -6,13 +6,15 @@
  * tools that serve them. The counts are of the whole phase, whatever the
  * filters. The steps are radio buttons, so the browser gives them the left
  * and right arrow keys while the strip has the focus. Nothing else steps the
- * phase: the strip has no timer and never advances on its own.
+ * phase: the strip has no timer and never advances on its own. It opens and
+ * closes as a panel does, by its opacity.
  *
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
  */
 import type { GraphIndex } from './data';
 import { element } from './dom';
+import { showPanel } from './motion';
 import { scrubbedPhaseOf } from './state';
 import type { MapState, Store } from './state';
 
@@ -57,16 +59,19 @@ export function mountPhaseStrip(app: HTMLElement, index: GraphIndex, store: Stor
   strip.setAttribute('aria-label', 'Phase scrub');
   app.append(strip);
 
-  function render({ lens }: MapState): void {
+  function render({ lens }: MapState, atOnce = false): void {
     const phase = scrubbedPhaseOf(lens);
     // A strip that closes under the partner's hands, as with the key `1`, hands the focus on.
     const heldFocus = strip.contains(document.activeElement);
-    strip.hidden = phase === null;
-    for (const [step, input] of inputs) input.checked = step === phase;
-    if (heldFocus && strip.hidden) onClosedWithFocus();
+    showPanel(strip, phase !== null, { atOnce });
+    // A strip that is closing keeps its chosen step while it fades.
+    if (phase !== null) for (const [step, input] of inputs) input.checked = step === phase;
+    if (heldFocus && phase === null) onClosedWithFocus();
   }
 
-  render(store.get());
+  // The page may open with the strip, which is then there at once.
+  strip.hidden = true;
+  render(store.get(), true);
   store.subscribe((state, previous) => {
     if (state.lens !== previous.lens) render(state);
   });

@@ -239,24 +239,6 @@ body {
   font: 400 13px/20px var(--font-sans);
 }
 
-/* Map motion: a panel takes 200 ms. With reduced motion on, it takes none. */
-.detail-card-opening {
-  animation: detail-card-in 200ms ease-out;
-}
-
-@keyframes detail-card-in {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .detail-card-opening {
-    animation: none;
-  }
-}
-
 .detail-card[hidden] {
   display: none;
 }

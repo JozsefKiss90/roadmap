@@ -59,6 +59,8 @@ export interface TraceDrawing {
   place(unitsPerPixelAt: (x: number, y: number, z: number) => number): void;
   /** The widths of the outline and the rings are in screen pixels, so they follow the display's pixel ratio. */
   setPixelRatio(pixelRatio: number): void;
+  /** How opaque the whole drawing is, from 0 to 1. A trace that comes on fades in with its marks. */
+  setOpacity(opacity: number): void;
 }
 
 export function createTraceDrawing(
@@ -194,6 +196,10 @@ export function createTraceDrawing(
       outlineMaterial.uniforms.uPixelRatio!.value = ratio;
       ringMaterial.uniforms.uPixelRatio!.value = ratio;
       selectedMaterial.uniforms.uPixelRatio!.value = ratio;
+    },
+    setOpacity(opacity) {
+      lines.material.opacity = lineColour.alpha * opacity;
+      for (const material of [outlineMaterial, ringMaterial, selectedMaterial]) material.uniforms.uOpacity!.value = opacity;
     },
   };
 }

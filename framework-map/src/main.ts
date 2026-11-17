@@ -5,6 +5,7 @@ import { GraphRejected } from './data';
 import { loadGraph } from './inlined-graph';
 import { TAG_FONT, addLabels } from './labels';
 import type { LabelRect } from './labels';
+import { isMoving } from './motion';
 import { mountPanels } from './panels';
 import { loadFonts, signalReady } from './ready';
 import { createStage } from './scene';
@@ -12,8 +13,11 @@ import { createStore, syncWithFragment } from './state';
 
 declare global {
   interface Window {
-    /** What the screenshot script reads from the page, beside the "ready" signal. */
-    frameworkMap?: { labels(): LabelRect[] };
+    /**
+     * What the screenshot script reads from the page, beside the "ready" signal: where the labels
+     * stand, and whether a flight, a fade or a panel is still under way.
+     */
+    frameworkMap?: { labels(): LabelRect[]; isMoving(): boolean };
   }
 }
 
@@ -44,7 +48,7 @@ async function start(): Promise<void> {
   const stage = createStage(container, index, layout, constants, store);
   const labels = addLabels(stage, index, layout, constants, store);
   mountPanels(app, index, store, constants);
-  window.frameworkMap = { labels: () => labels.rects() };
+  window.frameworkMap = { labels: () => labels.rects(), isMoving };
   await labels.settled();
 
   if (import.meta.env.DEV) {
