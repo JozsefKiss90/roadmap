@@ -1,0 +1,43 @@
+@import './fonts.css';
+
+/*
+ * Colour and type tokens, by the semantic names in references/style-guide.md
+ * (light skin). The map section of the style guide adds the tokens specific
+ * to the map.
+ */
+:root {
+  --paper: #f6f1e7;
+  --ink: #14213d;
+
+  --font-serif: 'Instrument Serif', serif;
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+#app {
+  padding: 20px 24px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--title-size);
+  font-weight: 400;
+  line-height: 1.1;
+}

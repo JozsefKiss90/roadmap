@@ -36,3 +36,7 @@ desktop.ini
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Framework map build output (rebuild with: npm run build, in framework-map/)
+framework-map/dist/
+/framework-map.html
