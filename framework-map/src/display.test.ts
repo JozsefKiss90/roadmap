@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { decisionStep } from './display';
+import { KIND_ICONS, decisionStep, gateBadge, kindIcon } from './display';
 import type { Vocabulary } from './validate';
 
 const vocabulary = JSON.parse(
@@ -33,5 +33,34 @@ describe('decisionStep', () => {
 
   it('refuses a decision class it does not know', () => {
     expect(() => decisionStep('Maybe')).toThrow(/Maybe/);
+  });
+});
+
+describe('kindIcon', () => {
+  it('has an icon for every kind family in the vocabulary file, and no two families share one', () => {
+    const icons = Object.keys(vocabulary.kind).map((family) => kindIcon(family));
+    expect(new Set(icons).size).toBe(icons.length);
+    for (const icon of icons) expect(KIND_ICONS).toContain(icon);
+  });
+
+  it('refuses a kind family it does not know', () => {
+    expect(() => kindIcon('Gadget')).toThrow(/Gadget/);
+  });
+});
+
+describe('gateBadge', () => {
+  it('gives every gate family but "None" a badge of its own', () => {
+    const gated = Object.keys(vocabulary.gate).filter((family) => family !== 'None');
+    const badges = gated.map((family) => gateBadge(family));
+    expect(badges.every((badge) => typeof badge === 'string' && badge.length > 0)).toBe(true);
+    expect(new Set(badges).size).toBe(gated.length);
+  });
+
+  it('gives a tool with no gate no badge', () => {
+    expect(gateBadge('None')).toBeNull();
+  });
+
+  it('refuses a gate family it does not know', () => {
+    expect(() => gateBadge('Curfew')).toThrow(/Curfew/);
   });
 });

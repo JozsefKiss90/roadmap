@@ -31,6 +31,33 @@ export const constants = {
   insetBottomPx: 32,
   insetLeftPx: 296,
 
+  /**
+   * The camera at the tier and cluster distances. It tilts toward top-down,
+   * and comes no closer than a number of pixels for each layout unit, so a
+   * short plate or a small cell is not blown up to fill the window.
+   */
+  tierTiltDegrees: 32,
+  tierMostPixelsPerUnit: 30,
+  clusterTiltDegrees: 24,
+  clusterMostPixelsPerUnit: 40,
+  /** The limits at those two distances: tilt, turn to either side, and zoom as multiples of the range. */
+  focusTiltSlackDegrees: 10,
+  focusMaxTiltDegrees: 60,
+  focusTurnDegrees: 30,
+  focusNearestZoom: 0.7,
+  focusFarthestZoom: 1.3,
+  /** The window's margins at those two distances. The right one at the tier distance is room for cluster names. */
+  nearInsetSidePx: 48,
+  tierInsetRightPx: 260,
+  /** Where the names above a focused plate or cell begin, from the top of the window. */
+  annotationTopPx: 88,
+
+  /** How opaque the plates above the focused one are. */
+  fadedPlateOpacity: 0.04,
+  /** Durations, from the style guide's "Map motion" table. */
+  flightMs: 700,
+  fadeMs: 250,
+
   /** How thick a plate is, in layout units. */
   plateThickness: 0.16,
 
@@ -43,7 +70,27 @@ export const constants = {
   countGapPx: 7,
   /** Sizes on screen, from the style guide's "Map type" table. */
   tierNamePx: 20,
-  countPx: 11,
+  clusterNamePx: 13,
+  toolNamePx: 12,
+  tagPx: 11,
+
+  /** Cluster names: a staircase above the focused plate. One row for each name, and a gap under the lowest. */
+  clusterRowPx: 19,
+  clusterNameGapPx: 12,
+  /** From a cluster name's leader line to its first letter. */
+  clusterNameIndentPx: 6,
+
+  /** Tool names: a list in columns above the focused cell. */
+  toolRowPx: 20,
+  toolListMostRows: 20,
+  toolColumnGapPx: 40,
+  /** From the foot of the list down to the cell. */
+  toolListGapPx: 30,
+  /** The kind icon, and the space between an icon, a name and a gate badge. */
+  toolIconPx: 14,
+  toolPartGapPx: 7,
+  /** The least space between a name and its gate badge. */
+  toolBadgeGapPx: 12,
 };
 
 export type Constants = typeof constants;

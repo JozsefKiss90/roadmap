@@ -76,6 +76,26 @@ describe('readGraph', () => {
     expect(index.toolCountOf('T1')).toBe(1);
   });
 
+  it('finds a tier or a cluster by its id, and nothing for an id of another type', () => {
+    const index = readGraph(validGraph(), vocabulary);
+    expect(index.tier('T1')?.label).toBe('Extension primitives');
+    expect(index.cluster('0B')?.tier).toBe('T0');
+    expect(index.tier('0B')).toBeUndefined();
+    expect(index.cluster('tool:a')).toBeUndefined();
+  });
+
+  it('gives the family the vocabulary file lists a kind or gate value under', () => {
+    const families: Vocabulary = {
+      ...vocabulary,
+      kind: { 'Skill or command': ['Skill', 'Ruleset'] },
+      gate: { None: ['None'], Guarded: ['Guarded: client data'] },
+    };
+    const index = readGraph(validGraph(), families);
+    expect(index.kindFamilyOf('Ruleset')).toBe('Skill or command');
+    expect(index.gateFamilyOf('Guarded: client data')).toBe('Guarded');
+    expect(() => index.gateFamilyOf('Unheard of')).toThrow(/gate family/);
+  });
+
   it('refuses a graph the validator rejects, and names the faults', () => {
     const graph = validGraph();
     graph.nodes.push(tool('tool:e', '9Z', 'T0'));

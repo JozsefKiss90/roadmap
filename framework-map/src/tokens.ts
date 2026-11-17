@@ -45,6 +45,7 @@ export const MAP_TOKENS = {
   'map-mark-guarded': { fill: null, outline: 'muted', widthPx: 1, dashed: true },
   'map-text-name': { text: 'ink' },
   'map-text-tag': { text: 'muted' },
+  'map-label-leader': { line: 'soft', widthPx: 1 },
 } as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | MarkToken>;
 
 /** The mark token of each decision-class step. */

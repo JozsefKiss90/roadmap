@@ -12,6 +12,8 @@ declare module 'troika-three-text' {
     anchorX: number | 'left' | 'center' | 'right';
     anchorY: number | 'top' | 'top-baseline' | 'middle' | 'bottom-baseline' | 'bottom';
     color: string | number;
+    /** What the typeset text covers, from its anchor: left, bottom, right, top. Null until the first sync. */
+    readonly textRenderInfo: { blockBounds: [number, number, number, number] } | null;
     /** Typesets the text; `done` runs once the result is in place. */
     sync(done?: () => void): void;
     dispose(): void;

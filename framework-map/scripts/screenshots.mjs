@@ -5,8 +5,10 @@
  * screenshots/ at the repository root.
  *
  * It fails if a state logs a console error, throws, never signals "ready", or
- * requests anything other than the file itself. It does not compare
- * pixels, because headless 3D rendering varies between runs.
+ * requests anything other than the file itself. It also fails if a state
+ * shows too many labels, two labels that overlap, or a label that runs out of
+ * the window. It does not compare pixels, because headless 3D rendering varies
+ * between runs.
  *
  * Usage: node scripts/screenshots.mjs [path to the built file]
  */
@@ -14,7 +16,8 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
-import { states, viewports } from './screenshot-states.mjs';
+import { MOST_LABELS, states, viewports } from './screenshot-states.mjs';
+import { labelFaults } from './label-faults.mjs';
 
 const READY_SELECTOR = 'html[data-ready="true"]';
 const READY_TIMEOUT_MS = 15_000;
@@ -75,6 +78,8 @@ try {
       try {
         await page.goto(url.href);
         await page.waitForSelector(READY_SELECTOR, { state: 'attached', timeout: READY_TIMEOUT_MS });
+        const labels = await page.evaluate(() => window.frameworkMap?.labels() ?? null);
+        for (const fault of labelFaults(labels, viewport, MOST_LABELS)) failures.push(`${label}: ${fault}`);
         const screenshotPath = path.join(outputDir, `${label}.png`);
         await page.screenshot({ path: screenshotPath });
         console.log(`saved ${path.relative(repositoryRoot, screenshotPath)}`);
@@ -93,4 +98,6 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log(`\n${states.length} state(s) at ${viewports.length} viewport(s), no console errors, no network requests.`);
+console.log(
+  `\n${states.length} state(s) at ${viewports.length} viewport(s): no console errors, no network requests, no label faults.`,
+);

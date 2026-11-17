@@ -33,6 +33,12 @@ export interface GraphIndex {
   toolsOf(clusterId: string): readonly ToolNode[];
   /** How many tools a tier holds across its clusters. */
   toolCountOf(tierId: string): number;
+  /** The tier or cluster with this id, if the graph has one. */
+  tier(id: string): TierNode | undefined;
+  cluster(id: string): ClusterNode | undefined;
+  /** The family the vocabulary file lists a raw kind or gate value under. */
+  kindFamilyOf(kind: string): string;
+  gateFamilyOf(gate: string): string;
 }
 
 function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, T[]> {
@@ -43,6 +49,19 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, 
     else groups.set(key(item), [item]);
   }
   return groups;
+}
+
+/** Each raw value to the family the vocabulary file lists it under. */
+function familyOfValue(families: Record<string, string[]>, field: string): (value: string) => string {
+  const familyOf = new Map<string, string>();
+  for (const [family, values] of Object.entries(families)) {
+    for (const value of values) familyOf.set(value, family);
+  }
+  return (value) => {
+    const family = familyOf.get(value);
+    if (family === undefined) throw new Error(`The vocabulary file lists no ${field} family for "${value}".`);
+    return family;
+  };
 }
 
 /** Validates a parsed graph and indexes it. Throws GraphRejected on any fault. */
@@ -72,5 +91,9 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     clustersOf: (tierId) => clustersByTier.get(tierId) ?? [],
     toolsOf: (clusterId) => toolsByCluster.get(clusterId) ?? [],
     toolCountOf: (tierId) => toolsByTier.get(tierId)?.length ?? 0,
+    tier: (id) => tiers.find((tier) => tier.id === id),
+    cluster: (id) => clusters.find((cluster) => cluster.id === id),
+    kindFamilyOf: familyOfValue(vocabulary.kind, 'kind'),
+    gateFamilyOf: familyOfValue(vocabulary.gate, 'gate'),
   };
 }

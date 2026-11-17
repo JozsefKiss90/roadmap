@@ -20,6 +20,15 @@ export function mountTuning(constants: Constants, onChange: () => void): void {
   camera.addBinding(constants, 'nearestZoom', { label: 'nearest', min: 0.1, max: 1, step: 0.05 });
   camera.addBinding(constants, 'farthestZoom', { label: 'farthest', min: 1, max: 2, step: 0.05 });
 
+  const focus = pane.addFolder({ title: 'Tier and cluster distances' });
+  focus.addBinding(constants, 'tierTiltDegrees', { label: 'tier tilt', min: 10, max: 60, step: 1 });
+  focus.addBinding(constants, 'tierMostPixelsPerUnit', { label: 'tier closest', min: 16, max: 60, step: 1 });
+  focus.addBinding(constants, 'clusterTiltDegrees', { label: 'cluster tilt', min: 10, max: 60, step: 1 });
+  focus.addBinding(constants, 'clusterMostPixelsPerUnit', { label: 'cluster closest', min: 16, max: 80, step: 1 });
+  focus.addBinding(constants, 'tierInsetRightPx', { label: 'tier right', min: 0, max: 500, step: 4 });
+  focus.addBinding(constants, 'annotationTopPx', { label: 'names from top', min: 40, max: 200, step: 4 });
+  focus.addBinding(constants, 'fadedPlateOpacity', { label: 'faded plates', min: 0, max: 0.4, step: 0.01 });
+
   const insets = pane.addFolder({ title: 'Insets' });
   insets.addBinding(constants, 'insetTopPx', { label: 'top', min: 0, max: 300, step: 4 });
   insets.addBinding(constants, 'insetRightPx', { label: 'right', min: 0, max: 500, step: 4 });

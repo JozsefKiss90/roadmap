@@ -3,9 +3,19 @@ import layout from 'virtual:stack-layout';
 import { constants } from './constants';
 import { GraphRejected } from './data';
 import { loadGraph } from './inlined-graph';
-import { COUNT_FONT, addTierLabels } from './labels';
+import { TAG_FONT, addLabels } from './labels';
+import type { LabelRect } from './labels';
+import { mountPanels } from './panels';
 import { loadFonts, signalReady } from './ready';
 import { createStage } from './scene';
+import { createStore, syncWithFragment } from './state';
+
+declare global {
+  interface Window {
+    /** What the screenshot script reads from the page, beside the "ready" signal. */
+    frameworkMap?: { labels(): LabelRect[] };
+  }
+}
 
 const root = document.documentElement;
 
@@ -15,15 +25,23 @@ function applyPageConstants(): void {
 
 async function start(): Promise<void> {
   applyPageConstants();
+  const app = document.getElementById('app');
   const container = document.getElementById('stage');
-  if (!container) throw new Error('The page has no #stage element.');
+  if (!app || !container) throw new Error('The page has no #app or no #stage element.');
 
-  // The counts are drawn on a canvas, which needs its typeface loaded first.
-  await loadFonts(['400 1em "Instrument Serif"', COUNT_FONT]);
+  // The counts and badges are drawn on a canvas, which needs its typeface loaded first.
+  await loadFonts(['400 1em "Instrument Serif"', TAG_FONT]);
 
   const index = loadGraph();
-  const stage = createStage(container, index, layout, constants);
-  await addTierLabels(stage, index, layout, constants);
+  // The store starts from the URL fragment, so the page opens at the distance a link names.
+  const store = createStore(index);
+  syncWithFragment(store, index);
+
+  const stage = createStage(container, index, layout, constants, store);
+  const labels = addLabels(stage, index, layout, constants, store);
+  mountPanels(app, index, store);
+  window.frameworkMap = { labels: () => labels.rects() };
+  await labels.settled();
 
   if (import.meta.env.DEV) {
     const { mountTuning } = await import('./dev/tuning');

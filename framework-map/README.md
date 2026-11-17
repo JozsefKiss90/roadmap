@@ -21,7 +21,7 @@ Run these from this folder, after `npm install`.
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It uses the installed Chrome or Edge.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -29,18 +29,41 @@ Run these from this folder, after `npm install`.
 | --- | --- |
 | `src/data.ts` | Validates the graph with the validator below and indexes it. It throws `GraphRejected` for a graph with any fault |
 | `src/inlined-graph.ts` | Hands `data.ts` the graph and the vocabulary file that are inlined in the page |
-| `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows |
+| `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows, and gives each kind family its icon and each gate family its badge |
 | `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
 | `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
-| `src/camera.ts` | The arithmetic for where the camera rests |
-| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph, and sets the camera's limits |
-| `src/labels.ts` | The tier names (troika-three-text) and tool counts (three-spritetext) |
+| `src/camera.ts` | The arithmetic for where the camera stands at each distance |
+| `src/state.ts` | The state store: the distance and the focused tier or cluster, in step with the URL fragment |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks |
+| `src/pick.ts` | Which plate and cell lie under the pointer |
+| `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
+| `src/label-layout.ts` | The arithmetic for where cluster and tool names stand |
+| `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
+| `src/panels.ts` | The breadcrumb, and the Escape key |
 
 **The layout runs in the build, not in the page** (ADR 0002). A plugin in `vite.config.ts` runs `layoutStack` on the graph and serves the result as the module `virtual:stack-layout`. The page imports positions and never computes them, and nothing is written into the graph JSON. The layout's spacings are `STACK_METRICS` in `src/layout.ts`; after changing one, rebuild or reload the dev server.
 
 **How the layout works.** Every cell uses one mark grid, four marks deep, so a cell's area follows its tool count and a plate's length follows its tier's. Plates share their left edge and their depth. A cell fills a column at a time, from its committed tools to its guarded ones and by name within a step.
 
 **The camera** orbits the stack's vertical axis. Its tilt and zoom limits, its field of view and the margins around the stack are in `src/constants.ts`, and the dev server's tuning panel changes them live.
+
+## The three distances
+
+The map has three distances: stack, tier and cluster. `src/state.ts` holds the distance and the focused tier or cluster. The scene, the labels and the panels read the store and write to it. They never call each other.
+
+| Distance | What is on screen | How to get there |
+| --- | --- | --- |
+| Stack | Every plate, with each tier's name and tool count | Open the map, press Escape from a tier, or click "Stack" in the breadcrumb |
+| Tier | The focused plate, with its cluster names above it. The plates above it are faded | Click a plate or a tier name |
+| Cluster | The focused cell, with its tool names above it. Each name has its kind icon and, where the tool is gated, a gate badge | Click a cell of the focused plate, or a cluster name |
+
+- **Nothing moves but the camera.** A change of distance flies the camera and changes opacity. No plate, cell or mark changes place.
+- **From the stack, a click anywhere on a plate goes to its tier.** A cell takes clicks once its plate is focused.
+- **Escape steps out one distance.** The breadcrumb at the top centre shows the stack, the tier and the cluster, and each part is a button.
+- **The URL fragment names the focus.** `#tier=T3` opens at the tier distance and `#cluster=1A` at the cluster distance. An id the graph lacks opens the stack at rest.
+- **Close in, the camera stays near the front.** At the tier and cluster distances it turns 30 degrees to either side at most, because the names stand above the plate.
+- **Labels keep their size on screen.** Each is anchored to a point of the stack and offset from it in pixels. `src/label-layout.ts` works out the offsets, and `src/scene.ts` leaves room for them when it places the camera.
+- **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen. The screenshot script reads it.
 
 ## The graph validator
 

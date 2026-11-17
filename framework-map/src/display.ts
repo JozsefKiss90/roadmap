@@ -1,9 +1,10 @@
 /**
- * display: the map's display table for decision classes.
+ * display: the map's display table.
  *
  * The ten decision-class values group into the four steps a mark's form shows
  * (spec, "Encodings"). Kind and gate families are grouped in the vocabulary
- * file itself; the steps are grouped here.
+ * file itself; the steps are grouped here. The table also gives each kind
+ * family its icon and each gate family the word on its badge.
  */
 
 /** The four steps, from most to least committed. A cell lists its marks in this order. */
@@ -31,4 +32,57 @@ export function decisionStep(decisionClass: string): DecisionStep {
     : undefined;
   if (!step) throw new Error(`The display table has no step for the decision class "${decisionClass}".`);
   return step;
+}
+
+/** The Lucide icons the map draws for kind families, by Lucide's own names. */
+export const KIND_ICONS = [
+  'sparkles',
+  'puzzle',
+  'plug',
+  'package',
+  'app-window',
+  'server',
+  'brain',
+  'toggle-right',
+  'book-open',
+  'hammer',
+] as const;
+
+export type KindIcon = (typeof KIND_ICONS)[number];
+
+const ICON_OF_KIND_FAMILY: Readonly<Record<string, KindIcon>> = {
+  'Skill or command': 'sparkles',
+  'Plug-in, subagent or hook': 'puzzle',
+  'MCP server': 'plug',
+  'Library or framework': 'package',
+  'App or CLI': 'app-window',
+  'Platform or infrastructure': 'server',
+  Model: 'brain',
+  'Feature or capability': 'toggle-right',
+  'Standard or reference': 'book-open',
+  'Internal build': 'hammer',
+};
+
+/** The icon of a kind family. Throws for a family the table lacks. */
+export function kindIcon(kindFamily: string): KindIcon {
+  const icon = Object.hasOwn(ICON_OF_KIND_FAMILY, kindFamily) ? ICON_OF_KIND_FAMILY[kindFamily] : undefined;
+  if (!icon) throw new Error(`The display table has no icon for the kind family "${kindFamily}".`);
+  return icon;
+}
+
+/** The word on the badge of each gate family. A tool with no gate carries no badge. */
+const BADGE_OF_GATE_FAMILY: Readonly<Record<string, string | null>> = {
+  None: null,
+  'Admission review': 'Review',
+  'Licence check': 'Licence',
+  Guarded: 'Guarded',
+  'Operator approval': 'Approval',
+};
+
+/** The word on a gated tool's badge, or null for a tool with no gate. Throws for a family the table lacks. */
+export function gateBadge(gateFamily: string): string | null {
+  if (!Object.hasOwn(BADGE_OF_GATE_FAMILY, gateFamily)) {
+    throw new Error(`The display table has no badge for the gate family "${gateFamily}".`);
+  }
+  return BADGE_OF_GATE_FAMILY[gateFamily] ?? null;
 }

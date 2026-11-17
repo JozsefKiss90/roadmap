@@ -241,6 +241,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-faded` | `ink @ 0.12` | A mark outside the active lens or filter |
 | `map-text-name` | `ink` | Tier, cluster and tool names |
 | `map-text-tag` | `muted` | Counts and tags |
+| `map-label-leader` | `soft` hairline, 1px | The line from a cluster name down to its cell, and the bracket from a list of tool names to its cell |
 
 ### Decision-class scale
 
@@ -301,6 +302,8 @@ These rows extend the [contrast contract](#contrast-contract) to the map. Each o
 | `map-text-name` | `ink` | `paper-2` | text | 4.5:1 | 12.84:1 |
 | `map-text-tag` | `muted` | `paper` | text | 4.5:1 | 6.57:1 |
 | `map-text-tag` | `muted` | `paper-2` | text | 4.5:1 | 5.94:1 |
+| `map-label-leader` | `soft` | `paper` | non-text | 3:1 | 5.27:1 |
+| `map-label-leader` | `soft` | `paper-2` | non-text | 3:1 | 4.77:1 |
 
 The plate and the cell line are decorative, so neither may be the only carrier of meaning. Plate height and the tier name carry the tier. The marks of a cell sit together on one grid, with a gap to the next cell, and that grouping carries the cluster at the stack distance. From the tier distance the cluster name carries it too. The `exception` row is the second exception above.
 
