@@ -49,6 +49,8 @@ export const constants = {
   /** The window's margins at those two distances. The right one at the tier distance is room for cluster names. */
   nearInsetSidePx: 48,
   tierInsetRightPx: 260,
+  /** The detail card's width. While it is open, the tier and cluster distances keep clear of it. */
+  detailCardPx: 360,
   /** Where the names above a focused plate or cell begin, from the top of the window. */
   annotationTopPx: 88,
 
@@ -91,6 +93,11 @@ export const constants = {
   toolPartGapPx: 7,
   /** The least space between a name and its gate badge. */
   toolBadgeGapPx: 12,
+
+  /** The hover label: how far it stands from the pointer, to the right and above. */
+  hoverLabelOffsetPx: 12,
+  /** Where the link to the tool matrix leads: the export that sits beside the map's file. */
+  toolMatrixHref: 'Hermes%20OS%20tool%20matrix.xlsx',
 };
 
 export type Constants = typeof constants;

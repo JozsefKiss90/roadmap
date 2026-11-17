@@ -7,7 +7,7 @@
  * It fails if a state logs a console error, throws, never signals "ready", or
  * requests anything other than the file itself. It also fails if a state
  * shows too many labels, two labels that overlap, or a label that runs out of
- * the window. It does not compare pixels, because headless 3D rendering varies
+ * the window or under the detail card. It does not compare pixels, because headless 3D rendering varies
  * between runs.
  *
  * Usage: node scripts/screenshots.mjs [path to the built file]
@@ -79,7 +79,12 @@ try {
         await page.goto(url.href);
         await page.waitForSelector(READY_SELECTOR, { state: 'attached', timeout: READY_TIMEOUT_MS });
         const labels = await page.evaluate(() => window.frameworkMap?.labels() ?? null);
-        for (const fault of labelFaults(labels, viewport, MOST_LABELS)) failures.push(`${label}: ${fault}`);
+        // An open detail card covers the right of the window, so the labels must end before it.
+        const cardLeft = await page.evaluate(
+          () => document.querySelector('.detail-card:not([hidden])')?.getBoundingClientRect().left ?? null,
+        );
+        const clear = { width: cardLeft ?? viewport.width, height: viewport.height };
+        for (const fault of labelFaults(labels, clear, MOST_LABELS)) failures.push(`${label}: ${fault}`);
         const screenshotPath = path.join(outputDir, `${label}.png`);
         await page.screenshot({ path: screenshotPath });
         console.log(`saved ${path.relative(repositoryRoot, screenshotPath)}`);

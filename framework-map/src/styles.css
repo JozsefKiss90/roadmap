@@ -7,8 +7,12 @@
  */
 :root {
   --paper: #f6f1e7;
+  --paper-2: #ece6d8;
   --ink: #14213d;
   --muted: #46557a;
+  --soft: #55638a;
+  --rule: rgba(20, 33, 61, 0.12);
+  --rule-solid: #c4bfb1;
   --accent: #1f4fd8;
 
   --font-serif: 'Instrument Serif', serif;
@@ -75,14 +79,21 @@ body {
 .breadcrumb {
   position: absolute;
   top: 22px;
-  left: 50%;
   /* Stays clear of the title, and of the same width on the other side. */
-  max-width: calc(100vw - 2 * 330px);
-  transform: translateX(-50%);
+  right: 330px;
+  left: 330px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Beside an open detail card, the breadcrumb is centred in the room that is left. */
+#app:has(.detail-card:not([hidden])) .breadcrumb {
+  right: calc(var(--detail-card-width) + 16px);
 }
 
 .breadcrumb ol {
   display: flex;
+  max-width: 100%;
   align-items: center;
   gap: 2px;
   margin: 0;
@@ -141,6 +152,348 @@ body {
 
 /* map-focus-outline: a 2px accent outline with a 2px gap. */
 .breadcrumb button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The hover label: the name and cluster of the mark under the pointer. */
+.hover-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 280px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule-solid);
+  border-radius: 4px;
+  background: var(--paper);
+  pointer-events: none;
+}
+
+.hover-label[hidden] {
+  display: none;
+}
+
+.hover-label-name {
+  font: 500 12px/16px var(--font-sans);
+}
+
+.hover-label-cluster {
+  color: var(--muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The detail card: docked on the right, present only while something is selected. */
+.detail-card {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--detail-card-width);
+  border-left: 1px solid var(--rule-solid);
+  background: var(--paper);
+  font: 400 13px/20px var(--font-sans);
+}
+
+.detail-card[hidden] {
+  display: none;
+}
+
+.card-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 20px 16px 16px 24px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.card-eyebrow,
+.card-tag,
+.card-fields dt,
+.card-section h3,
+.pill {
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+}
+
+.card-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.card-name {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: 600 20px/24px var(--font-sans);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.card-name:focus {
+  outline: none;
+}
+
+.card-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.card-close:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.card-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+}
+
+.card-body > * {
+  margin: 0;
+}
+
+.card-body > :not(:first-child) {
+  margin-top: 20px;
+}
+
+.card-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.card-section h3 {
+  margin: 0 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.card-section .card-text {
+  font-size: 13px;
+}
+
+.card-tag {
+  flex: none;
+  color: var(--muted);
+}
+
+.card-note {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Labelled fields: the label in its own column, so the values line up. */
+.card-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.card-fields > div {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+/* A label shares its value's line height, so the two sit on one line however far the value runs. */
+.card-fields dt {
+  color: var(--muted);
+  line-height: 20px;
+}
+
+.card-fields dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The decision: its class, in the form its mark has in the stack, and whose decision it is. */
+.card-decision p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.card-decision-class {
+  font-weight: 600;
+}
+
+.card-decision-source {
+  flex-wrap: wrap;
+}
+
+.card-decision .card-decision-source {
+  margin-top: 8px;
+}
+
+.card-decision-source .card-note {
+  margin: 0;
+}
+
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+
+.swatch-committed {
+  background: var(--ink);
+}
+
+/* A planned or optional mark has a paper fill, which shows where a row is lit under the pointer. */
+.swatch-planned {
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+
+.swatch-optional {
+  border: 1px solid var(--soft);
+  background: var(--paper);
+}
+
+.swatch-guarded {
+  border: 1px dashed var(--muted);
+}
+
+/* Whose decision: a filled pill for the Architect's, an outlined one for a proposal. They differ by form. */
+.pill {
+  flex: none;
+  padding: 0 8px;
+  line-height: 20px;
+  border-radius: 4px;
+}
+
+.pill-decided {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.pill-proposed {
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+/* Rows that select something else: a tool, a cluster or a need. */
+.card-rows {
+  margin: 0 -8px;
+  padding: 0;
+  list-style: none;
+}
+
+.card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-row .swatch {
+  align-self: center;
+}
+
+.card-row:hover {
+  background: var(--paper-2);
+}
+
+.card-row-name,
+.card-inline {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* A row selects what it names, so it is underlined at rest like the card's links. */
+  text-decoration: underline;
+  text-decoration-color: var(--rule-solid);
+  text-underline-offset: 4px;
+}
+
+.card-row:hover .card-row-name,
+.card-inline:hover {
+  text-decoration-color: var(--ink);
+}
+
+.card-inline {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-row-end {
+  margin-left: auto;
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--soft);
+  text-underline-offset: 4px;
+  overflow-wrap: anywhere;
+}
+
+.card-link:hover {
+  text-decoration-color: var(--ink);
+}
+
+.card-link .card-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+.card-foot {
+  padding: 12px 24px;
+  border-top: 1px solid var(--rule);
+}
+
+/* map-focus-outline, as on the breadcrumb. */
+.detail-card :is(button, a):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

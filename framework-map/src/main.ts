@@ -21,6 +21,7 @@ const root = document.documentElement;
 
 function applyPageConstants(): void {
   root.style.setProperty('--title-size', `${constants.titleSizePx}px`);
+  root.style.setProperty('--detail-card-width', `${constants.detailCardPx}px`);
 }
 
 async function start(): Promise<void> {
@@ -39,7 +40,7 @@ async function start(): Promise<void> {
 
   const stage = createStage(container, index, layout, constants, store);
   const labels = addLabels(stage, index, layout, constants, store);
-  mountPanels(app, index, store);
+  mountPanels(app, index, store, constants);
   window.frameworkMap = { labels: () => labels.rects() };
   await labels.settled();
 

@@ -1,11 +1,14 @@
 /**
  * panels: the DOM interface around the canvas.
  *
- * So far: the breadcrumb at the top centre, and the Escape key. Both read the
- * state store and write to it; neither knows the scene.
+ * So far: the breadcrumb at the top centre, the detail card on the right, and
+ * the Escape key. All read the state store and write to it; none knows the
+ * scene.
  */
 import { ChevronRight, createElement } from 'lucide';
+import type { Constants } from './constants';
 import type { GraphIndex } from './data';
+import { mountDetailCard } from './detail-card';
 import type { MapState, Store } from './state';
 
 interface Crumb {
@@ -62,11 +65,13 @@ function mountBreadcrumb(app: HTMLElement, index: GraphIndex, store: Store): voi
 }
 
 /** Adds the interface around the canvas, and the keys that work anywhere on the page. */
-export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store): void {
+export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, constants: Constants): void {
   mountBreadcrumb(app, index, store);
+  mountDetailCard(app, index, store, constants);
   document.addEventListener('keydown', (event) => {
-    // A held key steps out once, not all the way.
+    // A held key steps back once, not all the way.
     if (event.key !== 'Escape' || event.defaultPrevented || event.repeat) return;
-    store.stepOut();
+    // Closes the detail card if it is open, and otherwise steps out one distance.
+    store.stepBack();
   });
 }

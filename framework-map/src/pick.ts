@@ -1,5 +1,5 @@
 /**
- * pick: which plate and cell lie under a point of the picture. Pure
+ * pick: which plate, cell and mark lie under a point of the picture. Pure
  * arithmetic on the layout, so it has no three.js in it.
  */
 import type { Point, StackLayout } from './layout';
@@ -14,12 +14,14 @@ export interface StackHit {
   tier: string;
   /** The cell the ray meets, or null where it meets the plate between its cells. */
   cluster: string | null;
+  /** The tool whose mark the ray meets, or null where it meets the cell between its marks. */
+  tool: string | null;
 }
 
 const within = (value: number, centre: number, size: number): boolean => Math.abs(value - centre) <= size / 2;
 
 /**
- * The first plate a ray meets, and the cell it meets there. A plate that
+ * The first plate a ray meets, and the cell and the mark it meets there. A plate that
  * `seesThrough` names is passed over, as if it were not there.
  */
 export function pickOnStack(
@@ -42,8 +44,16 @@ export function pickOnStack(
       (candidate) =>
         candidate.tier === plate.tier && within(x, candidate.x, candidate.width) && within(z, candidate.z, candidate.depth),
     );
+    const mark = cell
+      ? layout.marks.find(
+          (candidate) =>
+            candidate.cluster === cell.cluster &&
+            within(x, candidate.x, candidate.size) &&
+            within(z, candidate.z, candidate.size),
+        )
+      : undefined;
     nearest = along;
-    hit = { tier: plate.tier, cluster: cell?.cluster ?? null };
+    hit = { tier: plate.tier, cluster: cell?.cluster ?? null, tool: mark?.tool ?? null };
   }
   return hit;
 }

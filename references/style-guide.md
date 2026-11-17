@@ -234,6 +234,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-mark-guarded` | No fill, 1px dashed `muted` outline | Decision class: guarded |
 | `map-hover-ring` | 1px `ink` ring, 2px clear of the mark | The mark under the pointer |
 | `map-selected-fill` | Solid `accent` fill | A selected mark, or a mark in a need trace or phase scrub |
+| `map-selected-cell` | 2px `accent` outline | The cell of a selected cluster |
 | `map-bestfit-ring` | 2px `accent` ring, 2px clear of the mark | A best-fit tool in a need trace |
 | `map-home-cell` | 2px `accent` outline | The home cell of a traced need |
 | `map-trace-line` | 1px `accent` line | The line from a home cell to a serving tool, or from an internal skill to its cluster |
@@ -261,7 +262,7 @@ The steps differ by form: filled or not, a heavy or a thin outline, a solid or a
 | State | Treatment |
 |---|---|
 | Hover | `map-hover-ring` is added. The mark itself does not change. |
-| Selected or traced | The mark takes `map-selected-fill`, whatever its step. |
+| Selected or traced | The mark takes `map-selected-fill`, whatever its step. A selected cluster's cell takes `map-selected-cell`. |
 | Keyboard focus | `map-focus-outline` is added. |
 | Faded | The mark keeps its form. Its `ink`, `soft` or `muted` part turns to `map-faded`, and a `paper` fill stays `paper`. |
 
@@ -291,6 +292,7 @@ These rows extend the [contrast contract](#contrast-contract) to the map. Each o
 | `map-mark-guarded` | `muted` | `paper-2` | non-text | 3:1 | 5.94:1 |
 | `map-hover-ring` | `ink` | `paper-2` | non-text | 3:1 | 12.84:1 |
 | `map-selected-fill` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
+| `map-selected-cell` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-bestfit-ring` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-home-cell` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
 | `map-trace-line` | `accent` | `paper-2` | non-text | 3:1 | 5.33:1 |
@@ -327,6 +329,8 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
 | `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts |
 | `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags |
+| `map-card-name` | Geist (sans) | 20px | 600 | The name at the head of the detail card |
+| `map-card-body` | Geist (sans) | 13px | 400 | Text in the detail card; its opening line is 14px |
 
 **Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 1280×720. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.
 

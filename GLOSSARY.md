@@ -70,6 +70,14 @@ _Avoid_: Time slider, timeline
 The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
+**Hover label**:
+The small label beside the pointer that names the tool under it and its cluster.
+_Avoid_: Tooltip, popup
+
+**Overlap group**:
+A named set of tools that do the same job; the detail card lists a tool's fellow members.
+_Avoid_: Duplicate set, alternatives
+
 **Lens**:
 A way of re-colouring or filtering the map that leaves every tool where it is.
 _Avoid_: Mode, filter (when it means a lens)

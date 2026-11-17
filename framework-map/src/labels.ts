@@ -15,7 +15,8 @@
  * Every label keeps its size on screen. A label is anchored to a point of the
  * stack and offset from it in pixels, so it follows its plate or cell as the
  * camera moves. The labels read the distance and focus from the state store,
- * and write to it when the partner clicks a tier or cluster name.
+ * and write to it when the partner clicks a name: a tier name goes to its
+ * tier, and a cluster or tool name selects what it names.
  */
 import {
   BufferGeometry,
@@ -42,7 +43,6 @@ import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { gateBadge, kindIcon } from './display';
 import type { KindIcon } from './display';
-import type { ToolNode } from './graph';
 import { drawKindIcon } from './icons';
 import { listLayout, staircaseRise } from './label-layout';
 import type { StackLayout } from './layout';
@@ -216,7 +216,7 @@ export function addLabels(
         dx: 0,
         dy: rise,
         box: { left: 0, bottom: 0, right: 0, top: constants.clusterRowPx },
-        action: () => store.focusCluster(cluster.id),
+        action: () => store.select(cluster.id),
       };
       pending.push(
         typeset(name).then(() => {
@@ -230,8 +230,6 @@ export function addLabels(
   }
 
   // Cluster distance: tool names. They are made when a cluster is focused and thrown away after.
-  const tools = new Map<string, ToolNode>();
-  for (const node of index.graph.nodes) if (node.type === 'tool') tools.set(node.id, node);
   const iconTextures = new Map<KindIcon, CanvasTexture>();
   function iconMaterial(icon: KindIcon): SpriteMaterial {
     let texture = iconTextures.get(icon);
@@ -281,7 +279,7 @@ export function addLabels(
     const rows = layout.marks
       .filter((mark) => mark.cluster === clusterId)
       .map((mark) => {
-        const tool = tools.get(mark.tool);
+        const tool = index.tool(mark.tool);
         if (!tool) throw new Error(`The layout places "${mark.tool}", which is not a tool in the graph.`);
         const group = new Group();
         group.visible = false;
@@ -326,15 +324,16 @@ export function addLabels(
           });
         }
         stage.add(group);
-        return { group, name, badge };
+        return { group, name, badge, tool: tool.id };
       });
 
-    const labels: Label[] = rows.map(({ group }) => ({
+    const labels: Label[] = rows.map(({ group, tool }) => ({
       group,
       anchor,
       dx: 0,
       dy: 0,
       box: { left: 0, bottom: -constants.toolRowPx / 2, right: 0, top: constants.toolRowPx / 2 },
+      action: () => store.select(tool),
     }));
     toolLabels = labels;
 

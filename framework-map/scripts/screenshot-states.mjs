@@ -13,6 +13,12 @@ export const states = [
   // T3 has the most clusters, and 1A the most tools: the two states with the most labels.
   { name: 'one-tier', fragment: 'tier=T3' },
   { name: 'one-cluster', fragment: 'cluster=1A' },
+  // The detail card in its three forms. Serena has a repository, a note, needs and an overlap group.
+  { name: 'tool-selected', fragment: 'cluster=4A&select=tool:serena' },
+  // An internal skill, with its `implements` line; 1A is the widest list of names beside the card.
+  { name: 'internal-skill-selected', fragment: 'cluster=1A&select=tool:ci-gate-add' },
+  { name: 'cluster-selected', fragment: 'cluster=5B&select=5B' },
+  { name: 'need-selected', fragment: 'cluster=5F&select=N01' },
 ];
 
 /** The most labels a state may show at once. The spec asks for "no more than about 60". */

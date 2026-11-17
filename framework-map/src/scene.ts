@@ -6,9 +6,16 @@
  * of its nodes, pinned where the layout put it; no simulation runs and no link
  * is drawn. Plates and cells are plain objects added to its scene.
  *
- * The scene reads the distance and the focus from the state store, and writes
- * to the store when the partner clicks a plate or a cell. It moves the camera
- * and changes opacity; it never moves a plate, a cell or a mark.
+ * The scene reads the distance, the focus and the selection from the state
+ * store, and writes to the store when the partner clicks a plate, a cell or a
+ * mark. It moves the camera and changes colour and opacity; it never moves a
+ * plate, a cell or a mark.
+ *
+ * The mark under the pointer gets a ring and a hover label. The selected
+ * tool's mark takes the selected fill, and the selected cluster's cell an
+ * outline. `implements` lines run from a selected
+ * tool to the clusters it implements, and from a selected cluster to the
+ * tools that implement it.
  */
 import ForceGraph3D from '3d-force-graph';
 import {
@@ -36,13 +43,29 @@ import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display';
 import type { DecisionStep } from './display';
-import type { ToolNode } from './graph';
+import { createHoverLabel } from './hover-label';
 import { listShape, staircaseHeight } from './label-layout';
-import type { CellLayout, PlateLayout, StackLayout } from './layout';
+import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
 import { pickOnStack } from './pick';
+import type { StackHit } from './pick';
+import { AT_STACK } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
 import type { LineToken, MarkToken } from './tokens';
+
+/** The form of the selected mark: the selected fill, whatever the mark's step. */
+const SELECTED_MARK: MarkToken = {
+  fill: MAP_TOKENS['map-selected-fill'].fill,
+  outline: null,
+  widthPx: 0,
+  dashed: false,
+};
+/** The hover ring is drawn as a mark with an outline and no fill, on a square of its own. */
+const HOVER_RING = MAP_TOKENS['map-hover-ring'];
+const HOVER_RING_MARK: MarkToken = { fill: null, outline: HOVER_RING.line, widthPx: HOVER_RING.widthPx, dashed: false };
+/** The outline of a selected cluster's cell is drawn the same way, on a rectangle the size of the cell. */
+const SELECTED_CELL = MAP_TOKENS['map-selected-cell'];
+const SELECTED_CELL_MARK: MarkToken = { fill: null, outline: SELECTED_CELL.line, widthPx: SELECTED_CELL.widthPx, dashed: false };
 
 /** Something the partner can click that is not a plate or a cell: it answers for a point of the picture. */
 export type Pickable = (x: number, y: number) => (() => void) | null;
@@ -87,6 +110,8 @@ const MARK_LIFT = 0.02;
 const MARK_SHARE_OF_QUAD = 0.8;
 /** A faded tier is drawn before the others, so its marks never lie over the marks of the focused plate. */
 const UNDER_THE_REST = -1;
+/** The hover ring and the `implements` lines are drawn after the plates and marks. */
+const OVER_THE_MARKS = 1;
 /** A press that moves the pointer further than this is a drag, not a click. */
 const CLICK_SLOP_PX = 5;
 
@@ -185,6 +210,8 @@ interface TierParts {
   fill: MeshBasicMaterial;
   lines: Line[];
   marks: Map<DecisionStep, ShaderMaterial>;
+  /** The material of the tier's selected mark. */
+  selected: ShaderMaterial;
   /** Every object drawn for the tier: its plate, its lines and its marks. */
   objects: Object3D[];
   /** How opaque the tier is now, from 0 to 1, and where its fade started and ends. */
@@ -205,7 +232,7 @@ function setTierOpacity(parts: TierParts, opacity: number): void {
   }
   parts.fill.opacity = opacity;
   for (const { material, fullOpacity } of parts.lines) material.opacity = fullOpacity * opacity;
-  for (const material of parts.marks.values()) material.uniforms.uOpacity!.value = opacity;
+  for (const material of [...parts.marks.values(), parts.selected]) material.uniforms.uOpacity!.value = opacity;
 }
 
 /** The limits the orbit controls hold the camera to at one distance. */
@@ -252,8 +279,19 @@ export function createStage(
     const marks = new Map<DecisionStep, ShaderMaterial>(
       DECISION_STEPS.map((step) => [step, markMaterial(MARK_TOKEN_OF_STEP[step], renderer.getPixelRatio())]),
     );
+    const selected = markMaterial(SELECTED_MARK, renderer.getPixelRatio());
     const objects: Object3D[] = [];
-    tiers.set(plate.tier, { plate, fill, lines: [edge, cellLine], marks, objects, opacity: 1, from: 1, to: 1 });
+    tiers.set(plate.tier, {
+      plate,
+      fill,
+      lines: [edge, cellLine],
+      marks,
+      selected,
+      objects,
+      opacity: 1,
+      from: 1,
+      to: 1,
+    });
 
     const thickness = constants.plateThickness;
     const box = new BoxGeometry(plate.width, thickness, plate.depth);
@@ -285,10 +323,15 @@ export function createStage(
   };
 
   // Marks. One flat square per tool, in the material of its tier and its decision-class step.
-  const tools = new Map<string, ToolNode>();
-  for (const node of index.graph.nodes) if (node.type === 'tool') tools.set(node.id, node);
+  const markOf = new Map<string, MarkLayout>(layout.marks.map((mark) => [mark.tool, mark]));
+  const cellOf = new Map<string, CellLayout>(layout.cells.map((cell) => [cell.cluster, cell]));
+  const meshes = new Map<string, { mesh: Mesh; node: MarkNode }>();
+  const selectedTool = (): string | null => {
+    const { selection } = store.get();
+    return selection?.type === 'tool' ? selection.id : null;
+  };
   const nodes: MarkNode[] = layout.marks.map((mark) => {
-    const tool = tools.get(mark.tool);
+    const tool = index.tool(mark.tool);
     if (!tool) throw new Error(`The layout places "${mark.tool}", which is not a tool in the graph.`);
     const y = mark.y + MARK_LIFT;
     return {
@@ -317,13 +360,116 @@ export function createStage(
     .nodeThreeObject((node) => {
       const mark = node as MarkNode;
       const parts = partsOf(mark.tier);
-      const mesh = new Mesh(square, parts.marks.get(mark.step));
+      const mesh = new Mesh(square, mark.id === selectedTool() ? parts.selected : parts.marks.get(mark.step));
+      meshes.set(mark.id, { mesh, node: mark });
       mesh.scale.setScalar(mark.size / MARK_SHARE_OF_QUAD);
       mesh.renderOrder = parts.opacity >= 1 ? 0 : UNDER_THE_REST;
       parts.objects.push(mesh);
       return mesh;
     })
     .graphData({ nodes, links: [] });
+
+  // A mark made while its tool is selected starts with the selected fill, so the page may open with one.
+  let filled = selectedTool();
+  /** Gives the selected tool's mark the selected fill, and every other mark the form of its step. */
+  function showSelectedMark(): void {
+    const next = selectedTool();
+    if (next === filled) return;
+    for (const [id, selected] of [
+      [filled, false],
+      [next, true],
+    ] as const) {
+      const made = id === null ? undefined : meshes.get(id);
+      if (!made) continue;
+      const parts = partsOf(made.node.tier);
+      made.mesh.material = selected ? parts.selected : parts.marks.get(made.node.step)!;
+    }
+    filled = next;
+  }
+
+  // The `implements` lines of the selection. They cross plates, so no plate hides them.
+  const traceLine = line(MAP_TOKENS['map-trace-line']);
+  traceLine.material.depthTest = false;
+  const traces = new LineSegments(new BufferGeometry(), traceLine.material);
+  traces.renderOrder = OVER_THE_MARKS;
+  traces.frustumCulled = false;
+  traces.visible = false;
+  graph.scene().add(traces);
+
+  // The outline of the selected cluster's cell.
+  const cellOutlineMaterial = markMaterial(SELECTED_CELL_MARK, renderer.getPixelRatio());
+  const cellOutline = new Mesh(square, cellOutlineMaterial);
+  cellOutline.renderOrder = OVER_THE_MARKS;
+  cellOutline.visible = false;
+  graph.scene().add(cellOutline);
+
+  function showSelectedCell(): void {
+    const { selection } = store.get();
+    const cell = selection?.type === 'cluster' ? cellOf.get(selection.id) : undefined;
+    cellOutline.visible = cell !== undefined;
+    if (!cell) return;
+    cellOutline.position.set(cell.x, cell.y + MARK_LIFT, cell.z);
+    cellOutline.scale.set(cell.width / MARK_SHARE_OF_QUAD, 1, cell.depth / MARK_SHARE_OF_QUAD);
+  }
+
+  /** Draws a line for each `implements` edge of the selected tool or cluster, and none for any other selection. */
+  function showImplementsLines(): void {
+    const { selection } = store.get();
+    const ends: [MarkLayout | undefined, CellLayout | undefined][] =
+      selection?.type === 'tool'
+        ? index.implementsOf(selection.id).map((cluster) => [markOf.get(selection.id), cellOf.get(cluster.id)])
+        : selection?.type === 'cluster'
+          ? index.implementedBy(selection.id).map((tool) => [markOf.get(tool.id), cellOf.get(selection.id)])
+          : [];
+    const corners: number[] = [];
+    for (const [mark, cell] of ends) {
+      if (!mark || !cell) continue;
+      // The line meets the cell at the middle of an edge, not on one of its marks:
+      // the back edge for a tool on a higher plate, and the front edge for any other.
+      const edgeZ = cell.z + (mark.y > cell.y ? -1 : 1) * (cell.depth / 2);
+      corners.push(mark.x, mark.y + MARK_LIFT, mark.z, cell.x, cell.y + MARK_LIFT, edgeZ);
+    }
+    traces.geometry.dispose();
+    traces.geometry = new BufferGeometry().setAttribute('position', new Float32BufferAttribute(corners, 3));
+    traces.visible = corners.length > 0;
+  }
+
+  // Hover: a ring on the mark under the pointer, and a label beside the pointer.
+  const ringMaterial = markMaterial(HOVER_RING_MARK, renderer.getPixelRatio());
+  const ring = new Mesh(square, ringMaterial);
+  ring.renderOrder = OVER_THE_MARKS;
+  ring.visible = false;
+  graph.scene().add(ring);
+  const hoverLabel = createHoverLabel(container, constants.hoverLabelOffsetPx);
+  let hovered: MarkLayout | null = null;
+  const fromCamera = new Vector3();
+  const forward = new Vector3();
+
+  /** Sizes the ring so that it stands its gap clear of the mark, in pixels on screen. */
+  function placeHoverRing(): void {
+    if (!hovered) return;
+    ring.position.set(hovered.x, hovered.y + MARK_LIFT * 1.5, hovered.z);
+    camera.getWorldDirection(forward);
+    const depth = fromCamera.copy(ring.position).sub(camera.position).dot(forward);
+    const unitsPerPixel = (2 * depth * Math.tan(radians(camera.fov) / 2)) / frame.height;
+    const side = hovered.size + 2 * (HOVER_RING.gapPx + HOVER_RING.widthPx) * unitsPerPixel;
+    ring.scale.setScalar(side / MARK_SHARE_OF_QUAD);
+  }
+
+  /** Shows the ring and the label for a tool's mark, with the pointer at a point of the picture. Null hides both. */
+  function hover(toolId: string | null, at?: { x: number; y: number }): void {
+    const tool = toolId === null ? undefined : index.tool(toolId);
+    hovered = tool ? (markOf.get(tool.id) ?? null) : null;
+    ring.visible = hovered !== null;
+    if (!tool || !hovered || !at) {
+      hoverLabel.hide();
+      return;
+    }
+    placeHoverRing();
+    // An open detail card covers the right of the window, so the label keeps left of it.
+    const rightEdge = windowSize.width - (store.get().selection ? constants.detailCardPx : 0);
+    hoverLabel.show(at.x + origin.x, at.y + origin.y, rightEdge, tool.label, index.cluster(tool.cluster)?.label ?? '');
+  }
 
   controls.enablePan = false;
   controls.enableDamping = false;
@@ -333,7 +479,7 @@ export function createStage(
   const windowSize = { width: 0, height: 0 };
   const frame: Frame = { width: 0, height: 0, inset: { top: 0, right: 0, bottom: 0, left: 0 } };
   const origin = { x: 0, y: 0 };
-  const listeners: (() => void)[] = [];
+  const listeners: (() => void)[] = [placeHoverRing];
   const notify = (): void => listeners.forEach((listener) => listener());
   const centre = new Vector3(
     (layout.bounds.min.x + layout.bounds.max.x) / 2,
@@ -363,14 +509,16 @@ export function createStage(
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
-    const cell = state.distance === 'cluster' ? layout.cells.find((each) => each.cluster === state.cluster) : undefined;
+    // An open detail card covers the right of the window, so the plate or cell stands clear of it.
+    const card = state.selection ? constants.detailCardPx : 0;
+    const cell = state.distance === 'cluster' ? cellOf.get(state.cluster ?? '') : undefined;
     if (cell) {
       const names = listShape(index.toolsOf(cell.cluster).length, constants.toolListMostRows);
       const top = constants.annotationTopPx + names.rows * constants.toolRowPx + constants.toolListGapPx;
       const region = inPicture(
         constants.nearInsetSidePx,
         top,
-        windowSize.width - constants.nearInsetSidePx,
+        windowSize.width - constants.nearInsetSidePx - card,
         windowSize.height - constants.insetBottomPx,
       );
       return placeToFit(flat(cell), frame, region, field, constants.clusterTiltDegrees, 0, {
@@ -386,7 +534,7 @@ export function createStage(
       const region = inPicture(
         constants.nearInsetSidePx,
         top,
-        windowSize.width - constants.tierInsetRightPx,
+        windowSize.width - constants.tierInsetRightPx - card,
         windowSize.height - constants.insetBottomPx,
       );
       return placeToFit(flat(plate), frame, region, field, constants.tierTiltDegrees, 0, {
@@ -523,10 +671,14 @@ export function createStage(
     camera.fov = constants.fieldOfViewDegrees;
     // The outline widths are in screen pixels, so they follow the display's pixel ratio.
     for (const parts of tiers.values()) {
-      for (const material of parts.marks.values()) material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
+      for (const material of [...parts.marks.values(), parts.selected]) {
+        material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
+      }
     }
+    ringMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
+    cellOutlineMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
 
-    restRange = placeOf({ distance: 'stack', tier: null, cluster: null }).range;
+    restRange = placeOf(AT_STACK).range;
     // One depth range for every distance. It is tight enough to keep marks
     // and plates apart in the depth buffer.
     camera.near = restRange / 20;
@@ -551,8 +703,24 @@ export function createStage(
     notify();
   }
 
+  /**
+   * What decides the camera's place: the distance, the focus, and whether the
+   * detail card is open beside a focused plate or cell.
+   */
+  const placeKey = (state: MapState): string =>
+    [state.distance, state.tier, state.cluster, state.distance !== 'stack' && state.selection !== null].join('|');
+
   if (fitWindow()) goTo(store.get(), false);
-  store.subscribe((state) => goTo(state, true));
+  showSelectedCell();
+  showImplementsLines();
+  store.subscribe((state, before) => {
+    hover(null);
+    showSelectedMark();
+    showSelectedCell();
+    showImplementsLines();
+    if (placeKey(state) !== placeKey(before)) goTo(state, true);
+    else notify();
+  });
 
   controls.addEventListener('change', notify);
   new ResizeObserver(() => {
@@ -560,24 +728,36 @@ export function createStage(
     onResize();
   }).observe(container);
 
-  // Clicks. A label is asked first; then the plates and cells under the pointer.
+  // Clicks and hover. A label is asked first; then the plates, cells and marks under the pointer.
   const pickables: Pickable[] = [];
   const raycaster = new Raycaster();
   const isFaded = (tier: string): boolean => partsOf(tier).to < 1;
 
-  function actionAt(x: number, y: number): (() => void) | null {
+  /** What lies under a point of the picture: a label's action, or a place on the stack, or nothing. */
+  function under(x: number, y: number): { action: (() => void) | null; hit: StackHit | null } {
     for (const pickable of pickables) {
       const action = pickable(x, y);
-      if (action) return action;
+      if (action) return { action, hit: null };
     }
     raycaster.setFromCamera(new Vector2((x / frame.width) * 2 - 1, 1 - (y / frame.height) * 2), camera);
-    const hit = pickOnStack(raycaster.ray, layout, isFaded);
-    if (!hit) return null;
+    return { action: null, hit: pickOnStack(raycaster.ray, layout, isFaded) };
+  }
+
+  /** What a click on a point of the picture does, if anything. */
+  function actionAt(x: number, y: number): { action: (() => void) | null; hit: StackHit | null } {
+    const { action, hit } = under(x, y);
+    return { action: action ?? (hit ? actionOn(hit) : null), hit };
+  }
+
+  /** What a click on a place of the stack does. */
+  function actionOn({ tier, cluster, tool }: StackHit): (() => void) | null {
     const state = store.get();
-    const { tier, cluster } = hit;
     // From the stack, a click on a plate goes to its tier, wherever on the plate it lands.
     if (state.distance === 'stack' || tier !== state.tier) return () => store.focusTier(tier);
-    if (cluster) return cluster === state.cluster ? null : () => store.focusCluster(cluster);
+    // On the focused plate, a mark selects its tool and the rest of a cell selects its cluster.
+    const selected = state.selection?.id;
+    if (tool) return tool === selected ? null : () => store.select(tool);
+    if (cluster) return cluster === selected ? null : () => store.select(cluster);
     // The focused plate, between its cells: from a cluster this is the way back to the tier.
     return state.distance === 'cluster' ? () => store.focusTier(tier) : null;
   }
@@ -589,7 +769,9 @@ export function createStage(
   let pressedAt: { x: number; y: number } | null = null;
   canvasHost.addEventListener('pointerdown', (event) => {
     pressedAt = event.button === 0 ? pointerAt(event) : null;
+    hover(null);
   });
+  canvasHost.addEventListener('pointerleave', () => hover(null));
   canvasHost.addEventListener('pointerup', (event) => {
     const released = pointerAt(event);
     const pressed = pressedAt;
@@ -597,12 +779,15 @@ export function createStage(
     if (!pressed || Math.hypot(released.x - pressed.x, released.y - pressed.y) > CLICK_SLOP_PX) return;
     // A click during a flight would be picked against a camera that is still moving.
     if (!controls.enabled) return;
-    actionAt(released.x, released.y)?.();
+    actionAt(released.x, released.y).action?.();
   });
   canvasHost.addEventListener('pointermove', (event) => {
-    if (event.buttons !== 0) return;
+    // A camera in flight, or one the partner is turning, has no steady picture to hover over.
+    if (event.buttons !== 0 || !controls.enabled) return;
     const at = pointerAt(event);
-    canvasHost.style.cursor = actionAt(at.x, at.y) ? 'pointer' : '';
+    const { action, hit } = actionAt(at.x, at.y);
+    canvasHost.style.cursor = action ? 'pointer' : '';
+    hover(hit?.tool ?? null, at);
   });
 
   const projected = new Vector3();

@@ -17,6 +17,7 @@ export const ROLES = {
   soft: '#55638a',
   rule: 'rgba(20,33,61,0.12)',
   'rule-solid': '#c4bfb1',
+  accent: '#1f4fd8',
 } as const;
 
 export type Role = keyof typeof ROLES;
@@ -25,6 +26,11 @@ export type Role = keyof typeof ROLES;
 export interface LineToken {
   line: Role;
   widthPx: number;
+}
+
+/** A ring around a mark: a line that stands a gap clear of it. */
+export interface RingToken extends LineToken {
+  gapPx: number;
 }
 
 /** The form of a mark in one decision-class step. A `null` fill lets the plate show through. */
@@ -43,10 +49,14 @@ export const MAP_TOKENS = {
   'map-mark-planned': { fill: 'paper', outline: 'ink', widthPx: 2, dashed: false },
   'map-mark-optional': { fill: 'paper', outline: 'soft', widthPx: 1, dashed: false },
   'map-mark-guarded': { fill: null, outline: 'muted', widthPx: 1, dashed: true },
+  'map-hover-ring': { line: 'ink', widthPx: 1, gapPx: 2 },
+  'map-selected-fill': { fill: 'accent' },
+  'map-selected-cell': { line: 'accent', widthPx: 2 },
+  'map-trace-line': { line: 'accent', widthPx: 1 },
   'map-text-name': { text: 'ink' },
   'map-text-tag': { text: 'muted' },
   'map-label-leader': { line: 'soft', widthPx: 1 },
-} as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | MarkToken>;
+} as const satisfies Record<string, { fill: Role } | { text: Role } | LineToken | RingToken | MarkToken>;
 
 /** The mark token of each decision-class step. */
 export const MARK_TOKEN_OF_STEP: Readonly<Record<DecisionStep, MarkToken>> = {

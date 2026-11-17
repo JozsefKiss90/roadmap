@@ -21,7 +21,7 @@ Run these from this folder, after `npm install`.
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window. It uses the installed Chrome or Edge.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window or under the detail card. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -33,13 +33,15 @@ Run these from this folder, after `npm install`.
 | `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
 | `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
 | `src/camera.ts` | The arithmetic for where the camera stands at each distance |
-| `src/state.ts` | The state store: the distance and the focused tier or cluster, in step with the URL fragment |
-| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks |
-| `src/pick.ts` | Which plate and cell lie under the pointer |
+| `src/state.ts` | The state store: the distance, the focused tier or cluster, and the selection, in step with the URL fragment |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected mark and the `implements` lines |
+| `src/pick.ts` | Which plate, cell and mark lie under the pointer |
+| `src/hover-label.ts` | The label beside the pointer that names the mark under it |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
 | `src/label-layout.ts` | The arithmetic for where cluster and tool names stand |
 | `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
-| `src/panels.ts` | The breadcrumb, and the Escape key |
+| `src/panels.ts` | Mounts the breadcrumb and the detail card, and takes the Escape key |
+| `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
 
 **The layout runs in the build, not in the page** (ADR 0002). A plugin in `vite.config.ts` runs `layoutStack` on the graph and serves the result as the module `virtual:stack-layout`. The page imports positions and never computes them, and nothing is written into the graph JSON. The layout's spacings are `STACK_METRICS` in `src/layout.ts`; after changing one, rebuild or reload the dev server.
 
@@ -60,10 +62,30 @@ The map has three distances: stack, tier and cluster. `src/state.ts` holds the d
 - **Nothing moves but the camera.** A change of distance flies the camera and changes opacity. No plate, cell or mark changes place.
 - **From the stack, a click anywhere on a plate goes to its tier.** A cell takes clicks once its plate is focused.
 - **Escape steps out one distance.** The breadcrumb at the top centre shows the stack, the tier and the cluster, and each part is a button.
-- **The URL fragment names the focus.** `#tier=T3` opens at the tier distance and `#cluster=1A` at the cluster distance. An id the graph lacks opens the stack at rest.
+- **The URL fragment names the focus and the selection.** `#tier=T3` opens at the tier distance and `#cluster=1A` at the cluster distance. `select=` adds the selection, as in `#cluster=4A&select=tool:serena`. An id the graph lacks opens the stack at rest.
 - **Close in, the camera stays near the front.** At the tier and cluster distances it turns 30 degrees to either side at most, because the names stand above the plate.
 - **Labels keep their size on screen.** Each is anchored to a point of the stack and offset from it in pixels. `src/label-layout.ts` works out the offsets, and `src/scene.ts` leaves room for them when it places the camera.
 - **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen. The screenshot script reads it.
+
+## Selection and the detail card
+
+A partner can select a tool, a cluster or a need. The detail card on the right describes the selection, and is absent when nothing is selected. `src/state.ts` holds the selection. The scene and the detail card both read it there, and neither calls the other.
+
+| To select | Do this |
+| --- | --- |
+| A tool | Click its mark on the focused plate, its name in the list above a focused cell, or its row in the detail card |
+| A cluster | Click its cell on the focused plate, between the marks, or click its name |
+| A need | Click its row in a tool's detail card |
+
+- **Selecting a tool or a cluster goes to that cluster.** Selecting a need leaves the map where it is.
+- **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
+- **Escape closes the detail card first.** The next Escape steps out one distance.
+- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. From the stack, a click still goes to the tier.
+- **The selected mark takes the accent fill.** It no longer shows its decision class, so the detail card states it, with a square in the mark's own form.
+- **`implements` lines.** A selected tool has a line to each cluster it implements. A selected cluster has a line to each tool that implements it. The detail card lists the same clusters and tools.
+- **The camera keeps clear of the detail card.** At the tier and cluster distances the focused plate or cell is centred in the room left of the card.
+- **A field with no value is left out.** A tool with no repository shows no repository, stars, last commit or licence.
+- **The link to the tool matrix** leads to `Hermes OS tool matrix.xlsx` beside the map's file. Its address is `toolMatrixHref` in `src/constants.ts`.
 
 ## The graph validator
 

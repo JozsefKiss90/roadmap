@@ -1,6 +1,7 @@
 /**
  * icons: the Lucide icons the map uses, as data, and a way to draw one on a
- * 2D canvas for use in the scene. The panels use Lucide's own SVG elements.
+ * 2D canvas for use in the scene. The panels make Lucide's own SVG elements
+ * from the same data.
  */
 import { AppWindow, BookOpen, Brain, Hammer, Package, Plug, Puzzle, Server, Sparkles, ToggleRight } from 'lucide';
 import type { IconNode } from 'lucide';
@@ -18,6 +19,9 @@ const KIND_ICON_NODES: Readonly<Record<KindIcon, IconNode>> = {
   'book-open': BookOpen,
   hammer: Hammer,
 };
+
+/** A kind icon as Lucide's data, for a panel to make an SVG element from. */
+export const kindIconNode = (icon: KindIcon): IconNode => KIND_ICON_NODES[icon];
 
 /** Lucide draws every icon on a 24 by 24 grid, with a 2-unit round stroke. */
 const GRID = 24;
