@@ -1,6 +1,9 @@
 /**
  * The tuning panel. Loaded only by the dev server (see main.ts); the built
  * file must not contain it, and scripts/publish.mjs checks that.
+ *
+ * The layout's own spacings (STACK_METRICS in src/layout.ts) are not here: the
+ * build computes the layout, so changing one means editing that file.
  */
 import { Pane } from 'tweakpane';
 import type { Constants } from '../constants';
@@ -8,5 +11,20 @@ import type { Constants } from '../constants';
 export function mountTuning(constants: Constants, onChange: () => void): void {
   const pane = new Pane({ title: 'Tuning', expanded: false });
   pane.addBinding(constants, 'titleSizePx', { label: 'title size', min: 16, max: 64, step: 1 });
+
+  const camera = pane.addFolder({ title: 'Camera' });
+  camera.addBinding(constants, 'fieldOfViewDegrees', { label: 'field of view', min: 2, max: 40, step: 1 });
+  camera.addBinding(constants, 'restTiltDegrees', { label: 'tilt at rest', min: 10, max: 85, step: 1 });
+  camera.addBinding(constants, 'minTiltDegrees', { label: 'least tilt', min: 0, max: 85, step: 1 });
+  camera.addBinding(constants, 'maxTiltDegrees', { label: 'most tilt', min: 10, max: 89, step: 1 });
+  camera.addBinding(constants, 'nearestZoom', { label: 'nearest', min: 0.1, max: 1, step: 0.05 });
+  camera.addBinding(constants, 'farthestZoom', { label: 'farthest', min: 1, max: 2, step: 0.05 });
+
+  const insets = pane.addFolder({ title: 'Insets' });
+  insets.addBinding(constants, 'insetTopPx', { label: 'top', min: 0, max: 300, step: 4 });
+  insets.addBinding(constants, 'insetRightPx', { label: 'right', min: 0, max: 500, step: 4 });
+  insets.addBinding(constants, 'insetBottomPx', { label: 'bottom', min: 0, max: 300, step: 4 });
+  insets.addBinding(constants, 'insetLeftPx', { label: 'left', min: 0, max: 500, step: 4 });
+
   pane.on('change', onChange);
 }

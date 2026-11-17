@@ -25,16 +25,43 @@ body {
 }
 
 body {
+  overflow: hidden;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
 }
 
 #app {
-  padding: 20px 24px;
+  position: relative;
+  height: 100%;
+}
+
+/* The canvas fills the window; the interface is laid over it. */
+#stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+#stage canvas {
+  display: block;
+}
+
+.fault {
+  position: absolute;
+  top: 72px;
+  left: 24px;
+  max-width: 40ch;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .title {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  pointer-events: none;
   margin: 0;
   font-family: var(--font-serif);
   font-size: var(--title-size);

@@ -23,6 +23,25 @@ Run these from this folder, after `npm install`.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
 - `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It uses the installed Chrome or Edge.
 
+## How the stack is drawn
+
+| Module | What it does |
+| --- | --- |
+| `src/data.ts` | Validates the graph with the validator below and indexes it. It throws `GraphRejected` for a graph with any fault |
+| `src/inlined-graph.ts` | Hands `data.ts` the graph and the vocabulary file that are inlined in the page |
+| `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows |
+| `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
+| `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
+| `src/camera.ts` | The arithmetic for where the camera rests |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph, and sets the camera's limits |
+| `src/labels.ts` | The tier names (troika-three-text) and tool counts (three-spritetext) |
+
+**The layout runs in the build, not in the page** (ADR 0002). A plugin in `vite.config.ts` runs `layoutStack` on the graph and serves the result as the module `virtual:stack-layout`. The page imports positions and never computes them, and nothing is written into the graph JSON. The layout's spacings are `STACK_METRICS` in `src/layout.ts`; after changing one, rebuild or reload the dev server.
+
+**How the layout works.** Every cell uses one mark grid, four marks deep, so a cell's area follows its tool count and a plate's length follows its tier's. Plates share their left edge and their depth. A cell fills a column at a time, from its committed tools to its guarded ones and by name within a step.
+
+**The camera** orbits the stack's vertical axis. Its tilt and zoom limits, its field of view and the margins around the stack are in `src/constants.ts`, and the dev server's tuning panel changes them live.
+
 ## The graph validator
 
 `npm run validate` checks `../tool-discovery/tool-framework.graph.json` and exits with 1 if it finds a fault. The build runs it first, so a graph with a fault never reaches the built file. Each fault is printed with its type and the id at fault.
