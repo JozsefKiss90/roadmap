@@ -58,6 +58,8 @@ export const MAP_TOKENS = {
   'map-hover-ring': { line: 'ink', widthPx: 1, gapPx: 2 },
   'map-selected-fill': { fill: 'accent' },
   'map-selected-cell': { line: 'accent', widthPx: 2 },
+  'map-bestfit-ring': { line: 'accent', widthPx: 2, gapPx: 2 },
+  'map-home-cell': { line: 'accent', widthPx: 2 },
   'map-trace-line': { line: 'accent', widthPx: 1 },
   'map-faded': { tint: 'ink', alpha: 0.12 },
   'map-text-name': { text: 'ink' },

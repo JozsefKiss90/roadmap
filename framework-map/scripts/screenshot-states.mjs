@@ -14,12 +14,11 @@ export const states = [
   // T3 has the most clusters, and 1A the most tools: the two states with the most labels.
   { name: 'one-tier', fragment: 'tier=T3' },
   { name: 'one-cluster', fragment: 'cluster=1A' },
-  // The detail card in its three forms. Serena has a repository, a note, needs and an overlap group.
+  // The detail card's tool and cluster forms; the need form is with the need trace below. Serena has a repository, a note, needs and an overlap group.
   { name: 'tool-selected', fragment: 'cluster=4A&select=tool:serena' },
   // An internal skill, with its `implements` line; 1A is the widest list of names beside the card.
   { name: 'internal-skill-selected', fragment: 'cluster=1A&select=tool:ci-gate-add' },
   { name: 'cluster-selected', fragment: 'cluster=5B&select=5B' },
-  { name: 'need-selected', fragment: 'cluster=5F&select=N01' },
   // The search, reached with "/": results in all three groups, and a word the framework lacks.
   { name: 'search-results', fragment: '', keys: [['press', '/'], ['type', 'semantic']] },
   { name: 'search-no-result', fragment: '', keys: [['press', '/'], ['type', 'zeppelin']] },
@@ -40,6 +39,11 @@ export const states = [
     name: 'role-lens-filtered-cluster',
     fragment: 'cluster=4G&lens=role&role=D&decision=Core+v1&decision=Core+later&decision=Build',
   },
+  // The need trace. N15 has the widest trace: 15 tools on five tiers, seven of them best fits. Then the
+  // trace with no need chosen, as key 3 leaves it; and a traced tool selected, with the way back to its need.
+  { name: 'one-need-trace', fragment: 'select=N15&lens=need&need=N15' },
+  { name: 'need-trace-unchosen', fragment: '', keys: [['press', '3']] },
+  { name: 'need-trace-tool-selected', fragment: 'cluster=5F&select=tool:pr-agent&lens=need&need=N01' },
 ];
 
 /** The most labels a state may show at once. The spec asks for "no more than about 60". */

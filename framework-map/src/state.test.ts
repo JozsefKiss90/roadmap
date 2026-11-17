@@ -3,6 +3,7 @@ import {
   AT_STACK,
   FILTER_NAMES,
   NO_FILTERS,
+  bestFit,
   clearFilters,
   clearLens,
   createStore,
@@ -10,17 +11,21 @@ import {
   focusCluster,
   focusTier,
   fromFragment,
+  inReach,
   isFiltered,
+  narrows,
   passes,
   select,
   setFilter,
+  showNeedTrace,
   showRoleLens,
   stepBack,
   stepOut,
   toFragment,
   toggleFilter,
+  traced,
 } from './state';
-import type { Facets, FilterName, Filters, MapState, Places } from './state';
+import type { FilterName, Filters, MapState, Places, Traits } from './state';
 
 /** Two tiers; T1 holds the clusters 1A and 1B, T0 holds 0A. */
 const clusters: Record<string, { id: string; tier: string }> = {
@@ -28,7 +33,7 @@ const clusters: Record<string, { id: string; tier: string }> = {
   '1B': { id: '1B', tier: 'T1' },
   '0A': { id: '0A', tier: 'T0' },
 };
-/** The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has one need, N1. */
+/** The tool "tool:a" lies in 1A and "tool:b" in 0A; the graph has two needs, N1 and N2. */
 const tools: Record<string, { id: string; cluster: string }> = {
   'tool:a': { id: 'tool:a', cluster: '1A' },
   'tool:b': { id: 'tool:b', cluster: '0A' },
@@ -48,7 +53,7 @@ const places: Places = {
   tier: (id) => (['T0', 'T1'].includes(id) ? { id } : undefined),
   cluster: (id) => (Object.hasOwn(clusters, id) ? clusters[id] : undefined),
   tool: (id) => (Object.hasOwn(tools, id) ? tools[id] : undefined),
-  need: (id) => (id === 'N1' ? { id } : undefined),
+  need: (id) => (['N1', 'N2'].includes(id) ? { id } : undefined),
 };
 
 const atTier = (tier: string): MapState => ({ distance: 'tier', tier, cluster: null, selection: null, filters: NO_FILTERS, lens: null });
@@ -64,6 +69,14 @@ const withTool = (tier: string, cluster: string, id: string): MapState => ({
   ...atCluster(tier, cluster),
   selection: { type: 'tool', id },
 });
+/** The need trace for one need, as choosing the need leaves it: at the stack, with the need's detail card open. */
+const traceOf = (need: string): MapState => ({
+  ...AT_STACK,
+  selection: { type: 'need', id: need },
+  lens: { type: 'need', need },
+});
+/** The need trace with no need chosen yet. */
+const TRACE_UNCHOSEN: MapState = { ...AT_STACK, lens: { type: 'need', need: null } };
 
 describe('moving between the distances', () => {
   it('goes from the stack to a tier', () => {
@@ -110,12 +123,9 @@ describe('selecting', () => {
     });
   });
 
-  it('selects a need and leaves the map where it is', () => {
-    expect(select(atTier('T1'), places, 'N1')).toEqual({ ...atTier('T1'), selection: { type: 'need', id: 'N1' } });
-    expect(select(withTool('T1', '1A', 'tool:a'), places, 'N1')).toEqual({
-      ...atCluster('T1', '1A'),
-      selection: { type: 'need', id: 'N1' },
-    });
+  it('selects a need by starting its trace, at the stack', () => {
+    expect(select(atTier('T1'), places, 'N1')).toEqual(traceOf('N1'));
+    expect(select(withTool('T1', '1A', 'tool:a'), places, 'N1')).toEqual(traceOf('N1'));
   });
 
   it('moves from one selection to another', () => {
@@ -165,8 +175,8 @@ describe('stepping out', () => {
   });
 });
 
-/** A skill on the Hub that the Architect and the Designer use; the Architect operates it. */
-const skill: Facets = {
+/** A skill on the Hub that the Architect and the Designer use; the Architect operates it. It is a best fit for the need N1. */
+const skill: Traits = {
   decision: ['Core v1'],
   kind: ['Skill or command'],
   used: ['A', 'D'],
@@ -174,9 +184,11 @@ const skill: Facets = {
   hosting: ['Hub'],
   stream: ['OS'],
   gate: ['None'],
+  needs: ['N1'],
+  bestFitFor: ['N1'],
 };
-/** An optional model in the cloud that only the Analyst uses. */
-const model: Facets = {
+/** An optional model in the cloud that only the Analyst uses. It serves the need N1, and it alone serves N2. */
+const model: Traits = {
   decision: ['Optional / benchmark'],
   kind: ['Model'],
   used: ['M'],
@@ -184,9 +196,11 @@ const model: Facets = {
   hosting: ['Cloud'],
   stream: ['Build'],
   gate: ['Guarded'],
+  needs: ['N1', 'N2'],
+  bestFitFor: ['N2'],
 };
-/** A ruleset on the Hub that only the Designer uses; the Architect operates it. */
-const ruleset: Facets = { ...skill, used: ['D'] };
+/** A ruleset on the Hub that only the Designer uses; the Architect operates it. It serves no need. */
+const ruleset: Traits = { ...skill, used: ['D'], needs: [], bestFitFor: [] };
 const filtersOf = (state: MapState): Filters => state.filters;
 const choose = (...choices: [FilterName, string][]): MapState =>
   choices.reduce((state, [name, value]) => toggleFilter(state, places, name, value), AT_STACK);
@@ -327,13 +341,133 @@ describe('the role lens', () => {
   });
 });
 
+describe('the need trace', () => {
+  /** What the skill, the ruleset and the model are under a state, in that order. */
+  const sets = (state: MapState) => ({
+    traced: [skill, ruleset, model].map((tool) => traced(state.lens, tool)),
+    bestFit: [skill, ruleset, model].map((tool) => bestFit(state.lens, tool)),
+    emphasised: [skill, ruleset, model].map((tool) => emphasised(state, tool)),
+  });
+
+  it('is on with no need chosen until the partner picks one, and leaves every tool as it was', () => {
+    const state = showNeedTrace(atTier('T1'), places);
+    expect(state).toEqual({ ...atTier('T1'), lens: { type: 'need', need: null } });
+    expect(narrows(state.lens)).toBe(false);
+    expect(sets(state)).toEqual({
+      traced: [false, false, false],
+      bestFit: [false, false, false],
+      emphasised: [true, true, true],
+    });
+  });
+
+  it('traces the tools that serve the chosen need, marks its best fits, and fades the rest', () => {
+    const state = select(TRACE_UNCHOSEN, places, 'N1');
+    expect(state).toEqual(traceOf('N1'));
+    expect(narrows(state.lens)).toBe(true);
+    expect(sets(state)).toEqual({
+      traced: [true, false, true],
+      bestFit: [true, false, false],
+      emphasised: [true, false, true],
+    });
+  });
+
+  it('traces a need that a single tool serves', () => {
+    expect(sets(traceOf('N2'))).toEqual({
+      traced: [false, false, true],
+      bestFit: [false, false, true],
+      emphasised: [false, false, true],
+    });
+  });
+
+  it('shows one need at a time: another need takes the place of the first, with its detail card', () => {
+    const state = select(traceOf('N1'), places, 'N2');
+    expect(state).toEqual(traceOf('N2'));
+    expect(traced(state.lens, skill)).toBe(false);
+  });
+
+  it('goes to the stack when a need is chosen, so that the whole trace can be seen', () => {
+    expect(select(withTool('T1', '1A', 'tool:a'), places, 'N1')).toEqual(traceOf('N1'));
+  });
+
+  it('switches on for a need without choosing it: the place and a selected tool stay, as under the other lenses', () => {
+    const lens = { type: 'need', need: 'N1' };
+    expect(showNeedTrace(withTool('T1', '1A', 'tool:a'), places, 'N1')).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens });
+    expect(showNeedTrace(focusTier(lensOf('D'), places, 'T1'), places, 'N1')).toEqual({ ...atTier('T1'), lens });
+  });
+
+  it('keeps what it shows for a need the graph does not have', () => {
+    expect(showNeedTrace(atTier('T1'), places, 'N9')).toEqual(atTier('T1'));
+    expect(showNeedTrace(traceOf('N1'), places, 'N9')).toEqual(traceOf('N1'));
+  });
+
+  it('keeps the need it shows, and its detail card, when it is switched on again', () => {
+    expect(showNeedTrace(traceOf('N1'), places)).toEqual(traceOf('N1'));
+    expect(showNeedTrace(traceOf('N1'), places, 'N1')).toEqual(traceOf('N1'));
+    const tool = select(traceOf('N1'), places, 'tool:a');
+    expect(showNeedTrace(tool, places)).toBe(tool);
+  });
+
+  it('closes the detail card of a need when the trace is switched to another need without choosing it', () => {
+    expect(showNeedTrace(traceOf('N1'), places, 'N2')).toEqual({ ...AT_STACK, lens: { type: 'need', need: 'N2' } });
+  });
+
+  it('keeps the same lens when the need it traces is chosen again, so that nothing is drawn anew', () => {
+    const closed = stepBack(traceOf('N1'));
+    expect(select(closed, places, 'N1').lens).toBe(closed.lens);
+  });
+
+  it('takes the place of the role lens, and the role lens takes its place', () => {
+    expect(select(lensOf('D'), places, 'N1')).toEqual(traceOf('N1'));
+    expect(showRoleLens(traceOf('N1'), places, 'D')).toEqual(lensOf('D'));
+  });
+
+  it('keeps the trace when a traced tool is selected, and when a detail card is closed', () => {
+    const lens = { type: 'need', need: 'N1' };
+    const tool = select(traceOf('N1'), places, 'tool:a');
+    expect(tool).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens });
+    expect(stepBack(tool)).toEqual({ ...atCluster('T1', '1A'), lens });
+    expect(stepBack(traceOf('N1'))).toEqual({ ...AT_STACK, lens });
+  });
+
+  it('is one step away from a traced tool: selecting the need comes back to its trace', () => {
+    expect(select(select(traceOf('N1'), places, 'tool:a'), places, 'N1')).toEqual(traceOf('N1'));
+  });
+
+  it('closes the detail card of the need when the lens is switched off, and keeps the card of a tool', () => {
+    expect(clearLens(traceOf('N1'))).toEqual(AT_STACK);
+    expect(clearLens(select(traceOf('N1'), places, 'tool:a'))).toEqual(withTool('T1', '1A', 'tool:a'));
+  });
+
+  it('applies the filters on top of the trace: a traced tool the filters leave out is faded', () => {
+    const hub = toggleFilter(traceOf('N1'), places, 'hosting', 'Hub');
+    expect(traced(hub.lens, model)).toBe(true);
+    expect(emphasised(hub, model)).toBe(false);
+    expect(emphasised(hub, skill)).toBe(true);
+  });
+
+  it('traces nothing under the role lens or with no lens', () => {
+    expect(traced(lensOf('D').lens, skill)).toBe(false);
+    expect(bestFit(null, skill)).toBe(false);
+    expect(inReach(lensOf('D').lens, skill)).toBe(true);
+    expect(narrows(lensOf('D').lens)).toBe(true);
+    expect(narrows(null)).toBe(false);
+  });
+});
+
 describe('the URL fragment', () => {
   it.each([
     ['the stack', AT_STACK, ''],
     ['a tier', atTier('T1'), 'tier=T1'],
     ['a cluster', atCluster('T1', '1B'), 'cluster=1B'],
     ['a selected tool', withTool('T1', '1A', 'tool:a'), 'cluster=1A&select=tool:a'],
-    ['a selected need', { ...atTier('T0'), selection: { type: 'need', id: 'N1' } } as MapState, 'tier=T0&select=N1'],
+    ['a traced need', traceOf('N1'), 'select=N1&lens=need&need=N1'],
+    ['the need trace with no need chosen', TRACE_UNCHOSEN, 'lens=need'],
+    ['a trace with its detail card closed, at a tier', focusTier(traceOf('N2'), places, 'T0'), 'tier=T0&lens=need&need=N2'],
+    [
+      'a traced tool that is selected',
+      select(traceOf('N1'), places, 'tool:a'),
+      'cluster=1A&select=tool:a&lens=need&need=N1',
+    ],
   ])('writes %s', (_name, state, fragment) => {
     expect(toFragment(state)).toBe(fragment);
   });
@@ -344,8 +478,13 @@ describe('the URL fragment', () => {
     atCluster('T1', '1B'),
     withTool('T0', '0A', 'tool:b'),
     { ...atCluster('T1', '1B'), selection: { type: 'cluster', id: '1B' } },
-    { ...AT_STACK, selection: { type: 'need', id: 'N1' } },
-    { ...atCluster('T1', '1A'), selection: { type: 'need', id: 'N1' } },
+    traceOf('N1'),
+    traceOf('N2'),
+    TRACE_UNCHOSEN,
+    stepBack(traceOf('N1')),
+    focusTier(traceOf('N2'), places, 'T0'),
+    select(traceOf('N1'), places, 'tool:a'),
+    select(toggleFilter(traceOf('N1'), places, 'hosting', 'Hub'), places, '1B'),
   ])('reads back what it wrote: %o', (state) => {
     expect(fromFragment(toFragment(state), places)).toEqual(state);
   });
@@ -447,6 +586,23 @@ describe('the URL fragment', () => {
     expect(fromFragment('role=D', places)).toEqual(AT_STACK);
   });
 
+  it('starts the trace of a need that a link selects, whatever lens the link names', () => {
+    expect(fromFragment('select=N1', places)).toEqual(traceOf('N1'));
+    expect(fromFragment('cluster=1A&select=N2&lens=role&role=D', places)).toEqual(traceOf('N2'));
+    expect(fromFragment('select=N2&lens=need&need=N1', places)).toEqual(traceOf('N2'));
+  });
+
+  it('shows no lens for a need it does not know, and keeps the rest', () => {
+    expect(fromFragment('lens=need&need=N9&tier=T1', places)).toEqual(atTier('T1'));
+    expect(fromFragment('need=N1', places)).toEqual(AT_STACK);
+  });
+
+  it('drops the need from the fragment when the lens is switched off or changed', () => {
+    expect(toFragment(clearLens(traceOf('N1')), 'select=N1&lens=need&need=N1')).toBe('');
+    expect(toFragment(lensOf('D'), 'lens=need&need=N1')).toBe('lens=role&role=D');
+    expect(toFragment(stepBack(traceOf('N1')), 'lens=role&role=D')).toBe('lens=need&need=N1');
+  });
+
   it('keeps the lens when the place or the selection it names is not in the graph', () => {
     expect(fromFragment('tier=T9&lens=role&role=D', places)).toEqual(lensOf('D'));
     expect(fromFragment('cluster=1A&select=tool:zz&lens=role&role=D', places)).toEqual(lensOf('D'));
@@ -480,13 +636,12 @@ describe('the store', () => {
     store.stepBack();
     store.stepBack();
 
-    const need: MapState = { ...atCluster('T1', '1A'), selection: { type: 'need', id: 'N1' } };
+    const cardClosed: MapState = { ...AT_STACK, lens: { type: 'need', need: 'N1' } };
     expect(seen).toEqual([
       [withTool('T1', '1A', 'tool:a'), AT_STACK],
       [atCluster('T1', '1A'), withTool('T1', '1A', 'tool:a')],
-      [need, atCluster('T1', '1A')],
-      [atCluster('T1', '1A'), need],
-      [atTier('T1'), atCluster('T1', '1A')],
+      [traceOf('N1'), atCluster('T1', '1A')],
+      [cardClosed, traceOf('N1')],
     ]);
   });
 
@@ -536,6 +691,32 @@ describe('the store', () => {
       { ...atTier('T1'), lens: designer },
       lensOf('D'),
     ]);
+  });
+
+  it('switches the need trace on with no need, and afterwards comes back to the need it last showed', () => {
+    const store = createStore(places);
+    store.showNeedTrace();
+    expect(store.get()).toEqual(TRACE_UNCHOSEN);
+    store.select('N2');
+    expect(store.get()).toEqual(traceOf('N2'));
+    store.showRoleLens('D');
+    expect(store.get()).toEqual(lensOf('D'));
+    store.select('tool:a');
+    store.showNeedTrace();
+    const back: MapState = { ...withTool('T1', '1A', 'tool:a'), lens: { type: 'need', need: 'N2' } };
+    expect(store.get()).toEqual(back);
+    store.showNeedTrace();
+    expect(store.get()).toEqual(back);
+    store.clearLens();
+    store.showRoleLens();
+    expect(store.get()).toEqual({ ...withTool('T1', '1A', 'tool:a'), lens: { type: 'role', role: 'D' } });
+  });
+
+  it('comes back to the need of a trace it was handed, as from a link', () => {
+    const store = createStore(places, focusTier(traceOf('N1'), places, 'T1'));
+    store.clearLens();
+    store.showNeedTrace();
+    expect(store.get()).toEqual({ ...atTier('T1'), lens: { type: 'need', need: 'N1' } });
   });
 
   it('comes back to the role of a lens it was handed, as from a link', () => {

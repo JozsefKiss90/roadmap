@@ -131,6 +131,47 @@ describe('readGraph', () => {
     expect(ids(index.bestFitToolsOf('N01'))).toEqual([]);
   });
 
+  it("lists the tools that serve a need, best fit or not, in the graph's own order", () => {
+    const index = readGraph(wiredGraph(), vocabulary);
+    expect(ids(index.servingToolsOf('N02'))).toEqual(['tool:a', 'tool:b', 'tool:c']);
+    expect(ids(index.servingToolsOf('N01'))).toEqual(['tool:a']);
+    expect(index.servingToolsOf('N09')).toEqual([]);
+  });
+
+  it('gives the traced tools and the best fits under the need trace, and none under no trace', () => {
+    const index = readGraph(wiredGraph(), vocabulary);
+    const trace = (need: string | null) => ({ type: 'need', need }) as const;
+    expect([...index.traced(trace('N02'))]).toEqual(['tool:a', 'tool:b', 'tool:c']);
+    expect([...index.bestFit(trace('N02'))]).toEqual(['tool:a', 'tool:c']);
+    expect([...index.traced(trace('N01'))]).toEqual(['tool:a']);
+    expect([...index.bestFit(trace('N01'))]).toEqual([]);
+    expect([...index.traced(trace(null))]).toEqual([]);
+    expect([...index.traced(null)]).toEqual([]);
+    expect([...index.bestFit({ type: 'role', role: 'D' })]).toEqual([]);
+  });
+
+  it('puts the tools that serve the traced need in reach, and every tool while no need is chosen', () => {
+    const index = readGraph(wiredGraph(), vocabulary);
+    expect([...index.inReach({ type: 'need', need: 'N01' })]).toEqual(['tool:a']);
+    expect([...index.inReach({ type: 'need', need: null })]).toEqual(['tool:a', 'tool:b', 'tool:c', 'tool:d']);
+    expect(index.toolCountOf('T0', { type: 'need', need: 'N02' })).toBe(3);
+    expect(index.toolCountOf('T1', { type: 'need', need: 'N02' })).toBe(0);
+  });
+
+  it('lists the needs under each phase in turn, and a need that spans phases under each of them', () => {
+    const graph = wiredGraph();
+    graph.nodes.push({ id: 'N03', type: 'need', label: 'A long need', phase: 'P1-P3' });
+    graph.edges.push({ source: 'tool:d', target: 'N03', type: 'serves' });
+    graph.meta.counts.needs = 3;
+    graph.meta.counts.edges = graph.edges.length;
+    const index = readGraph(graph, vocabulary);
+    expect(index.needsByPhase.map(({ phase, needs }) => [phase, ids(needs)])).toEqual([
+      ['P1', ['N01', 'N03']],
+      ['P2', ['N02', 'N03']],
+      ['P3', ['N03']],
+    ]);
+  });
+
   it("names a tool's overlap group and lists its other members", () => {
     const index = readGraph(wiredGraph(), vocabulary);
     const overlap = index.overlapOf('tool:b');

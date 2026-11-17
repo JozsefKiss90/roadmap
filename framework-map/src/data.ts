@@ -8,9 +8,15 @@
  */
 import { DECISION_STEPS, decisionStep } from './display.ts';
 import type { ClusterNode, Graph, NeedNode, TierNode, ToolNode } from './graph';
-import { emphasised as isEmphasised, inReach as isInReach } from './state.ts';
-import type { Facets, FilterName, Lens, MapState } from './state.ts';
-import { validateGraph } from './validate.ts';
+import {
+  bestFit as isBestFit,
+  emphasised as isEmphasised,
+  inReach as isInReach,
+  traced as isTraced,
+  tracedNeedOf,
+} from './state.ts';
+import type { Facets, FilterName, Lens, MapState, Traits } from './state.ts';
+import { parsePhases, validateGraph } from './validate.ts';
 import type { Fault, Vocabulary } from './validate.ts';
 
 /** Thrown for a graph the validator rejects. */
@@ -47,6 +53,10 @@ export interface GraphIndex {
   needsOf(toolId: string): readonly ServedNeed[];
   /** The tools that are a best fit for a need. */
   bestFitToolsOf(needId: string): readonly ToolNode[];
+  /** Every tool that serves a need, best fit or not, in the graph's own order. */
+  servingToolsOf(needId: string): readonly ToolNode[];
+  /** The phases that have needs, in turn, each with its needs in the graph's own order. A need that spans phases is under each of them. */
+  readonly needsByPhase: readonly PhaseNeeds[];
   /** A tool's overlap group: its name and its other members. Undefined for a tool in no group. */
   overlapOf(toolId: string): OverlapGroup | undefined;
   /** The clusters a tool implements, and the tools that implement a cluster. */
@@ -75,6 +85,16 @@ export interface GraphIndex {
    * passing the filters. Every other tool is faded.
    */
   emphasised(state: Pick<MapState, 'lens' | 'filters'>): ReadonlySet<string>;
+  /** The ids of the traced tools: those that serve the need the need trace is on for, whatever the filters. */
+  traced(lens: Lens | null): ReadonlySet<string>;
+  /** The ids of the traced tools that are a best fit for the need. */
+  bestFit(lens: Lens | null): ReadonlySet<string>;
+}
+
+export interface PhaseNeeds {
+  /** The phase's code, such as "P2". */
+  phase: string;
+  needs: readonly NeedNode[];
 }
 
 export interface ServedNeed {
@@ -145,6 +165,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     [...some].sort((a, b) => (toolOrder.get(a.id) ?? 0) - (toolOrder.get(b.id) ?? 0));
 
   const needsByTool = new Map<string, ServedNeed[]>();
+  const toolsByNeed = new Map<string, ToolNode[]>();
   const bestFitByNeed = new Map<string, ToolNode[]>();
   const groupByTool = new Map<string, string>();
   const toolsByGroup = new Map<string, Set<ToolNode>>();
@@ -163,6 +184,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
       if (!need) continue;
       const bestFit = edge.best_fit === true;
       push(needsByTool, tool.id, { need, bestFit });
+      push(toolsByNeed, need.id, tool);
       if (bestFit) push(bestFitByNeed, need.id, tool);
     } else if (edge.type === 'overlaps' && edge.group !== undefined) {
       const other = toolById.get(edge.target);
@@ -178,6 +200,14 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
       push(implementersByCluster, cluster.id, tool);
     }
   }
+
+  const scheduled = new Map<string, NeedNode[]>();
+  for (const need of needs.values()) {
+    for (const phase of parsePhases(need.phase) ?? []) push(scheduled, phase, need);
+  }
+  const needsByPhase: PhaseNeeds[] = [...scheduled.keys()]
+    .sort()
+    .map((phase) => ({ phase, needs: scheduled.get(phase) ?? [] }));
 
   const kindFamilyOf = familyOfValue(vocabulary.kind, 'kind');
   const gateFamilyOf = familyOfValue(vocabulary.gate, 'gate');
@@ -223,20 +253,51 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     return made;
   };
 
-  const idsWhere = (keep: (facets: Facets) => boolean): ReadonlySet<string> =>
-    new Set(tools.filter((tool) => keep(facetsOf(tool.id))).map((tool) => tool.id));
+  /** What a tool has for the lenses and the filters: its facets and the needs it serves. */
+  const traits = new Map<string, Traits>();
+  const traitsOf = (toolId: string): Traits => {
+    let made = traits.get(toolId);
+    if (!made) {
+      const served = needsByTool.get(toolId) ?? [];
+      made = {
+        ...facetsOf(toolId),
+        needs: served.map(({ need }) => need.id),
+        bestFitFor: served.filter(({ bestFit }) => bestFit).map(({ need }) => need.id),
+      };
+      traits.set(toolId, made);
+    }
+    return made;
+  };
+  const idsWhere = (keep: (traits: Traits) => boolean): ReadonlySet<string> =>
+    new Set(tools.filter((tool) => keep(traitsOf(tool.id))).map((tool) => tool.id));
   // The scene, the outline and the panels all ask for the same lens and filters after a change, so the last answers are kept.
   let reached: { lens: Lens | null; ids: ReadonlySet<string> } | null = null;
   const inReach = (lens: Lens | null): ReadonlySet<string> => {
-    if (reached?.lens !== lens) reached = { lens, ids: idsWhere((facets) => isInReach(lens, facets)) };
+    if (reached?.lens !== lens) reached = { lens, ids: idsWhere((each) => isInReach(lens, each)) };
     return reached.ids;
   };
   let shown: { state: Pick<MapState, 'lens' | 'filters'>; ids: ReadonlySet<string> } | null = null;
   const emphasised = (state: Pick<MapState, 'lens' | 'filters'>): ReadonlySet<string> => {
     if (shown?.state.lens !== state.lens || shown.state.filters !== state.filters) {
-      shown = { state, ids: idsWhere((facets) => isEmphasised(state, facets)) };
+      shown = { state, ids: idsWhere((each) => isEmphasised(state, each)) };
     }
     return shown.ids;
+  };
+
+  // A trace has a few tools, so it is read from the need's own edges, and the last answer is kept as the others are.
+  let lastTrace: { lens: Lens | null; traced: ReadonlySet<string>; bestFit: ReadonlySet<string> } | null = null;
+  const trace = (lens: Lens | null): { traced: ReadonlySet<string>; bestFit: ReadonlySet<string> } => {
+    if (lastTrace?.lens !== lens) {
+      const serving = inGraphOrder(toolsByNeed.get(tracedNeedOf(lens) ?? '') ?? []);
+      const idsOf = (keep: (traits: Traits) => boolean): ReadonlySet<string> =>
+        new Set(serving.filter((tool) => keep(traitsOf(tool.id))).map((tool) => tool.id));
+      lastTrace = {
+        lens,
+        traced: idsOf((each) => isTraced(lens, each)),
+        bestFit: idsOf((each) => isBestFit(lens, each)),
+      };
+    }
+    return lastTrace;
   };
 
   return {
@@ -257,6 +318,8 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     need: (id) => needs.get(id),
     needsOf: (toolId) => needsByTool.get(toolId) ?? [],
     bestFitToolsOf: (needId) => inGraphOrder(bestFitByNeed.get(needId) ?? []),
+    servingToolsOf: (needId) => inGraphOrder(toolsByNeed.get(needId) ?? []),
+    needsByPhase,
     overlapOf(toolId) {
       const group = groupByTool.get(toolId);
       if (group === undefined) return undefined;
@@ -274,5 +337,7 @@ export function readGraph(candidate: unknown, vocabulary: Vocabulary): GraphInde
     toolCountWith: (name, value) => countsOf(name).get(value) ?? 0,
     inReach,
     emphasised,
+    traced: (lens) => trace(lens).traced,
+    bestFit: (lens) => trace(lens).bestFit,
   };
 }

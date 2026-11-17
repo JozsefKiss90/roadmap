@@ -19,6 +19,7 @@ import { decisionStep, fadedName } from './display';
 import { dressSwatch, element, swatch } from './dom';
 import type { ClusterNode, TierNode, ToolNode } from './graph';
 import { inGridOrder } from './layout';
+import { narrows } from './state';
 import type { MapState, Store } from './state';
 
 const count = (tools: number): string => (tools === 1 ? '1 tool' : `${tools} tools`);
@@ -64,10 +65,10 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
     const counter = countOf.get(row);
     if (counter) {
       counter.textContent = String(inReach);
-      label += state.lens ? `, ${inReach} of ${count(tools.length)} in reach` : `, ${count(tools.length)}`;
+      label += narrows(state.lens) ? `, ${inReach} of ${count(tools.length)} in reach` : `, ${count(tools.length)}`;
     }
     // The row is named for what leaves it out: the lens, where none of its tools is in reach, or else the filters.
-    const outOfReach = state.lens !== null && inReach === 0;
+    const outOfReach = narrows(state.lens) && inReach === 0;
     if (out) label += `, ${fadedName(outOfReach, !outOfReach).toLowerCase()}`;
     row.setAttribute('aria-label', label);
     if (out === (row.dataset.faded === 'true')) return;

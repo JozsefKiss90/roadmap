@@ -22,7 +22,11 @@ function announcementOf(state: MapState, before: MapState, index: GraphIndex): s
       return cluster ? `Selected cluster ${cluster.id}, ${cluster.label}.` : null;
     }
     const need = index.need(selection.id);
-    return need ? `Selected need ${need.id}, ${need.label}.` : null;
+    if (!need) return null;
+    // A selected need is always traced, so the sentence says what the trace found.
+    const serving = index.servingToolsOf(need.id).length;
+    const bestFits = index.bestFitToolsOf(need.id).length;
+    return `Tracing need ${need.id}, ${need.label}. ${serving} ${serving === 1 ? 'tool serves' : 'tools serve'} it, ${bestFits} as a best fit.`;
   }
   const cluster = state.distance === 'cluster' ? index.cluster(state.cluster ?? '') : undefined;
   const tier = state.distance === 'tier' ? index.tier(state.tier ?? '') : undefined;

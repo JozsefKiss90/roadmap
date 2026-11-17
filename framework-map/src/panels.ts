@@ -2,7 +2,7 @@
  * panels: the DOM interface around the canvas.
  *
  * So far: the left rail with the title, the search box, the lens switch, the
- * filters and the outline; the breadcrumb at the top centre; the detail card on the right;
+ * need list, the filters and the outline; the breadcrumb at the top centre; the detail card on the right;
  * the legend at the bottom left; the list of keys; and the keys that work
  * anywhere. All read the state store and write
  * to it; none knows the scene.
@@ -17,9 +17,11 @@ import { mountFilterPanel } from './filter-panel';
 import { mountKeyList } from './key-list';
 import { mountLegend } from './legend';
 import { mountLensPanel } from './lens-panel';
+import { mountNeedList } from './need-list';
 import { mountOutline } from './outline';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
+import { tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
 interface Crumb {
@@ -111,8 +113,9 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   });
   // A chosen result opens its detail card, and the focus goes there to read it.
   const searchBox = mountSearchBox(rail, outline.element, index, search, store, () => card.focus());
-  // The lens switch and then the filters stand between the search box and the outline.
-  mountLensPanel(rail, outline.element, index, store);
+  // The lens switch, the need list and then the filters stand between the search box and the outline.
+  const lensPanel = mountLensPanel(rail, outline.element, index, store);
+  const needList = mountNeedList(rail, outline.element, index, store, () => lensPanel.focus());
   mountFilterPanel(rail, outline.element, index, store);
 
   mountLegend(app, store);
@@ -138,6 +141,10 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
     } else if (event.key === '2') {
       // The role lens comes back with the role it last showed.
       store.showRoleLens();
+    } else if (event.key === '3') {
+      // The need trace comes back with the need it last showed. With none yet, the need list takes the focus.
+      store.showNeedTrace();
+      if (tracedNeedOf(store.get().lens) === null) needList.focus();
     }
   });
 }

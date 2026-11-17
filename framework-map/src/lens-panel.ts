@@ -1,22 +1,26 @@
 /**
  * lens-panel: the lens switch at the head of the rail, and what the lens that
- * is on needs beside it. So far it offers no lens and the role lens; the need
- * trace and the phase scrub add to it in later tickets.
+ * is on needs beside it. So far it offers no lens, the role lens and the need
+ * trace; the phase scrub adds to it in a later ticket.
  *
- * With the role lens on, it lists the three roles, one of which is chosen,
- * and gives the number of tools in that role's reach.
+ * With the role lens on, it lists the three roles, one of which is chosen.
+ * The needs of the need trace stand in a list of their own, under the switch
+ * (src/need-list.ts). Beside its heading, the switch gives the number of
+ * tools in reach.
  *
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
  */
 import type { GraphIndex } from './data';
 import { element } from './dom';
+import { narrows } from './state';
 import type { MapState, Store } from './state';
 
 /** The lenses the switch offers, in the order of their keys: the value, its name, and its key. */
 const LENSES = [
   ['none', 'None', '1'],
   ['role', 'Role', '2'],
+  ['need', 'Need', '3'],
 ] as const;
 
 interface Segments {
@@ -67,8 +71,13 @@ function segments(
   };
 }
 
+export interface LensPanel {
+  /** Puts the keyboard focus on the lens switch, at the lens that is on. */
+  focus(): void;
+}
+
 /** @param before The part of the rail the lens switch stands above. */
-export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): void {
+export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): LensPanel {
   const heading = element('h2', 'rail-heading', 'Lens');
   heading.id = 'lens-heading';
 
@@ -77,6 +86,7 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
 
   const lenses = segments('lens', LENSES, (value) => {
     if (value === 'role') store.showRoleLens();
+    else if (value === 'need') store.showNeedTrace();
     else store.clearLens();
   });
   lenses.element.setAttribute('aria-labelledby', heading.id);
@@ -100,8 +110,8 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
     const heldFocus = roles.element.contains(document.activeElement);
     roles.element.hidden = lens?.type !== 'role';
     if (heldFocus && roles.element.hidden) lenses.focus();
-    roles.choose(lens?.role ?? null);
-    if (lens) {
+    roles.choose(lens?.type === 'role' ? lens.role : null);
+    if (narrows(lens)) {
       const inReach = index.inReach(lens).size;
       count.textContent = `${inReach} ${inReach === 1 ? 'tool' : 'tools'} in reach`;
     } else {
@@ -113,4 +123,5 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
   store.subscribe((state, previous) => {
     if (state.lens !== previous.lens) render(state);
   });
+  return { focus: () => lenses.focus() };
 }

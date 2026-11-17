@@ -483,6 +483,18 @@ body {
   margin-left: auto;
 }
 
+/* On a tool's card while a need is traced: the way back to the need. */
+.card-trace {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--paper-2);
+  box-shadow: inset 2px 0 var(--accent);
+}
+
 .card-link {
   display: inline-flex;
   align-items: center;
@@ -525,6 +537,7 @@ body {
 .rail-heading,
 .outline-tag,
 .outline-count,
+.need-phase-name,
 .filters-count,
 .lens-count,
 .filter-chosen,
@@ -805,6 +818,116 @@ body {
 }
 
 /*
+ * The need list: the needs under each phase, while the need trace is on. It
+ * shares the rail's free height with the outline, and scrolls.
+ */
+.needs {
+  display: flex;
+  flex: 2 1 0;
+  flex-direction: column;
+  min-height: 136px;
+}
+
+/* While the needs are listed, the filters and the outline give them room. */
+.needs:not([hidden]) ~ .filters {
+  max-height: 25%;
+}
+
+.needs:not([hidden]) ~ .outline {
+  min-height: 104px;
+}
+
+.needs[hidden] {
+  display: none;
+}
+
+/* The rule is the edge the needs scroll under, as the one under the outline's heading is. */
+.needs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 20px 16px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.needs-prompt {
+  margin: 0;
+  color: var(--muted);
+  font: 400 12px/16px var(--font-sans);
+}
+
+.needs-prompt[hidden] {
+  display: none;
+}
+
+/*
+ * The padding leaves room for the focus outline of a row at the edge. The list is the frame of
+ * what it hides from sight for assistive technology, so that none of it lies outside the rail.
+ */
+.needs-list {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px 8px 8px;
+  scrollbar-color: var(--soft) transparent;
+  scrollbar-width: thin;
+}
+
+.need-phase-name {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 8px 8px 4px;
+  color: var(--muted);
+}
+
+.need-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.need-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: 400 13px/20px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  scroll-margin: 8px 0;
+}
+
+.need-row:hover {
+  background: var(--paper-2);
+}
+
+.need-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The traced need: lit, with a bar at its left and its name in map-text-selected, as the outline's selected row is. */
+.need-row[aria-current] {
+  border-radius: 0 4px 4px 0;
+  background: var(--paper-2);
+  box-shadow: inset 2px 0 var(--accent);
+  font-weight: 600;
+}
+
+.need-row[aria-current] .need-name {
+  color: var(--accent);
+}
+
+/*
  * The filters: the count of the tools that pass, "committed only" and "clear",
  * then the seven filters. A filter's values open under its name. The list
  * scrolls, so that open filters never take the whole rail from the outline.
@@ -1035,9 +1158,21 @@ body {
   background: var(--paper);
 }
 
+.legend .rail-heading {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Beside an open detail card the legend keeps left of it, and its steps go to a second row if they must. */
+#app:has(.detail-card:not([hidden])) .legend {
+  box-sizing: border-box;
+  max-width: calc(100% - var(--rail-width) - var(--detail-card-width) - 32px);
+}
+
 .legend-steps {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 4px 16px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1054,10 +1189,21 @@ body {
   font: 400 12px/16px var(--font-sans);
 }
 
-/* The faded state is not a decision class, so a rule sets it apart from the four steps. */
-.legend-steps .legend-faded {
+/* The states of a lens or a filter are not decision classes, so a rule sets them apart from the four steps. */
+.legend-steps .legend-apart {
   padding-left: 16px;
   border-left: 1px solid var(--rule-solid);
+}
+
+/* A traced mark takes map-selected-fill, and a best-fit one map-bestfit-ring: a 2px ring, 2px clear of the mark. */
+.swatch-traced {
+  background: var(--accent);
+}
+
+.swatch-best-fit {
+  margin: 0 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* The outline: tiers, their clusters, and a cluster's tools once it is opened. */

@@ -11,8 +11,9 @@
  * mark. It moves the camera and changes colour and opacity; it never moves a
  * plate, a cell or a mark.
  *
- * A mark of a tool that the filters leave out is drawn in the faded state: it
- * keeps its form and its place.
+ * A mark of a tool that the lens or the filters leave out is drawn in the
+ * faded state: it keeps its form and its place. A traced mark takes the
+ * selected fill, and src/trace-drawing.ts draws the rest of a need trace.
  *
  * The mark under the pointer gets a ring and a hover label, and the selected
  * tool's mark takes the selected fill. src/selection-drawing.ts draws the
@@ -51,6 +52,7 @@ import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, markMaterial } from './m
 import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
 import { createSelectionDrawing } from './selection-drawing';
+import { createTraceDrawing } from './trace-drawing';
 import { AT_STACK } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, MARK_TOKEN_OF_STEP, PAGE_ROLE, colourOf } from './tokens';
@@ -266,14 +268,14 @@ export function createStage(
   const meshes = new Map<string, { mesh: Mesh; node: MarkNode }>();
   /**
    * The material of a mark for a state: the selected fill for the selected
-   * tool, the faded form for a tool the lens or the filters leave out, and otherwise the
-   * form of its step.
+   * tool, the faded form for a tool the lens or the filters leave out, the
+   * selected fill again for a traced tool, and otherwise the form of its step.
    */
   function materialOf(mark: MarkNode, state: MapState): ShaderMaterial {
     const parts = partsOf(mark.tier);
     if (state.selection?.type === 'tool' && state.selection.id === mark.id) return parts.selected;
-    const forms = index.emphasised(state).has(mark.id) ? parts.marks : parts.fadedMarks;
-    return forms.get(mark.step)!;
+    if (!index.emphasised(state).has(mark.id)) return parts.fadedMarks.get(mark.step)!;
+    return index.traced(state.lens).has(mark.id) ? parts.selected : parts.marks.get(mark.step)!;
   }
   const nodes: MarkNode[] = layout.marks.map((mark) => {
     const tool = index.tool(mark.tool);
@@ -328,6 +330,9 @@ export function createStage(
     renderer.getPixelRatio(),
   );
 
+  // A need trace: the home cell's outline, the lines to the traced tools and the best-fit rings.
+  const traceDrawing = createTraceDrawing((object) => void graph.scene().add(object), index, layout, renderer.getPixelRatio());
+
   // Hover: a ring on the mark under the pointer, and a label beside the pointer.
   const ringMaterial = markMaterial(HOVER_RING_MARK, renderer.getPixelRatio());
   const ring = new Mesh(square, ringMaterial);
@@ -339,13 +344,18 @@ export function createStage(
   const fromCamera = new Vector3();
   const forward = new Vector3();
 
+  /** How many layout units one pixel of the picture covers at a point of the scene. */
+  function unitsPerPixelAt(x: number, y: number, z: number): number {
+    camera.getWorldDirection(forward);
+    const depth = fromCamera.set(x, y, z).sub(camera.position).dot(forward);
+    return (2 * depth * Math.tan(radians(camera.fov) / 2)) / frame.height;
+  }
+
   /** Sizes the ring so that it stands its gap clear of the mark, in pixels on screen. */
   function placeHoverRing(): void {
     if (!hovered) return;
     ring.position.set(hovered.x, hovered.y + MARK_LIFT * 1.5, hovered.z);
-    camera.getWorldDirection(forward);
-    const depth = fromCamera.copy(ring.position).sub(camera.position).dot(forward);
-    const unitsPerPixel = (2 * depth * Math.tan(radians(camera.fov) / 2)) / frame.height;
+    const unitsPerPixel = unitsPerPixelAt(ring.position.x, ring.position.y, ring.position.z);
     const side = hovered.size + 2 * (HOVER_RING.gapPx + HOVER_RING.widthPx) * unitsPerPixel;
     ring.scale.setScalar(side / MARK_SHARE_OF_QUAD);
   }
@@ -375,7 +385,7 @@ export function createStage(
   const windowSize = { width: 0, height: 0 };
   const frame: Frame = { width: 0, height: 0, inset: { top: 0, right: 0, bottom: 0, left: 0 } };
   const origin = { x: 0, y: 0 };
-  const listeners: (() => void)[] = [placeHoverRing];
+  const listeners: (() => void)[] = [placeHoverRing, () => traceDrawing.place(unitsPerPixelAt)];
   const notify = (): void => listeners.forEach((listener) => listener());
   const centre = new Vector3(
     (layout.bounds.min.x + layout.bounds.max.x) / 2,
@@ -411,7 +421,9 @@ export function createStage(
    * the insets. At the tier distance the focused plate stands under the room
    * its cluster names need, and at the cluster distance the focused cell
    * stands under the room its tool names need. A selection with `implements`
-   * lines has their far ends in the picture too.
+   * lines has their far ends in the picture too. A need's detail card opens at
+   * the stack distance: the whole stack then stands clear of it, so every
+   * traced tool is in the picture, whatever tiers the trace spans.
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
@@ -467,7 +479,7 @@ export function createStage(
     const region = {
       left: frame.inset.left,
       top: frame.inset.top,
-      right: frame.width - frame.inset.right,
+      right: frame.width - frame.inset.right - card,
       bottom: frame.height - frame.inset.bottom,
     };
     return placeToFit(layout.bounds, frame, region, field, constants.restTiltDegrees, 0);
@@ -605,6 +617,7 @@ export function createStage(
     }
     ringMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
     selectionDrawing.setPixelRatio(renderer.getPixelRatio());
+    traceDrawing.setPixelRatio(renderer.getPixelRatio());
 
     restRange = placeOf(AT_STACK).range;
     // One depth range for every distance. It is tight enough to keep marks
@@ -633,22 +646,24 @@ export function createStage(
 
   /**
    * What decides the camera's place and the fade: the distance, the focus,
-   * whether the detail card is open beside a focused plate or cell, and which
-   * selection it is when the selection has `implements` lines to frame.
+   * whether the detail card is open, and which selection it is when the
+   * selection has `implements` lines to frame.
    */
   const placeKey = (state: MapState): string => {
     const { selection } = state;
     const framed = state.distance !== 'stack' && selectionDrawing.endsOf(selection).length > 0 ? selection?.id : null;
-    return [state.distance, state.tier, state.cluster, state.distance !== 'stack' && selection !== null, framed].join('|');
+    return [state.distance, state.tier, state.cluster, selection !== null, framed].join('|');
   };
 
   if (fitWindow()) goTo(store.get(), false);
   selectionDrawing.show(store.get().selection);
+  traceDrawing.show(store.get());
   store.subscribe((state, before) => {
     hover(null);
     if (state.selection !== before.selection || state.filters !== before.filters || state.lens !== before.lens) {
       dressMarks(state);
     }
+    if (state.filters !== before.filters || state.lens !== before.lens) traceDrawing.show(state);
     selectionDrawing.show(state.selection);
     if (placeKey(state) !== placeKey(before)) goTo(state, true);
     else notify();
@@ -684,6 +699,9 @@ export function createStage(
   /** What a click on a place of the stack does. */
   function actionOn({ tier, cluster, tool }: StackHit): (() => void) | null {
     const state = store.get();
+    // A traced mark at full strength selects its tool from any distance, and the trace stays on.
+    const traced = tool !== null && index.traced(state.lens).has(tool) && index.emphasised(state).has(tool);
+    if (tool && traced && tool !== state.selection?.id) return () => store.select(tool);
     // From the stack, a click on a plate goes to its tier, wherever on the plate it lands.
     if (state.distance === 'stack' || tier !== state.tier) return () => store.focusTier(tier);
     // On the focused plate, a mark selects its tool and the rest of a cell selects its cluster.

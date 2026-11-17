@@ -11,8 +11,8 @@ import { ChevronRight, createElement } from 'lucide';
 import type { GraphIndex } from './data';
 import { COMMITTED_ONLY } from './display';
 import { element, swatch } from './dom';
-import { FILTER_NAMES, isFiltered } from './state';
-import type { FilterName, Filters, MapState, Store } from './state';
+import { FILTER_NAMES, isFiltered, tracedNeedOf } from './state';
+import type { FilterName, Filters, Lens, MapState, Store } from './state';
 
 /** The name the rail gives each filter. */
 const FILTER_TITLES: Readonly<Record<FilterName, string>> = {
@@ -30,6 +30,13 @@ function valueName(index: GraphIndex, name: FilterName, value: string): string {
   if (name === 'used' || name === 'operated') return index.roleName(value);
   if (name === 'stream') return index.streamName(value);
   return value;
+}
+
+/** Why a lens leaves tools in reach, as assistive technology hears it after the count. Null for a lens that leaves none out. */
+function reasonInReach(index: GraphIndex, lens: Lens | null): string | null {
+  if (lens?.type === 'role') return `are in reach of the ${index.roleName(lens.role)}`;
+  const need = index.need(tracedNeedOf(lens) ?? '');
+  return need ? `serve the need ${need.id}, ${need.label}` : null;
 }
 
 /** Whether the decision classes chosen are exactly those of "committed only". */
@@ -137,10 +144,7 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
     // The filters apply on top of the lens, so the count is of the tools at full strength under both.
     const atFullStrength = index.emphasised({ lens, filters }).size;
     // What assistive technology hears after the numbers: why these tools are the ones at full strength.
-    const reasons = [
-      lens && `are in reach of the ${index.roleName(lens.role)}`,
-      isFiltered(filters) && 'pass the filters',
-    ].filter(Boolean);
+    const reasons = [reasonInReach(index, lens), isFiltered(filters) && 'pass the filters'].filter(Boolean);
     const explanation = `${reasons.length > 0 ? ` ${reasons.join(' and ')}` : ''}${isFiltered(filters) ? '' : ', no filter chosen'}`;
     count.replaceChildren(`${atFullStrength} of ${total} tools`, element('span', 'visually-hidden', explanation));
     committed.checked = isCommittedOnly(filters);

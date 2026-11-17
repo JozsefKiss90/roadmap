@@ -2,13 +2,14 @@
  * legend: the four decision-class steps with their names, at the bottom left
  * of the canvas. Each square is drawn from the same mark token as the marks.
  * While a lens or a filter is on, it also shows the faded state of a tool
- * left out, named for what leaves it out.
+ * left out, named for what leaves it out. While a need is traced, it shows
+ * the traced mark and the best-fit ring too.
  *
  * It is one of the panels: it reads the state store, and knows nothing of the scene.
  */
 import { DECISION_STEPS, STEP_NAMES, fadedName } from './display';
 import { dressSwatch, element, stepSwatch } from './dom';
-import { isFiltered } from './state';
+import { isFiltered, narrows, tracedNeedOf } from './state';
 import type { Store } from './state';
 
 export function mountLegend(app: HTMLElement, store: Store): void {
@@ -22,8 +23,16 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   const fadedSquare = stepSwatch('committed');
   dressSwatch(fadedSquare, 'committed', true);
   const fadedLabel = element('span', null);
-  const faded = element('li', 'legend-faded', fadedSquare, fadedLabel);
-  steps.append(faded);
+  const faded = element('li', 'legend-apart', fadedSquare, fadedLabel);
+  // A traced mark and a best-fit one, drawn as the scene draws them.
+  const tracedSquare = element('span', 'swatch swatch-traced');
+  tracedSquare.setAttribute('aria-hidden', 'true');
+  const traced = element('li', 'legend-apart', tracedSquare, 'Traced');
+  const bestFitSquare = element('span', 'swatch swatch-traced swatch-best-fit');
+  bestFitSquare.setAttribute('aria-hidden', 'true');
+  const bestFit = element('li', null, bestFitSquare, 'Best fit');
+  // The faded square stands before the two of the trace, so that those two go to a second row together.
+  steps.append(faded, traced, bestFit);
 
   const legend = element('section', 'legend', heading, steps);
   // Named apart from the filter of the same heading.
@@ -32,8 +41,9 @@ export function mountLegend(app: HTMLElement, store: Store): void {
 
   const show = (): void => {
     const { lens, filters } = store.get();
-    faded.hidden = lens === null && !isFiltered(filters);
-    fadedLabel.textContent = fadedName(lens !== null, isFiltered(filters));
+    faded.hidden = !narrows(lens) && !isFiltered(filters);
+    fadedLabel.textContent = fadedName(narrows(lens), isFiltered(filters));
+    traced.hidden = bestFit.hidden = tracedNeedOf(lens) === null;
   };
   show();
   store.subscribe(show);

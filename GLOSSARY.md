@@ -60,7 +60,7 @@ _Avoid_: Zoom level, level of detail
 The lens that brings forward the tools one role uses.
 
 **Reach**:
-The tools the lens that is on brings forward, across all eight tiers; under the role lens, the tools one role uses. With no lens, every tool is in reach.
+The tools the lens that is on brings forward, across all eight tiers; under the role lens, the tools one role uses, and under the need trace, the tools that serve the need. With no lens, every tool is in reach.
 _Avoid_: Scope, coverage
 
 **Emphasised**:
@@ -69,6 +69,21 @@ _Avoid_: Highlighted, active
 
 **Need trace**:
 The lens that shows one need and the tools that serve it.
+
+**Traced**:
+Serving the need the need trace shows; a traced tool's mark takes the selected fill. A selected need is always the traced need.
+_Avoid_: Highlighted, linked
+
+**Best fit**:
+A traced tool the framework recommends for the need; its mark takes a ring.
+_Avoid_: Recommended, primary
+
+**Home cell**:
+The cell of the cluster a need belongs to; the lines of a need trace start from it.
+_Avoid_: Source, origin
+
+**Need list**:
+The needs in the rail, grouped by phase, shown while the need trace is on; a partner picks the need to trace there.
 
 **Phase scrub**:
 The lens that steps through the roadmap phases and shows the needs and tools each one calls for.
@@ -79,7 +94,7 @@ The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
 **Rail**:
-The column down the left of the map that holds the title, the search box, the lens switch, the filters and the outline.
+The column down the left of the map that holds the title, the search box, the lens switch, the need list, the filters and the outline.
 _Avoid_: Sidebar, left panel, navigation
 
 **Outline**:
@@ -103,7 +118,7 @@ One of the seven ways to narrow the map to the tools that have a chosen value; t
 _Avoid_: Lens (when it means a filter)
 
 **Legend**:
-The panel at the bottom left of the map that names the four decision-class steps.
+The panel at the bottom left of the map that names the four decision-class steps, and the states a lens or a filter adds to them.
 _Avoid_: Key (a key is on the keyboard)
 
 **View**:

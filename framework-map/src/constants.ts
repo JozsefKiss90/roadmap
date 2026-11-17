@@ -77,6 +77,8 @@ export const constants = {
   labelRisePx: 10,
   /** From the top of a tier name up to the bottom of its count. */
   countGapPx: 7,
+  /** The least clear space between one tier's label and the next. With less, the names are left out and the counts stay. */
+  tierLabelGapPx: 4,
   /** Sizes on screen, from the style guide's "Map type" table. */
   tierNamePx: 20,
   clusterNamePx: 13,

@@ -7,8 +7,8 @@
  *
  * The transitions are pure functions of the state; the store only holds the
  * current state and tells its subscribers when it changes. It also remembers
- * the role the role lens last showed, which is no part of the state or of the
- * URL fragment.
+ * the role the role lens last showed and the need the need trace last showed,
+ * which are no part of the state or of the URL fragment.
  */
 
 /** One of the three zoom steps of the map. */
@@ -51,14 +51,30 @@ export interface RoleLens {
   readonly role: string;
 }
 
-/** The lens that is on. The need trace and the phase scrub join it in later tickets. */
-export type Lens = RoleLens;
+/** The need trace: shows one need and the tools that serve it. */
+export interface NeedTrace {
+  readonly type: 'need';
+  /** The need's id, or null while the trace is on and no need is chosen yet. */
+  readonly need: string | null;
+}
+
+/** The lens that is on. The phase scrub joins it in a later ticket. */
+export type Lens = RoleLens | NeedTrace;
+
+/**
+ * What one tool has for the lenses and the filters: its facets, the needs it
+ * serves and the needs it is a best fit for.
+ */
+export interface Traits extends Facets {
+  readonly needs: readonly string[];
+  readonly bestFitFor: readonly string[];
+}
 
 /**
  * Where the map is, and what is selected. At the stack distance nothing is
  * focused; at the tier distance a tier is; at the cluster distance a cluster
  * is, with its tier. A selected tool or cluster is always in the focused
- * cluster. A need has no place in the stack, so it can be selected anywhere.
+ * cluster. A selected need is always the need the need trace shows.
  */
 export interface MapState {
   readonly distance: Distance;
@@ -83,14 +99,18 @@ export interface Places {
 
 export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS, lens: null };
 
+const sameLens = (a: Lens | null, b: Lens | null): boolean =>
+  a === b ||
+  (a?.type === 'role' && b?.type === 'role' && a.role === b.role) ||
+  (a?.type === 'need' && b?.type === 'need' && a.need === b.need);
+
 const same = (a: MapState, b: MapState): boolean =>
   a.distance === b.distance &&
   a.tier === b.tier &&
   a.cluster === b.cluster &&
   a.selection?.type === b.selection?.type &&
   a.selection?.id === b.selection?.id &&
-  a.lens?.type === b.lens?.type &&
-  a.lens?.role === b.lens?.role &&
+  sameLens(a.lens, b.lens) &&
   (a.filters === b.filters || FILTER_NAMES.every((name) => a.filters[name].join('\n') === b.filters[name].join('\n')));
 
 /** Goes to the tier distance for a tier, with nothing selected. An id the graph lacks changes nothing. */
@@ -107,7 +127,7 @@ export function focusCluster(state: MapState, places: Places, clusterId: string)
 
 /**
  * Selects the tool, cluster or need with this id. A tool or a cluster also
- * takes the map to that cluster; a need leaves the map where it is. An id the
+ * takes the map to that cluster; a need starts its need trace. An id the
  * graph lacks changes nothing.
  */
 export function select(state: MapState, places: Places, id: string): MapState {
@@ -116,8 +136,10 @@ export function select(state: MapState, places: Places, id: string): MapState {
   const cluster = places.cluster(id);
   if (cluster) return { ...focusCluster(state, places, cluster.id), selection: { type: 'cluster', id: cluster.id } };
   const need = places.need(id);
-  if (need) return { ...state, selection: { type: 'need', id: need.id } };
-  return state;
+  if (!need) return state;
+  // A need has no place in the stack: the map goes to the stack, where its whole trace can be seen.
+  const traced = showNeedTrace(focusStack(state), places, need.id);
+  return { ...traced, selection: { type: 'need', id: need.id } };
 }
 
 /** Closes the detail card. The map stays where it is. */
@@ -181,25 +203,80 @@ export function passes(filters: Filters, facets: Facets): boolean {
 export function showRoleLens(state: MapState, places: Places, role?: string): MapState {
   const roles = places.filterValues('used');
   const shown = role === undefined ? roles[0] : roles.includes(role) ? role : undefined;
-  return shown === undefined ? state : { ...state, lens: { type: 'role', role: shown } };
+  return shown === undefined ? state : withLens(state, { type: 'role', role: shown });
 }
 
-/** Switches the lens off. The place, the selection and the filters stay. */
+/**
+ * Switches the need trace on, as the lens switch and its key do. The place
+ * stays, and so does a selected tool or cluster. With a need, it traces that
+ * need. With no need, it keeps the need it shows, or waits for the partner to
+ * pick one. It takes the place of any lens that was on. A need the graph
+ * lacks changes nothing. Choosing a need, with `select`, also goes to the
+ * stack and opens the need's detail card.
+ */
+export function showNeedTrace(state: MapState, places: Places, need?: string): MapState {
+  if (need === undefined) {
+    return state.lens?.type === 'need' ? state : withLens(state, { type: 'need', need: null });
+  }
+  const traced = places.need(need);
+  return traced ? withLens(state, { type: 'need', need: traced.id }) : state;
+}
+
+/** Switches the lens off. The place and the filters stay, and so does a selected tool or cluster. */
 export function clearLens(state: MapState): MapState {
-  return state.lens ? { ...state, lens: null } : state;
+  return state.lens ? withLens(state, null) : state;
 }
 
-/** Whether a tool is in reach under a lens. The role lens means "used by" only. No lens leaves every tool in reach. */
-export function inReach(lens: Lens | null, facets: Facets): boolean {
-  return lens === null || facets.used.includes(lens.role);
+/**
+ * Puts a lens in the place of the one that is on. A lens that is on already
+ * is kept as it is, with the selection. A selected need goes with its trace.
+ */
+function withLens(state: MapState, lens: Lens | null): MapState {
+  if (sameLens(state.lens, lens)) return state;
+  return { ...state, lens, selection: state.selection?.type === 'need' ? null : state.selection };
+}
+
+/** The id of the need a lens traces, or null: for no lens, the role lens, and the need trace with no need chosen. */
+export function tracedNeedOf(lens: Lens | null): string | null {
+  return lens?.type === 'need' ? lens.need : null;
+}
+
+/** Whether a lens leaves any tool out of reach. No lens does not, and neither does the need trace with no need chosen. */
+export function narrows(lens: Lens | null): boolean {
+  return lens?.type === 'role' || tracedNeedOf(lens) !== null;
+}
+
+/**
+ * Whether a tool is traced: the need trace is on for a need the tool serves.
+ * A traced tool takes the selected fill.
+ */
+export function traced(lens: Lens | null, traits: Traits): boolean {
+  const need = tracedNeedOf(lens);
+  return need !== null && traits.needs.includes(need);
+}
+
+/** Whether a tool is a best fit for the need the need trace is on for. */
+export function bestFit(lens: Lens | null, traits: Traits): boolean {
+  const need = tracedNeedOf(lens);
+  return need !== null && traits.bestFitFor.includes(need);
+}
+
+/**
+ * Whether a tool is in reach under a lens. The role lens means "used by"
+ * only. The need trace reaches the tools that serve its need. No lens leaves
+ * every tool in reach, and so does the need trace with no need chosen.
+ */
+export function inReach(lens: Lens | null, traits: Traits): boolean {
+  if (!narrows(lens)) return true;
+  return lens?.type === 'role' ? traits.used.includes(lens.role) : traced(lens, traits);
 }
 
 /**
  * Whether a tool is drawn at full strength: in reach under the lens, and
  * passing the filters, which apply on top of it. Every other tool is faded.
  */
-export function emphasised(state: Pick<MapState, 'lens' | 'filters'>, facets: Facets): boolean {
-  return inReach(state.lens, facets) && passes(state.filters, facets);
+export function emphasised(state: Pick<MapState, 'lens' | 'filters'>, traits: Traits): boolean {
+  return inReach(state.lens, traits) && passes(state.filters, traits);
 }
 
 /**
@@ -221,10 +298,11 @@ export function toFragment(state: MapState, current = ''): string {
   }
   parts.delete('lens');
   parts.delete('role');
-  if (state.lens) {
-    parts.set('lens', state.lens.type);
-    parts.set('role', state.lens.role);
-  }
+  parts.delete('need');
+  if (state.lens) parts.set('lens', state.lens.type);
+  if (state.lens?.type === 'role') parts.set('role', state.lens.role);
+  const need = tracedNeedOf(state.lens);
+  if (need !== null) parts.set('need', need);
   // A tool's id has a colon in it, which a fragment may hold as it is. The other parts are left as they are.
   return parts.toString().replace(/(^|&)select=[^&]*/, (part) => part.replace(/%3A/gi, ':'));
 }
@@ -234,19 +312,19 @@ export function toFragment(state: MapState, current = ''): string {
  * gives the stack at rest. A selected tool or cluster decides the place, so
  * the fragment cannot name a selection that is somewhere else. The filters
  * are read on their own: a value a filter does not list is left out, and the
- * rest hold wherever the map opens. So is the lens: a lens or a role the
- * fragment names wrongly gives no lens, and the role lens with no role is the
- * lens for the first role.
+ * rest hold wherever the map opens. So is the lens: a lens, a role or a need
+ * the fragment names wrongly gives no lens. The role lens with no role is the
+ * lens for the first role, and the need trace with no need waits for one. A
+ * selected need starts its own trace, whatever lens the fragment names.
  */
 export function fromFragment(fragment: string, places: Places): MapState {
   const parts = new URLSearchParams(fragment.replace(/^#/, ''));
   const cluster = parts.get('cluster');
   const tier = parts.get('tier');
-  const withLens = parts.get('lens') === 'role' ? showRoleLens(AT_STACK, places, parts.get('role') ?? undefined) : AT_STACK;
   const atStack = FILTER_NAMES.reduce((filtered, name) => {
     const values = parts.getAll(name);
     return values.length > 0 ? setFilter(filtered, places, name, values) : filtered;
-  }, withLens);
+  }, lensOfFragment(parts, places));
   let state = atStack;
   if (cluster !== null) state = focusCluster(atStack, places, cluster);
   else if (tier !== null) state = focusTier(atStack, places, tier);
@@ -255,6 +333,13 @@ export function fromFragment(fragment: string, places: Places): MapState {
   if (selected === null) return state;
   const withSelection = select(state, places, selected);
   return withSelection.selection ? withSelection : atStack;
+}
+
+/** The stack at rest under the lens a fragment names. */
+function lensOfFragment(parts: URLSearchParams, places: Places): MapState {
+  const lens = parts.get('lens');
+  if (lens === 'role') return showRoleLens(AT_STACK, places, parts.get('role') ?? undefined);
+  return lens === 'need' ? showNeedTrace(AT_STACK, places, parts.get('need') ?? undefined) : AT_STACK;
 }
 
 /** Called after a change, with the new state and the one before it. */
@@ -282,6 +367,8 @@ export interface Store {
   clearFilters(): void;
   /** Switches the role lens on: for this role, or for the role it last showed, or for the first role. */
   showRoleLens(role?: string): void;
+  /** Switches the need trace on: for this need, or for the need it last showed, or with no need chosen yet. The place and the selection stay. */
+  showNeedTrace(need?: string): void;
   /** Switches the lens off. */
   clearLens(): void;
 }
@@ -289,13 +376,16 @@ export interface Store {
 export function createStore(places: Places, initial: MapState = AT_STACK): Store {
   let state = initial;
   /** The role the role lens last showed, so that switching it off and on again comes back to the same role. */
-  let lastRole = initial.lens?.role;
+  let lastRole = initial.lens?.type === 'role' ? initial.lens.role : undefined;
+  /** The need the need trace last showed, in the same way. */
+  let lastNeed = tracedNeedOf(initial.lens) ?? undefined;
   const subscribers = new Set<Subscriber>();
   const set = (next: MapState): void => {
     if (same(next, state)) return;
     const before = state;
     state = next;
-    lastRole = state.lens?.role ?? lastRole;
+    if (state.lens?.type === 'role') lastRole = state.lens.role;
+    lastNeed = tracedNeedOf(state.lens) ?? lastNeed;
     for (const subscriber of [...subscribers]) subscriber(state, before);
   };
   return {
@@ -316,6 +406,8 @@ export function createStore(places: Places, initial: MapState = AT_STACK): Store
     setFilter: (name, values) => set(setFilter(state, places, name, values)),
     clearFilters: () => set(clearFilters(state)),
     showRoleLens: (role) => set(showRoleLens(state, places, role ?? lastRole)),
+    // A trace that is on keeps its need; one that is switched on comes back to the need it last showed.
+    showNeedTrace: (need) => set(showNeedTrace(state, places, need ?? (state.lens?.type === 'need' ? undefined : lastNeed))),
     clearLens: () => set(clearLens(state)),
   };
 }
@@ -339,7 +431,7 @@ export function syncWithFragment(store: Store, places: Places): void {
   };
   const read = (): void => {
     store.set(fromFragment(window.location.hash, places));
-    // A fragment that names a tier, cluster, selection, filter value or role the graph lacks is put right.
+    // A fragment that names a tier, cluster, selection, filter value, role or need the graph lacks is put right.
     write(store.get());
   };
   read();

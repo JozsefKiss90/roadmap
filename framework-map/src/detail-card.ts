@@ -16,6 +16,7 @@ import type { Child } from './dom';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
 import { inGridOrder } from './layout';
+import { tracedNeedOf } from './state';
 import type { Selection, Store } from './state';
 
 /** The decision source of a tool whose decision is a recommendation, not yet the Architect's. */
@@ -123,6 +124,18 @@ export function mountDetailCard(
     return element('header', 'card-head', element('p', 'card-eyebrow', ...eyebrow), close, title);
   }
 
+  /** While a need is traced, the way back from a tool's card to the need: one click. */
+  function wayBackToNeed(): HTMLElement | null {
+    const need = index.need(tracedNeedOf(store.get().lens) ?? '');
+    if (!need) return null;
+    return element(
+      'p',
+      'card-trace',
+      element('span', 'card-tag', 'Tracing'),
+      inlineRow(need.id, `${need.id} · ${need.label}`),
+    );
+  }
+
   function toolForm(tool: ToolNode): Child[] {
     const proposed = tool.decision_source === PROPOSED_HERE;
     const decision = element(
@@ -170,6 +183,7 @@ export function mountDetailCard(
       element(
         'div',
         'card-body',
+        wayBackToNeed(),
         paragraph(tool.capability),
         section('Decision', decision),
         section('Place and use', fields([['Cluster', cluster && inlineRow(cluster.id, `${cluster.id} · ${cluster.label}`)], ['Tier', tier && `${tier.id} · ${tier.label}`], ...attributes(tool)])),
@@ -276,7 +290,11 @@ export function mountDetailCard(
 
   render(store.get().selection);
   store.subscribe((state, before) => {
-    if (state.selection !== before.selection) render(state.selection, before.selection === null);
+    // A tool's card names the traced need, so it is made again when another need, or none, is traced under it.
+    const retraced = state.selection?.type === 'tool' && tracedNeedOf(state.lens) !== tracedNeedOf(before.lens);
+    if (state.selection !== before.selection || retraced) {
+      render(state.selection, before.selection === null);
+    }
   });
   return { focus: () => card.querySelector<HTMLElement>('.card-name')?.focus() };
 }

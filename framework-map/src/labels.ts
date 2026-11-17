@@ -47,6 +47,7 @@ import { drawKindIcon } from './icons';
 import { listLayout, nameCap, staircaseRise } from './label-layout';
 import type { StackLayout } from './layout';
 import type { Stage } from './scene';
+import { narrows } from './state';
 import type { MapState, Store } from './state';
 import { MAP_TOKENS, colourOf } from './tokens';
 
@@ -133,15 +134,18 @@ export function addLabels(
   };
   const middle = new Vector3(axis.x, (layout.bounds.min.y + layout.bounds.max.y) / 2, axis.z);
   const pending: Promise<void>[] = [];
-  /** Each tier's name and count, with its label and how far its name reaches, to set them again for a lens. */
-  const tierCounts: { tier: string; name: Text; count: SpriteText; label: Label; nameRight: number }[] = [];
+  /**
+   * Each tier's name and count, with its label and how far its name reaches down and across, to set
+   * them again for a lens, and to leave the names out where the plates stand too close for them.
+   */
+  const tierCounts: { tier: string; name: Text; count: SpriteText; label: Label; nameRight: number; nameBottom: number }[] = [];
   const tierCountText = (tierId: string, lens: MapState['lens']): string =>
-    lens
+    narrows(lens)
       ? reachText(tierId, index.toolCountOf(tierId, lens), index.toolCountOf(tierId))
       : countText(tierId, index.toolCountOf(tierId));
   /** A tier with no tool in reach has its name in the colour of a tag, as its row in the outline is dimmed. */
   const tierNameColour = (tierId: string, lens: MapState['lens']) =>
-    lens && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
+    narrows(lens) && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
 
   const tierLabels: Label[] = index.tiers.map((tier) => {
     const plate = layout.plates.find((candidate) => candidate.tier === tier.id);
@@ -172,14 +176,14 @@ export function addLabels(
       box: { left: 0, bottom: 0, right: count.scale.x, top: constants.countGapPx + count.scale.y },
       action: () => store.focusTier(tier.id),
     };
-    const counted = { tier: tier.id, name, count, label, nameRight: 0 };
+    const counted = { tier: tier.id, name, count, label, nameRight: 0, nameBottom: 0 };
     tierCounts.push(counted);
     pending.push(
       typeset(name).then(() => {
         const [, bottom, right] = blockOf(name);
-        label.box.bottom = bottom;
+        counted.nameBottom = bottom;
         counted.nameRight = right;
-        label.box.right = Math.max(count.scale.x, right);
+        boxTierLabels();
       }),
     );
     stage.add(group);
@@ -268,13 +272,29 @@ export function addLabels(
   stage.add(bracket);
   let bracketEnds: [Vector3, Vector3] | null = null;
 
+  /** Whether the tier names are left out, because the plates stand too close on screen for them. */
+  let tierNamesOut = false;
+
+  /**
+   * Sets what each tier label covers: its count, and its name unless the names are left out.
+   * A count on its own stands level with the middle of its plate, where the name would begin.
+   */
+  function boxTierLabels(): void {
+    for (const { name, count, label, nameRight, nameBottom } of tierCounts) {
+      name.visible = !tierNamesOut;
+      label.dy = tierNamesOut ? -(constants.countGapPx + count.scale.y / 2) : constants.labelRisePx;
+      label.box.bottom = tierNamesOut ? constants.countGapPx : nameBottom;
+      label.box.right = tierNamesOut ? count.scale.x : Math.max(count.scale.x, nameRight);
+    }
+  }
+
   /** Sets each tier's count for the lens: the tools in reach on its plate, or all of its tools with no lens. */
   function showTierCounts(lens: MapState['lens']): void {
-    for (const { tier, name, count, label, nameRight } of tierCounts) {
+    for (const { tier, name, count } of tierCounts) {
       name.color = tierNameColour(tier, lens);
       count.text = tierCountText(tier, lens);
-      label.box.right = Math.max(count.scale.x, nameRight);
     }
+    boxTierLabels();
   }
 
   let toolLabels: Label[] = [];
@@ -524,6 +544,18 @@ export function addLabels(
     // across the screen.
     const columnReachPx = halfWidth / unitsPerPixelAt(middle) + constants.labelGapPx + constants.labelColumnPx;
     for (const label of tierLabels) label.dx = -columnReachPx;
+
+    // Where the stack stands back, as it does beside a need's detail card in a narrow window, the
+    // plates come closer on screen than a name is tall. The names are then left out, and each
+    // tier keeps its count, which begins with the tier's code.
+    const heights = tierCounts.map(({ label }) => stage.toPicture(label.anchor).y);
+    const out = tierCounts.some(
+      ({ label, nameBottom }, at) => at > 0 && heights[at]! - heights[at - 1]! < label.box.top - nameBottom + constants.tierLabelGapPx,
+    );
+    if (out !== tierNamesOut) {
+      tierNamesOut = out;
+      boxTierLabels();
+    }
 
     for (const { group, anchor, dx, dy } of shown()) {
       const unitsPerPixel = unitsPerPixelAt(anchor);

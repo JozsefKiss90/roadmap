@@ -241,7 +241,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-focus-outline` | 2px `accent` outline, with a 2px gap | Keyboard focus, in the panels and on the canvas |
 | `map-faded` | `ink @ 0.12` | A mark outside the active lens or filter |
 | `map-text-name` | `ink` | Tier, cluster and tool names |
-| `map-text-selected` | `accent` | The selected tool's name in the list above its cell, and the selected row's name in the outline |
+| `map-text-selected` | `accent` | The selected tool's name in the list above its cell, the selected row's name in the outline, and the traced need's name in the need list |
 | `map-text-tag` | `muted` | Counts and tags. Also a tool's name in the list above its cell, when the lens or the filters leave the tool out, and a tier's name when the lens leaves none of its tools in reach |
 | `map-label-leader` | `soft` hairline, 1px | The line from a cluster name down to its cell, and the bracket from a list of tool names to its cell |
 
@@ -263,7 +263,7 @@ The steps differ by form: filled or not, a heavy or a thin outline, a solid or a
 | State | Treatment |
 |---|---|
 | Hover | `map-hover-ring` is added. The mark itself does not change. |
-| Selected or traced | The mark takes `map-selected-fill`, whatever its step. A selected cluster's cell takes `map-selected-cell`. The selected tool's name in the list above its cell takes `map-text-selected`, and so does the selected row's name in the outline. |
+| Selected or traced | The mark takes `map-selected-fill`, whatever its step. A selected cluster's cell takes `map-selected-cell`. The selected tool's name in the list above its cell takes `map-text-selected`, and so does the selected row's name in the outline. In a need trace, a best-fit tool's mark also takes `map-bestfit-ring`, the need's home cell takes `map-home-cell`, and the traced need's name in the need list takes `map-text-selected`. The traced need's row in the need list, and the row at the head of a tool's detail card that leads back to the need, stand on `paper-2` with a 2px `accent` bar at the left, as the outline's selected row does. |
 | Keyboard focus | `map-focus-outline` is added. |
 | Faded | The mark keeps its form. Its `ink`, `soft` or `muted` part turns to `map-faded`, and a `paper` fill stays `paper`. The tool's square in the outline fades the same way, and the text of its row takes `soft`. Its name in the list above its cell takes `map-text-tag`. |
 
@@ -310,7 +310,7 @@ These rows extend the [contrast contract](#contrast-contract) to the map. Each o
 | `map-label-leader` | `soft` | `paper` | non-text | 3:1 | 5.27:1 |
 | `map-label-leader` | `soft` | `paper-2` | non-text | 3:1 | 4.77:1 |
 
-The plate and the cell line are decorative, so neither may be the only carrier of meaning. Plate height and the tier name carry the tier. The marks of a cell sit together on one grid, with a gap to the next cell, and that grouping carries the cluster at the stack distance. From the tier distance the cluster name carries it too. The `exception` row is the second exception above.
+The plate and the cell line are decorative, so neither may be the only carrier of meaning. Plate height and the tier name carry the tier. Where the stack stands back beside a need's detail card and the plates come too close for the names, the count carries it in the name's place: it begins with the tier's code, and the outline names the tier. The marks of a cell sit together on one grid, with a gap to the next cell, and that grouping carries the cluster at the stack distance. From the tier distance the cluster name carries it too. The `exception` row is the second exception above.
 
 **How the rows are checked.** `scripts/verify-contrast.py` belongs to the diagram-design plugin and reads only the Semantic roles table. The map rows are checked in this repository. In `framework-map/`, `npm run contrast` measures every row in the light skin. It fails on any of these:
 
@@ -330,13 +330,13 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-tier-name` | Instrument Serif | 20px | 400 | Tier names |
 | `map-cluster-name` | Geist (sans) | 13px | 600 | Cluster names |
 | `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
-| `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters |
+| `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters. Also a phase and its number of needs, in the need list |
 | `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags |
 | `map-card-name` | Geist (sans) | 20px | 600 | The name at the head of the detail card, and of the list of keys |
 | `map-card-body` | Geist (sans) | 13px | 400; 600 for the decision class | Text in the detail card; its opening line is 14px |
-| `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, and the names of the steps in the legend |
+| `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, the names of the steps in the legend, and the line beside "Needs" that asks for a need |
 | `map-card-heading` | Geist Mono | 11px | 600, tracked 0.08em, uppercase | Section headings in the detail card, the rail, the search results, the legend and the list of keys |
-| `map-rail-row` | Geist (sans) | 13px | 600 for a tier, 500 for a cluster, 400 for a tool; 600 when selected | Rows of the outline. A search result's name and the "Keys" button are 13px at 500, the search field and its "nothing matches" line 13px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400. A segment of the lens switch is 13px at 500, and 600 when chosen. The lens that is on is filled with `ink`; "None" and a chosen role take `paper-2` and a 2px `ink` ring |
+| `map-rail-row` | Geist (sans) | 13px | 600 for a tier, 500 for a cluster, 400 for a tool; 600 when selected | Rows of the outline. A search result's name and the "Keys" button are 13px at 500, the search field and its "nothing matches" line 13px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400. A row of the need list is 13px at 400, and 600 when its need is traced. A segment of the lens switch is 13px at 500, and 600 when chosen. The lens that is on is filled with `ink`; "None" and a chosen role take `paper-2` and a 2px `ink` ring |
 | `map-key` | Geist Mono | 11px | 500 | A key of the keyboard, in a 1px `rule-solid` box |
 
 **Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 1280×720. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.
