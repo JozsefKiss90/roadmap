@@ -1,6 +1,6 @@
 import './styles.css';
 import { constants } from './constants';
-import { parseGraph } from './data';
+import { loadGraph } from './data';
 import { signalReady } from './ready';
 
 const root = document.documentElement;
@@ -13,7 +13,7 @@ applyConstants();
 
 // Nothing draws the graph yet. Parsing it here keeps the data in the built
 // file, so the inlining and the size budget are exercised from the start.
-const graph = parseGraph() as { nodes: unknown[] };
+const graph = loadGraph();
 root.dataset.graphNodes = String(graph.nodes.length);
 
 if (import.meta.env.DEV) {

@@ -8,7 +8,8 @@
     "dev": "vite --open /framework-map.html",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "tsc --noEmit && vite build && node scripts/publish.mjs",
+    "validate": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/validate-graph.ts",
+    "build": "tsc --noEmit && npm run validate && vite build && node scripts/publish.mjs",
     "screenshots": "node scripts/screenshots.mjs"
   },
   "devDependencies": {
