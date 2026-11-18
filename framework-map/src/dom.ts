@@ -1,6 +1,7 @@
 /**
  * dom: the small helpers the panels build their elements with.
  */
+import { ArrowUpRight, createElement } from 'lucide';
 import { decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { MARK_TOKEN_OF_STEP, cssOf, markPartColour } from './tokens';
@@ -38,3 +39,15 @@ export function stepSwatch(step: DecisionStep): HTMLElement {
 
 /** The square of a decision class: the form of its step. */
 export const swatch = (decisionClass: string): HTMLElement => stepSwatch(decisionStep(decisionClass));
+
+/** The link to the tool matrix, which opens beside the map. `href` is `toolMatrixHref` in src/constants.ts. */
+export function toolMatrixLink(href: string): HTMLAnchorElement {
+  const arrow = createElement(ArrowUpRight);
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.classList.add('card-icon');
+  const link = element('a', 'card-link', 'Open the tool matrix', arrow);
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  return link;
+}

@@ -1,7 +1,9 @@
 import './styles.css';
 import layout from 'virtual:stack-layout';
+import picture from 'virtual:stack-picture';
 import { constants } from './constants';
 import { GraphRejected } from './data';
+import { hasWebGL, mountFallback } from './fallback';
 import { loadGraph } from './inlined-graph';
 import { TAG_FONT, addLabels } from './labels';
 import type { LabelRect } from './labels';
@@ -26,7 +28,7 @@ const root = document.documentElement;
 function applyPageConstants(): void {
   root.style.setProperty('--title-size', `${constants.titleSizePx}px`);
   root.style.setProperty('--detail-card-width', `${constants.detailCardPx}px`);
-  root.style.setProperty('--rail-width', `${constants.railPx}px`);
+  root.style.setProperty('--rail-open-width', `${constants.railPx}px`);
   root.style.setProperty('--legend-second-row', `${constants.legendSecondRowPx}px`);
 }
 
@@ -41,13 +43,19 @@ async function start(): Promise<void> {
   await loadFonts(['400 1em "Instrument Serif"', TAG_FONT, '400 1em "Geist"']);
 
   const index = loadGraph();
+  if (!hasWebGL()) {
+    // No scene is made, so nothing moves and no label is drawn.
+    mountFallback(app, index, constants, __BUILD_ID__, picture);
+    window.frameworkMap = { labels: () => [], isMoving: () => false };
+    return;
+  }
   // The store starts from the URL fragment, so the page opens at the distance a link names.
   const store = createStore(index);
   syncWithFragment(store, index);
 
   const stage = createStage(container, index, layout, constants, store);
   const labels = addLabels(stage, index, layout, constants, store);
-  mountPanels(app, index, store, constants);
+  mountPanels(app, index, store, constants, __BUILD_ID__);
   window.frameworkMap = { labels: () => labels.rects(), isMoving };
   await labels.settled();
 

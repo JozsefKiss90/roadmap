@@ -10,8 +10,11 @@
  * requests anything other than the file itself. It fails if a state is still
  * moving after its time is up, or if anything moves at all with reduced motion on. It also fails if a state
  * shows too many labels, two labels that overlap, or a label that runs out of
- * the window, under the rail or under the detail card. It does not compare pixels, because headless 3D rendering varies
+ * the window, under the rail or under the detail card; and if two panels overlap or a panel runs out of the
+ * window. It does not compare pixels, because headless 3D rendering varies
  * between runs.
+ *
+ * A state may name its own viewports, and may ask for a browser with no WebGL.
  *
  * Usage: node scripts/screenshots.mjs [path to the built file]
  */
@@ -21,6 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { MOST_LABELS, states, viewports } from './screenshot-states.mjs';
 import { labelFaults } from './label-faults.mjs';
+import { panelFaults } from './panel-faults.mjs';
 
 const READY_SELECTOR = 'html[data-ready="true"]';
 const READY_TIMEOUT_MS = 15_000;
@@ -70,13 +74,52 @@ const browser = await launchBrowser();
 console.log(`browser: ${browser.browserType().name()} ${browser.version()}`);
 /** @type {string[]} */
 const failures = [];
+let taken = 0;
+
+/** Run in the page before its own code: the browser then gives no WebGL context, as one with WebGL switched off. */
+function withoutWebGL() {
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  // @ts-expect-error The stand-in takes any context name, as the page may ask for any.
+  HTMLCanvasElement.prototype.getContext = function (name, ...rest) {
+    return /webgl/i.test(String(name)) ? null : Reflect.apply(getContext, this, [name, ...rest]);
+  };
+}
+
+/**
+ * Run in the page: the panels that are on it, as rectangles. The rail is reported at the width the canvas keeps
+ * clear for it, so a rail opened over the canvas in the compact layout is no fault. The search results open over
+ * the canvas too, and are left out.
+ */
+function readPanels() {
+  const root = document.documentElement;
+  /** @type {import('./panel-faults.mjs').PanelRect[]} */
+  const panels = [];
+  if (document.querySelector('.rail')?.getClientRects().length) {
+    const railWidth = Number.parseFloat(getComputedStyle(root).getPropertyValue('--rail-width'));
+    panels.push({ name: 'rail', left: 0, top: 0, right: railWidth, bottom: root.clientHeight });
+  }
+  for (const [name, selector] of [
+    ['breadcrumb', '.breadcrumb ol'],
+    ['legend', '.legend'],
+    ['phase strip', '.phase-steps'],
+    ['detail card', '.detail-card'],
+    ['narrow message', '.narrow-message'],
+    ['fallback page', '.fallback'],
+  ]) {
+    const rect = document.querySelector(/** @type {string} */ (selector))?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) continue;
+    panels.push({ name: /** @type {string} */ (name), left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+  }
+  return { panels, railWidth: panels.find((panel) => panel.name === 'rail')?.right ?? 0, layout: root.dataset.layout ?? null };
+}
 
 try {
   for (const state of states) {
-    for (const viewport of viewports) {
+    for (const viewport of state.at ?? viewports) {
       for (const { reducedMotion, suffix } of MOTION_SETTINGS) {
         const label = `${state.name}-${viewport.width}x${viewport.height}${suffix}`;
         const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion });
+        if (state.webgl === false) await context.addInitScript(withoutWebGL);
         const page = await context.newPage();
 
         page.on('console', (message) => {
@@ -103,16 +146,19 @@ try {
           }
           // A key may start a flight, a fade or a panel. The screenshot is of the state at rest.
           await page.waitForFunction(() => window.frameworkMap?.isMoving() === false, null, { timeout: REST_TIMEOUT_MS });
-          const labels = await page.evaluate(() => window.frameworkMap?.labels() ?? null);
-          // The rail covers the left of the window and an open detail card the right, so the labels stand between them.
-          const [railRight, cardLeft] = await page.evaluate(() => [
-            document.querySelector('.rail')?.getBoundingClientRect().right ?? null,
-            document.querySelector('.detail-card:not([hidden])')?.getBoundingClientRect().left ?? null,
-          ]);
-          const clear = { left: railRight ?? 0, width: cardLeft ?? viewport.width, height: viewport.height };
-          for (const fault of labelFaults(labels, clear, MOST_LABELS)) failures.push(`${label}: ${fault}`);
+          const { panels, railWidth, layout } = await page.evaluate(readPanels);
+          for (const fault of panelFaults(panels, viewport)) failures.push(`${label}: ${fault}`);
+          // Under the narrow message the map is out of sight, and its labels with it.
+          if (layout !== 'narrow') {
+            const labels = await page.evaluate(() => window.frameworkMap?.labels() ?? null);
+            // The rail covers the left of the window and an open detail card the right, so the labels stand between them.
+            const cardLeft = panels.find((panel) => panel.name === 'detail card')?.left;
+            const clear = { left: railWidth, width: cardLeft ?? viewport.width, height: viewport.height };
+            for (const fault of labelFaults(labels, clear, MOST_LABELS)) failures.push(`${label}: ${fault}`);
+          }
           const screenshotPath = path.join(outputDir, `${label}.png`);
           await page.screenshot({ path: screenshotPath });
+          taken += 1;
           console.log(`saved ${path.relative(repositoryRoot, screenshotPath)}`);
         } catch (error) {
           failures.push(`${label}: ${firstLine(error)}`);
@@ -131,5 +177,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `\n${states.length} state(s) at ${viewports.length} viewport(s), with reduced motion off and on: no console errors, no network requests, no label faults, all at rest.`,
+  `\n${states.length} state(s) and ${taken} screenshot(s), with reduced motion off and on: no console errors, no network requests, no label faults, no panel faults, all at rest.`,
 );

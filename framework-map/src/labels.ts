@@ -41,11 +41,12 @@ import tierNameFontUrl from '@fontsource/instrument-serif/files/instrument-serif
 import { radians } from './camera';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
-import { gateBadge, kindIcon } from './display';
+import { gateBadge, kindIcon, tierCountText as countText } from './display';
 import type { KindIcon } from './display';
 import { drawKindIcon } from './icons';
 import { listLayout, nameCap, staircaseRise } from './label-layout';
 import type { StackLayout } from './layout';
+import { railPxAt } from './page-layout';
 import type { Stage } from './scene';
 import { narrows } from './state';
 import type { MapState, Store } from './state';
@@ -61,8 +62,6 @@ const OVERSAMPLING = 2;
 /** Names stand above their plate or cell, so they are drawn over whatever lies behind them. */
 const OVER_THE_STACK = 2;
 
-const countText = (tierId: string, tools: number): string =>
-  `${tierId} · ${tools} ${tools === 1 ? 'tool' : 'tools'}`.toUpperCase();
 /** A tier's count while a lens is on: the tools in reach on its plate, out of all it holds. */
 const reachText = (tierId: string, inReach: number, tools: number): string =>
   `${tierId} · ${inReach} of ${tools} in reach`.toUpperCase();
@@ -323,7 +322,7 @@ export function addLabels(
   /** The room for the list of tool names: between the rail and the window's edge, or the open detail card. */
   const listRoom = (): number =>
     stage.window.width -
-    constants.railPx -
+    railPxAt(stage.window.width, constants) -
     (store.get().selection ? constants.detailCardPx : 0) -
     2 * constants.listEdgePx;
 
@@ -567,7 +566,7 @@ export function addLabels(
     // The list is centred on its cell. Where that would take it under the rail, out of
     // the window or under the open detail card, the whole list moves across to stay in view.
     if (toolLabels.length > 0 && toolLabels[0]!.group.visible) {
-      const least = constants.railPx + constants.listEdgePx;
+      const least = railPxAt(stage.window.width, constants) + constants.listEdgePx;
       const most = stage.window.width - (store.get().selection ? constants.detailCardPx : 0) - constants.listEdgePx;
       let left = Infinity;
       let rightmost = -Infinity;

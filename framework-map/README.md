@@ -12,7 +12,7 @@ Run these from this folder, after `npm install`.
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
 | `npm run contrast` | Measures the map's contrast rows in the style guide; add `-- path/to/style-guide.md` to check another file |
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
-| `npm run screenshots` | Opens the built file in each named state, with reduced motion off and on, and saves a screenshot to `../screenshots/` |
+| `npm run screenshots` | Opens the built file in each named state at 1280×720, 1366×768 and 1920×1080, with reduced motion off and on, and saves a screenshot to `../screenshots/` |
 | `npm test` | Runs the unit tests, then the generator's tests in `../tool-discovery/` |
 | `npm run typecheck` | Type-checks without building |
 | `npm run dev` | Starts the dev server with the tuning panel |
@@ -20,8 +20,8 @@ Run these from this folder, after `npm install`.
 ## How the build stays one file
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
-- `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It opens each state with the system's reduced-motion setting off and then on, and fails if a state does not come to rest, or if anything is under way with reduced motion on. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card. It uses the installed Chrome or Edge.
+- `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph or the static picture of the stack, or contains the tuning panel.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It opens each state with the system's reduced-motion setting off and then on, and fails if a state does not come to rest, or if anything is under way with reduced motion on. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card; and if two panels overlap or a panel runs out of the window. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -109,7 +109,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters and the outline, and the need list while the need trace or the phase scrub is on. The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters, the outline and the build stamp, and the need list while the need trace or the phase scrub is on. Below 1366 pixels it stands as a column of icons; see "Window sizes, the fallback page and the build stamp". The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -261,6 +261,42 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **There is no glow and no vignette.** The blur is the map's only postprocessing. Antialiasing is the renderer's own and is always on.
 - **The tuning panel has a "Motion" and a "Depth blur" folder.** A value settled there is copied into `src/constants.ts` by hand.
 
+## Window sizes, the fallback page and the build stamp
+
+**Three page layouts, by the window's width.** `src/page-layout.ts` decides which, and names it on the `<html>` element as `data-layout`. The widths are `compactBelowPx` and `narrowBelowPx` in `src/constants.ts`.
+
+| Layout | Window width | What a partner gets |
+| --- | --- | --- |
+| Full | 1366 pixels and wider | The rail stands open down the left |
+| Compact | 1024 to 1365 pixels | The rail stands as a 56-pixel column of icons, and the canvas has the rest |
+| Narrow | Below 1024 pixels | A short message in place of the map, which asks for a wider window |
+
+1280×720 is the smallest supported size. The compact layout also serves windows down to 1024 pixels, which are not supported and are not checked.
+
+- **The picture is fitted to the room beside the icons.** The scene and the labels ask `railPxAt` for the rail's width at the window's width, so the picture and the panels cannot disagree. The stack at rest takes the room the rail gives up.
+- **An icon opens the rail over the canvas** and goes to its part: the search box, the lens switch, the need list, the filters or the outline. The need list's icon is there only while the list is. The icon at the foot opens the list of keys.
+- **An icon shows that its part is at work.** While a lens is on, or a filter is chosen, its icon is `ink` on `paper-2`, and its name ends in "on".
+- **The canvas beside the open rail is dimmed**, as the page is behind the list of keys.
+- **The open rail closes** with the button beside the title, with a press on the page outside it, or when the keyboard focus leaves it. The list of keys leaves it open. Escape keeps its own meaning and does not close it.
+- **`/` and `3` open the rail**, because they go to the search box and the need list. When a detail card or the phase strip closes while it holds the focus, the icon of the part takes the focus, and the rail stays as icons.
+- **The detail card lies over the canvas at every size**, and the picture keeps clear of it. With the rail as icons, 1280 pixels leave the picture more room beside an open card than 1366 pixels do with the rail open.
+- **Under the narrow message the map keeps running**, out of sight, so it is right the moment the window is widened. The keys that work anywhere do nothing there.
+
+**The fallback page.** `src/fallback.ts` asks the browser for WebGL before any scene is made. Without it the page shows the title, a short explanation, a link to the tool matrix, the static picture of the stack, the four decision-class steps and the build stamp. There is no console error, and a URL fragment changes nothing.
+
+- **The static picture is drawn by the build.** `src/stack-picture.ts` is a pure function of the layout. `vite.config.ts` runs it and inlines its SVG markup as the module `virtual:stack-picture`, as it does the layout itself (ADR 0002). The picture adds about 0.07 MB to the built file.
+- **It shows the stack at rest**: each plate with its cells and marks, each mark in the form of its decision-class step, and each tier's count and name. A mark's outline has the width its mark token gives, and is drawn inside the mark. It takes its colours from the map's tokens in `src/styles.css`.
+- **It is never scaled.** It is 1,166 pixels wide, and the page scrolls where the window is smaller, so its names keep to the text floor.
+
+**The build stamp** is at the foot of the rail and of the fallback page: the data date over the build identifier. The map ships as one file (ADR 0003), so it is how a partner tells whether their copy is current.
+
+- **The data date** is `meta.generated` in the graph JSON, shown as "17 Nov 2026".
+- **The build identifier** is the short commit the file was built from. `vite.config.ts` reads it from git and inlines it. `npm run build` prints it.
+- **A "+" after the commit** means the build held changes that commit does not, in `framework-map/` or `tool-discovery/`. A file for the partners is built from a clean commit and has no "+".
+- **"no commit"** means the build could read none, as outside a git checkout. The dev server shows "dev".
+- **In the column of icons** the stamp stands in a compact form, over the icon for the keys: the day, the year and the build identifier, without the names "Data" and "Build".
+- **Hovering the stamp** says the same in a sentence.
+
 ## The graph validator
 
 `npm run validate` checks `../tool-discovery/tool-framework.graph.json` and exits with 1 if it finds a fault. The build runs it first, so a graph with a fault never reaches the built file. Each fault is printed with its type and the id at fault.
@@ -303,4 +339,4 @@ The page sets `data-ready="true"` on the `<html>` element once its first render 
 
 ## Adding a screenshot state
 
-Add a name and a URL fragment to `scripts/screenshot-states.mjs`. A state that needs the keyboard to reach it also lists its keys: `['press', '/']` presses a key and `['type', 'semantic']` types text.
+Add a name and a URL fragment to `scripts/screenshot-states.mjs`. A state that needs the keyboard to reach it also lists its keys: `['press', '/']` presses a key and `['type', 'semantic']` types text. A state is opened at every viewport unless it names its own with `at`. `webgl: false` opens it in a browser that gives the page no WebGL.

@@ -47,8 +47,13 @@ function reasonInReach(index: GraphIndex, lens: Lens | null): string | null {
 const isCommittedOnly = (filters: Filters): boolean =>
   filters.decision.length === COMMITTED_ONLY.length && COMMITTED_ONLY.every((each) => filters.decision.includes(each));
 
+export interface FilterPanel {
+  /** Opens the filters if they are folded, and puts the keyboard focus on "committed only", their first control. */
+  focus(): void;
+}
+
 /** @param before The part of the rail the filters stand above. */
-export function mountFilterPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): void {
+export function mountFilterPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): FilterPanel {
   const total = index.tools.length;
 
   // The count is a live region, so a change of filter or of lens is said as well as shown.
@@ -144,7 +149,7 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
   panel.setAttribute('aria-labelledby', heading.id);
   parent.insertBefore(panel, before);
   // While the need list is on show the filters fold to their heading and their count.
-  mountFold(panel, heading, store);
+  const fold = mountFold(panel, heading, store);
 
   function render({ lens, filters }: MapState): void {
     // The filters apply on top of the lens, so the count is of the tools at full strength under both.
@@ -162,4 +167,10 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
   store.subscribe((state, previous) => {
     if (state.filters !== previous.filters || state.lens !== previous.lens) render(state);
   });
+  return {
+    focus() {
+      fold.open();
+      committed.focus();
+    },
+  };
 }

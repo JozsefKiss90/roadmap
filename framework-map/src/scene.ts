@@ -58,6 +58,7 @@ import { listShape, staircaseHeight } from './label-layout';
 import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, blendMaterial, markMaterial } from './mark-material';
 import { AT_ONCE, durationsNow, fadeMsBetween, hold, run } from './motion';
+import { insetLeftPxAt, railPxAt } from './page-layout';
 import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
 import { createSelectionDrawing } from './selection-drawing';
@@ -517,7 +518,7 @@ export function createStage(
           framed,
           frame,
           inPicture(
-            constants.railPx + constants.nearInsetSidePx,
+            railPxAt(windowSize.width, constants) + constants.nearInsetSidePx,
             constants.annotationTopPx + roomAbove,
             windowSize.width - constants.nearInsetSidePx - card,
             windowSize.height - constants.insetBottomPx - strip,
@@ -544,7 +545,7 @@ export function createStage(
       const top =
         constants.annotationTopPx + staircaseHeight(names, constants.clusterRowPx, constants.clusterNameGapPx);
       const region = inPicture(
-        constants.railPx + constants.nearInsetSidePx,
+        railPxAt(windowSize.width, constants) + constants.nearInsetSidePx,
         top,
         windowSize.width - constants.tierInsetRightPx - card,
         windowSize.height - constants.insetBottomPx - strip,
@@ -703,11 +704,13 @@ export function createStage(
     // middle of the area inside the insets. So the picture is made larger than
     // the window by the difference between opposite insets, and the window
     // shows the part of it that puts the axis there.
-    const extraX = constants.insetLeftPx - constants.insetRightPx;
+    // In the compact layout the rail is a column of icons, and the stack takes the room it gives up.
+    const insetLeftPx = insetLeftPxAt(windowSize.width, constants);
+    const extraX = insetLeftPx - constants.insetRightPx;
     const extraY = constants.insetTopPx - constants.insetBottomPx;
     frame.width = windowSize.width + Math.abs(extraX);
     frame.height = windowSize.height + Math.abs(extraY);
-    const besideX = (frame.width - (windowSize.width - constants.insetLeftPx - constants.insetRightPx)) / 2;
+    const besideX = (frame.width - (windowSize.width - insetLeftPx - constants.insetRightPx)) / 2;
     const besideY = (frame.height - (windowSize.height - constants.insetTopPx - constants.insetBottomPx)) / 2;
     frame.inset = { top: besideY, right: besideX, bottom: besideY, left: besideX };
     origin.x = Math.min(0, extraX);

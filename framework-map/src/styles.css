@@ -528,9 +528,140 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
-  width: var(--rail-width);
+  width: var(--rail-open-width);
   border-right: 1px solid var(--rule-solid);
   background: var(--paper);
+}
+
+/*
+ * The compact layout: the rail stands as a column of icons, `--rail-width` wide, and the canvas has
+ * the rest. An icon opens the rail over the canvas, above the breadcrumb and the legend.
+ */
+.rail[data-collapsed] {
+  width: var(--rail-width);
+}
+
+:root[data-layout='compact'] .rail:not([data-collapsed]) {
+  z-index: 2;
+}
+
+/*
+ * The canvas beside the open rail is dimmed, as the page is behind the list of keys, so the rail
+ * reads as lying over the picture and not as cutting it. A press there closes the rail.
+ */
+:root[data-layout='compact'] .rail:not([data-collapsed])::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(100% + 1px);
+  width: 100vw;
+  background: color-mix(in srgb, var(--ink) 24%, transparent);
+  content: '';
+}
+
+.rail-icons {
+  display: none;
+}
+
+.rail[data-collapsed] > :not(.rail-icons) {
+  display: none;
+}
+
+.rail[data-collapsed] > .rail-icons {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 0 6px;
+}
+
+/* The title stays on the page for assistive technology while the rail has no room to show it. */
+.rail[data-collapsed] > .title {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rail-icon,
+.rail-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.rail-icon svg,
+.rail-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rail-icon:hover,
+.rail-close:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.rail-icon[hidden] {
+  display: none;
+}
+
+/* The icon of a part that is at work, a lens that is on or a filter that is chosen: `ink` on `paper-2`. */
+.rail-icon[data-on] {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+/* The button that opens the rail stands apart from the icons of its parts. */
+.rail-icon:first-child {
+  margin-bottom: 12px;
+}
+
+/*
+ * The build stamp in the column of icons: the day, the year and the build identifier, one under the
+ * other and with no tracking, because the column is 56 pixels wide. It stands at the foot, over the icon for the keys.
+ */
+.build-stamp.build-stamp-compact {
+  width: 100%;
+  margin-top: auto;
+  padding-bottom: 8px;
+  overflow: hidden;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.build-stamp.build-stamp-compact > div,
+.build-stamp-compact span {
+  display: block;
+}
+
+/* The button that closes the open rail, beside the title. Only the compact layout has it. */
+.rail-close {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  display: none;
+}
+
+:root[data-layout='compact'] .rail:not([data-collapsed]) > .rail-close {
+  display: grid;
+}
+
+:root[data-layout='compact'] .rail .title {
+  padding-right: 56px;
 }
 
 .rail-heading,
@@ -671,7 +802,8 @@ body {
   display: flex;
   flex-direction: column;
   width: 400px;
-  max-height: calc(100vh - 160px);
+  /* The list ends above the foot of the rail, so the "Keys" button and the build stamp stay in sight. */
+  max-height: calc(100vh - 204px);
   border: 1px solid var(--soft);
   border-radius: 4px;
   background: var(--paper);
@@ -679,7 +811,7 @@ body {
 
 /* With nothing found, the message keeps to the rail. */
 .search-results:has(.search-list[hidden]) {
-  width: calc(var(--rail-width) - 32px);
+  width: calc(var(--rail-open-width) - 32px);
 }
 
 .search-results[hidden],
@@ -1515,8 +1647,40 @@ body {
 }
 
 .rail-foot {
-  padding: 8px 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px 12px 8px;
   border-top: 1px solid var(--rule);
+}
+
+/*
+ * The build stamp: the data date over the build identifier, so a partner can tell how current
+ * their copy of the file is. Two lines of tags, as tall as the "Keys" button beside them.
+ */
+.build-stamp {
+  margin: 0;
+  color: var(--muted);
+  font: 500 11px/14px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.build-stamp > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.build-stamp dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+/* A commit is written in small letters, and is shown as it is written. */
+.build-stamp-id {
+  text-transform: none;
 }
 
 .rail-keys {
@@ -1596,4 +1760,158 @@ body {
 
 .key-list-rows dd {
   margin: 0;
+}
+
+/*
+ * The narrow message: below 1024 pixels the window cannot hold the map, and this stands in its
+ * place. The canvas keeps its size out of sight, so the picture is right the moment the window is widened.
+ */
+.narrow-message {
+  display: none;
+}
+
+/* The list of keys is left alone: open, it lies over the whole page, and closing it gives the page back. */
+:root[data-layout='narrow'] #app > :not(.narrow-message, #stage, dialog) {
+  display: none;
+}
+
+:root[data-layout='narrow'] #stage {
+  visibility: hidden;
+}
+
+:root[data-layout='narrow'] .narrow-message {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  left: 24px;
+  display: block;
+  max-width: 44ch;
+}
+
+.narrow-message p {
+  margin: 0;
+  font: 400 14px/20px var(--font-sans);
+}
+
+.narrow-message .narrow-name {
+  margin-bottom: 12px;
+  font: 400 var(--title-size) / 1.1 var(--font-serif);
+}
+
+/*
+ * The fallback page, for a browser with no WebGL: the title and a short explanation, then the
+ * static picture of the stack, then the legend and the build stamp. The explanation begins where
+ * the plates do. The page scrolls if the window is too small for it; the picture is never scaled,
+ * so its names keep to the text floor.
+ */
+:root[data-fallback] body {
+  overflow: auto;
+}
+
+:root[data-fallback] #app {
+  height: auto;
+  min-height: 100%;
+}
+
+.fallback {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px 32px 16px;
+}
+
+.fallback-head {
+  display: grid;
+  grid-template-columns: calc(var(--picture-names) - var(--picture-margin)) 1fr;
+  gap: var(--picture-name-gap);
+  align-items: start;
+}
+
+.fallback .title {
+  padding: 0;
+}
+
+.fallback-text {
+  max-width: 72ch;
+}
+
+.fallback-text p {
+  margin: 0 0 8px;
+  font: 400 14px/20px var(--font-sans);
+}
+
+.fallback-text p:last-child {
+  margin: 0;
+}
+
+/* The picture's own margin is taken back, so its names begin on the line of the title. */
+.fallback-picture {
+  overflow-x: auto;
+  margin-top: 20px;
+  margin-left: calc(-1 * var(--picture-margin));
+}
+
+.stack-picture {
+  display: block;
+  /* Every part is a rectangle with level sides, and is drawn on whole pixels. */
+  shape-rendering: crispEdges;
+}
+
+/* The picture's parts take the tokens the scene draws the same parts with. */
+.picture-plate {
+  fill: var(--paper-2);
+  stroke: var(--rule-solid);
+}
+
+.picture-cell {
+  fill: none;
+  stroke: var(--rule);
+}
+
+.picture-mark-committed {
+  fill: var(--ink);
+}
+
+/* An outlined mark carries its line's width, from its mark token, and the line lies inside the mark. */
+.picture-mark-planned {
+  fill: var(--paper);
+  stroke: var(--ink);
+}
+
+.picture-mark-optional {
+  fill: var(--paper);
+  stroke: var(--soft);
+}
+
+.picture-mark-guarded {
+  fill: none;
+  stroke: var(--muted);
+  stroke-dasharray: 2 2;
+}
+
+.picture-count {
+  fill: var(--muted);
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.picture-name {
+  fill: var(--ink);
+  font: 400 20px var(--font-serif);
+}
+
+.fallback-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.fallback-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }

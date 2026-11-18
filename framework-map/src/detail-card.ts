@@ -11,7 +11,7 @@ import type { IconNode } from 'lucide';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { decisionStep, kindIcon } from './display';
-import { element, swatch } from './dom';
+import { element, swatch, toolMatrixLink } from './dom';
 import type { Child } from './dom';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
@@ -174,10 +174,7 @@ export function mountDetailCard(
     const overlap = index.overlapOf(tool.id);
     const cluster = index.cluster(tool.cluster);
     const tier = index.tier(tool.tier);
-    const matrix = element('a', 'card-link', 'Open the tool matrix', icon(ArrowUpRight));
-    matrix.href = constants.toolMatrixHref;
-    matrix.target = '_blank';
-    matrix.rel = 'noopener';
+    const matrix = toolMatrixLink(constants.toolMatrixHref);
 
     return [
       head([icon(kindIconNode(kindIcon(index.kindFamilyOf(tool.kind)))), tool.kind], tool.label),

@@ -111,3 +111,7 @@ export function gateBadge(gateFamily: string): string | null {
   }
   return BADGE_OF_GATE_FAMILY[gateFamily] ?? null;
 }
+
+/** A tier's count as the stack shows it beside the tier's name: "T3 · 154 TOOLS". */
+export const tierCountText = (tierId: string, tools: number): string =>
+  `${tierId} · ${tools} ${tools === 1 ? 'tool' : 'tools'}`.toUpperCase();

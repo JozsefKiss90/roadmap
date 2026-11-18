@@ -2,15 +2,17 @@
  * panels: the DOM interface around the canvas.
  *
  * So far: the left rail with the title, the search box, the lens switch, the
- * need list, the filters and the outline; the breadcrumb at the top centre; the detail card on the right;
+ * need list, the filters, the outline and the build stamp, and the column of icons it
+ * stands as in the compact layout; the message for a window too narrow for the map; the breadcrumb at the top centre; the detail card on the right;
  * the legend at the bottom left; the phase strip at the bottom; the list of keys; and the keys that work
  * anywhere. All read the state store and write
  * to it; none knows the scene.
  */
-import { ChevronRight, createElement } from 'lucide';
+import { ChevronRight, Eye, Keyboard, ListFilter, ListTree, Search, Target, createElement } from 'lucide';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { mountAnnouncer } from './announcer';
+import { buildStamp } from './build-stamp';
 import { mountDetailCard } from './detail-card';
 import { element } from './dom';
 import { mountFilterPanel } from './filter-panel';
@@ -19,10 +21,12 @@ import { mountLegend } from './legend';
 import { mountLensPanel } from './lens-panel';
 import { mountNeedList } from './need-list';
 import { mountOutline } from './outline';
+import { followWindow, pageLayoutNow } from './page-layout';
 import { mountPhaseStrip } from './phase-strip';
+import { mountRailCollapse } from './rail-collapse';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
-import { listsNeeds, tracedNeedOf } from './state';
+import { isFiltered, listsNeeds, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
 interface Crumb {
@@ -84,8 +88,17 @@ const isTyping = (target: EventTarget | null): boolean =>
   !(target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) &&
   (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
-/** Adds the interface around the canvas, and the keys that work anywhere on the page. */
-export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, constants: Constants): void {
+/**
+ * Adds the interface around the canvas, and the keys that work anywhere on the page.
+ * @param buildId The build identifier, for the build stamp at the foot of the rail.
+ */
+export function mountPanels(
+  app: HTMLElement,
+  index: GraphIndex,
+  store: Store,
+  constants: Constants,
+  buildId: string,
+): void {
   // The rail is put in the page before the breadcrumb and the detail card, so Tab reaches
   // the search, the filters and the outline first.
   const rail = element('div', 'rail');
@@ -98,15 +111,16 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   keys.type = 'button';
   keys.setAttribute('aria-label', 'Show the list of keys');
   keys.addEventListener('click', () => keyList.open());
-  const foot = element('footer', 'rail-foot', keys);
+  const foot = element('footer', 'rail-foot', keys, buildStamp(index.graph.meta.generated, buildId));
   rail.append(foot);
   const outline = mountOutline(rail, foot, index, store);
 
   mountBreadcrumb(app, index, store);
   // A card that closes under the partner's hands hands the focus to the outline, at the row for where the map is.
   // While the need list is on show the outline is folded, and the focus goes to the need list.
+  // While the rail stands as icons, the icon of that part takes the focus.
   const card = mountDetailCard(app, index, store, constants, () =>
-    listsNeeds(store.get().lens) ? needList.focus() : outline.focus(),
+    railCollapse.handFocus(listsNeeds(store.get().lens) ? 'needs' : 'outline'),
   );
 
   const nodes = index.graph.nodes;
@@ -119,11 +133,36 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
   const searchBox = mountSearchBox(rail, outline.element, index, search, store, () => card.focus());
   // The lens switch, the need list and then the filters stand between the search box and the outline.
   const lensPanel = mountLensPanel(rail, outline.element, index, store);
-  const needList = mountNeedList(rail, outline.element, index, store, () => lensPanel.focus());
-  mountFilterPanel(rail, outline.element, index, store);
+  const focusLens = (): void => railCollapse.handFocus('lens');
+  const needList = mountNeedList(rail, outline.element, index, store, focusLens);
+  const filterPanel = mountFilterPanel(rail, outline.element, index, store);
+  // In the compact layout the rail stands as a column of icons, one for each of these parts.
+  const railCollapse = mountRailCollapse(
+    rail,
+    [
+      { id: 'search', icon: Search, label: 'Search (key /)', focus: () => searchBox.focus() },
+      { id: 'lens', icon: Eye, label: 'Lens', focus: () => lensPanel.focus(), on: (state) => state.lens !== null },
+      { id: 'needs', icon: Target, label: 'Needs', focus: () => needList.focus(), when: (state) => listsNeeds(state.lens) },
+      { id: 'filters', icon: ListFilter, label: 'Filters', focus: () => filterPanel.focus(), on: (state) => isFiltered(state.filters) },
+      { id: 'outline', icon: ListTree, label: 'Outline', focus: () => outline.focus() },
+    ],
+    { icon: Keyboard, label: 'Keys (key ?)', act: () => keyList.open() },
+    buildStamp(index.graph.meta.generated, buildId, true),
+    store,
+  );
+  followWindow(constants, (layout) => railCollapse.setLayout(layout));
+  // What a window too narrow for the map shows in its place.
+  app.append(
+    element(
+      'div',
+      'narrow-message',
+      element('p', 'narrow-name', title?.textContent),
+      element('p', null, `This window is too narrow for the map. Widen it to at least ${constants.narrowBelowPx} pixels.`),
+    ),
+  );
 
   mountLegend(app, store);
-  const phaseStrip = mountPhaseStrip(app, index, store, () => lensPanel.focus());
+  const phaseStrip = mountPhaseStrip(app, index, store, focusLens);
   // The trace with no need chosen changes nothing on the canvas, so the canvas says that it is on.
   const hint = element('p', 'canvas-hint', 'The need trace is on. Choose a need in the rail to trace it.');
   const showHint = (): void => {
@@ -137,7 +176,8 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
 
   document.addEventListener('keydown', (event) => {
     // A held key acts once. The open list of keys takes its own Escape, and no other key.
-    if (event.defaultPrevented || event.repeat || keyList.isOpen()) return;
+    // Under the narrow message there is no map for a key to act on.
+    if (event.defaultPrevented || event.repeat || keyList.isOpen() || pageLayoutNow() === 'narrow') return;
     if (event.key === 'Escape') {
       // Closes the detail card if it is open, and otherwise steps out one distance.
       store.stepBack();
@@ -146,7 +186,7 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
     if (isTyping(event.target) || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === '/') {
       event.preventDefault();
-      searchBox.focus();
+      railCollapse.open('search');
     } else if (event.key === '?') {
       event.preventDefault();
       keyList.open();
@@ -158,7 +198,7 @@ export function mountPanels(app: HTMLElement, index: GraphIndex, store: Store, c
     } else if (event.key === '3') {
       // The need trace comes back with the need it last showed. With none yet, the need list takes the focus.
       store.showNeedTrace();
-      if (tracedNeedOf(store.get().lens) === null) needList.focus();
+      if (tracedNeedOf(store.get().lens) === null) railCollapse.open('needs');
     } else if (event.key === '4') {
       // The phase scrub comes back at the phase it last showed. The strip takes the focus, so the arrow keys step it at once.
       store.showPhaseScrub();

@@ -102,8 +102,36 @@ The side panel that describes the selected tool, cluster or need.
 _Avoid_: Tooltip, inspector, sidebar
 
 **Rail**:
-The column down the left of the map that holds the title, the search box, the lens switch, the need list, the filters and the outline.
+The column down the left of the map that holds the title, the search box, the lens switch, the need list, the filters, the outline and the build stamp. In the compact page layout it stands as a column of icons.
 _Avoid_: Sidebar, left panel, navigation
+
+**Page layout**:
+How the panels are arranged for the width of the window: full, compact, or the narrow message in place of the map.
+_Avoid_: Breakpoint, responsive mode, view
+
+**Narrow message**:
+The short message that stands in place of the map in a window too narrow for it, and asks for a wider one.
+_Avoid_: Error page, mobile view
+
+**Fallback page**:
+The page a partner gets in place of the map where the browser has no WebGL: the static picture, a short explanation and a link to the tool matrix.
+_Avoid_: Error page, degraded mode, lite version
+
+**Static picture**:
+The drawing of the stack at rest that stands in for the map where the browser has no WebGL.
+_Avoid_: Screenshot, fallback image, thumbnail
+
+**Build stamp**:
+The data date and the build identifier at the foot of the rail, which tell a partner how current their copy of the map is.
+_Avoid_: Version, footer, watermark
+
+**Data date**:
+The day the framework data in a copy of the map was generated.
+_Avoid_: Last updated, timestamp
+
+**Build identifier**:
+The short commit a copy of the map was built from; it ends in "+" when the build held changes that commit does not.
+_Avoid_: Version number, release, hash
 
 **Outline**:
 The tree of tiers, clusters and tools in the rail; it reaches everything the canvas does, by keyboard.

@@ -27,6 +27,15 @@ export const constants = {
 
   /** The left rail's width. The picture, its names and the camera all keep right of it. */
   railPx: 240,
+  /** The rail as a column of icons, in the compact layout. */
+  railIconsPx: 56,
+  /**
+   * The window widths where the layout changes (see src/page-layout.ts). Below
+   * the first the rail is a column of icons; below the second a message stands
+   * in place of the map.
+   */
+  compactBelowPx: 1366,
+  narrowBelowPx: 1024,
 
   /**
    * The part of the window kept clear around the stack at rest, in pixels. The

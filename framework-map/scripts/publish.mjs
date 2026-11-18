@@ -20,8 +20,9 @@ const megabytes = (/** @type {number} */ bytes) => (bytes / (1024 * 1024)).toFix
 const html = readFileSync(builtPath, 'utf8');
 const faults = checkBuiltFile(html, {
   maxBytes: MAX_BYTES,
-  // The graph's own title shows that the graph JSON was inlined.
-  mustContain: [graph.meta.title],
+  // The graph's own title shows that the graph JSON was inlined, and the opening of the static
+  // picture's markup that the picture was (see src/stack-picture.ts).
+  mustContain: [graph.meta.title, '<svg data-stack-picture '],
   // Class names that Tweakpane puts in its stylesheet and its DOM.
   mustNotContain: ['tp-rotv', 'tp-dfwv'],
 });

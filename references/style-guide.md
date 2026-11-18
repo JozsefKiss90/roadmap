@@ -335,7 +335,7 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-cluster-name` | Geist (sans) | 13px | 600 | Cluster names |
 | `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
 | `map-count` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters. Also a phase and its number of needs, in the need list |
-| `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags |
+| `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags. Also the build stamp, on a 14px line: its labels in `muted`, its values in `ink`, and the build identifier in the small letters a commit is written in |
 | `map-card-name` | Geist (sans) | 20px | 600 | The name at the head of the detail card, and of the list of keys |
 | `map-card-body` | Geist (sans) | 13px | 400; 600 for the decision class | Text in the detail card; its opening line is 14px |
 | `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, the names of the steps in the legend, and the line beside "Needs" that asks for a need |
@@ -344,6 +344,10 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-key` | Geist Mono | 11px | 500 | A key of the keyboard, in a 1px `rule-solid` box |
 
 **Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 1280×720. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.
+
+**Page layouts.** From 1366 pixels the rail stands open. Below that, down to the smallest supported window, it stands as a 56-pixel column of icons: 40-pixel buttons with a 20-pixel Lucide icon in `muted`, which turn `ink` on `paper-2` under the pointer. The icon of a lens that is on, or of filters that are chosen, is `ink` on `paper-2`. An icon opens the rail over the canvas, and the canvas beside it is dimmed with `ink` at 24%, as behind the list of keys. Below 1024 pixels a message in `map-card-body` at 14px, under the title, stands in place of the map.
+
+**Static picture.** Where the browser has no WebGL, the page shows the stack at rest as a flat drawing. Its plates, cells and marks take the same map tokens as the scene, its tier names are `map-tier-name` and its counts `map-count`. It is never scaled, so it keeps to the text floor.
 
 **Fonts.** The map bundles Geist, Geist Mono and Instrument Serif in its one file, through Fontsource, so it makes no network request. The faces are the same as the diagrams use. The guide's own `Font source` stays `web`, and the diagrams keep loading their fonts from the web.
 
