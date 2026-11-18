@@ -165,6 +165,11 @@ export const constants = {
   clusterNamePx: 13,
   toolNamePx: 12,
   tagPx: 11,
+  /**
+   * Under the bar, the tag that gives a tier's code and name over its plate. It is a little under the
+   * size of a tag, so that the longest name has room in a phone's window.
+   */
+  tierTitlePx: 10,
 
   /** Cluster names: a staircase above the focused plate. One row for each name, and a gap under the lowest. */
   clusterRowPx: 19,

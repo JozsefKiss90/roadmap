@@ -122,10 +122,11 @@ export interface Stage {
    */
   tierNamesHaveRoom(): boolean;
   /**
-   * Where a point of the scene is drawn with the camera at rest for the state the map is in, in
-   * pixels of the window. A label asks it for the room it has at rest, however the stack is turned.
+   * The camera's view at rest for the state the map is in: it gives where a point of the scene is
+   * then drawn, in pixels of the window. A label asks it for the room it has at rest, however the
+   * stack is turned.
    */
-  atRest(point: Vector3): { x: number; y: number };
+  restView(): (point: Vector3) => { x: number; y: number };
   /**
    * What the selected tool's mark or the selected cluster's cell covers, in pixels of the window; null with
    * nothing selected, or a need. The screenshot script checks that no panel lies over it.
@@ -1062,9 +1063,12 @@ export function createStage(
     },
     addPickable: (pickable) => void pickables.push(pickable),
     tierNamesHaveRoom: () => restFit(store.get()).names,
-    atRest(point) {
-      const at = pictureOf(point, restFit(store.get()).place, frame, constants.fieldOfViewDegrees);
-      return { x: at.x + origin.x, y: at.y + origin.y };
+    restView() {
+      const { place } = restFit(store.get());
+      return (point) => {
+        const at = pictureOf(point, place, frame, constants.fieldOfViewDegrees);
+        return { x: at.x + origin.x, y: at.y + origin.y };
+      };
     },
     selectionRect() {
       const { selection } = store.get();

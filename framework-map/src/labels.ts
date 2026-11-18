@@ -144,8 +144,8 @@ interface StandingTag {
   /** Its size, in pixels. */
   readonly width: number;
   readonly height: number;
-  /** Draws another text on it: in the colour of a tag, or in the one given. */
-  write(text: string, colour?: string): void;
+  /** Draws another text on it: in the colour and at the size of a tag, or in those given. */
+  write(text: string, colour?: string, sizePx?: number): void;
 }
 
 /** Whether a point lies inside a shape whose corners are given in order round it, and which has no dent. */
@@ -185,17 +185,17 @@ export function addLabels(
 
   const typeset = (text: Text): Promise<void> => new Promise((resolve) => text.sync(() => resolve()));
 
-  function tag(text: string): SpriteText {
-    const sprite = new SpriteText(text.toUpperCase(), constants.tagPx, tagColour);
+  function tag(text: string, sizePx = constants.tagPx): SpriteText {
+    const sprite = new SpriteText(text.toUpperCase(), sizePx, tagColour);
     sprite.fontFace = TAG_FAMILY;
     sprite.fontWeight = TAG_WEIGHT;
-    sprite.fontSize = tagResolution(constants.tagPx);
+    sprite.fontSize = tagResolution(sizePx);
     return sprite;
   }
 
-  /** How wide a tag of a text is, in pixels. */
-  function tagWidth(text: string): number {
-    const drawn = tag(text);
+  /** How wide a tag of a text is at a size, in pixels. */
+  function tagWidth(text: string, sizePx: number): number {
+    const drawn = tag(text, sizePx);
     const width = drawn.scale.x;
     drawn.material.map?.dispose();
     drawn.material.dispose();
@@ -225,8 +225,10 @@ export function addLabels(
       get height() {
         return drawn.scale.y;
       },
-      write(next, colour = tagColour) {
+      write(next, colour = tagColour, sizePx = constants.tagPx) {
         drawn.color = colour;
+        drawn.textHeight = sizePx;
+        drawn.fontSize = tagResolution(sizePx);
         drawn.text = next;
         fit();
       },
@@ -259,16 +261,9 @@ export function addLabels(
       : countText(tierId, index.toolCountOf(tierId));
   /**
    * A tier's code and name, as its tag gives them on the far edge of its plate. The code has no dot
-   * after it there: with one, the longest name runs out of a window 360 pixels wide.
+   * after it there, which leaves the longest name two more letters of room in a phone's window.
    */
   const tierTitleText = (tier: { id: string; label: string }): string => `${tier.id} ${tier.label}`.toUpperCase();
-  /**
-   * What a tier's tag reads. On the far edge of its plate, as under the bar, the tag stands for the
-   * tier's name, which has no room of its own there: it gives the tier's code and name, and no count.
-   * @param shownTitle The code and name, cut short where the window has no room for all of it.
-   */
-  const tierTagText = (tierId: string, shownTitle: string, lens: MapState['lens']): string =>
-    countsOverPlates ? shownTitle : tierCountText(tierId, lens);
   /** A tier with no tool in reach has its name in the colour of a tag, as its row in the outline is dimmed. */
   const tierNameColour = (tierId: string, lens: MapState['lens']) =>
     narrows(lens) && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
@@ -317,7 +312,7 @@ export function addLabels(
       nameWidth: 0,
       nameBottom: 0,
       title,
-      titleWidth: tagWidth(title),
+      titleWidth: tagWidth(title, constants.tierTitlePx),
       shownTitle: title,
     };
     tierCounts.push(counted);
@@ -459,12 +454,15 @@ export function addLabels(
 
   /**
    * Sets each tier's count for the lens: the tools in reach on its plate, or all of its tools with no lens.
-   * On the far edge of its plate the tag gives the tier's name instead, in the colour its name would have.
+   * On the far edge of its plate, as under the bar, the tag stands for the tier's name, which has no
+   * room of its own there: it gives the tier's code and name, cut short where the window has no room
+   * for all of it, and no count. It has the colour its name would have, and the size of a tier's title.
    */
   function showTierCounts(lens: MapState['lens']): void {
     for (const { tier, name, count, shownTitle } of tierCounts) {
       name.color = tierNameColour(tier, lens);
-      count.write(tierTagText(tier, shownTitle, lens), countsOverPlates ? tierNameColour(tier, lens) : tagColour);
+      if (countsOverPlates) count.write(shownTitle, tierNameColour(tier, lens), constants.tierTitlePx);
+      else count.write(tierCountText(tier, lens));
     }
     boxTierLabels();
   }
@@ -710,16 +708,25 @@ export function addLabels(
   /**
    * Each tier's code and name as its tag has room for them on the far edge of its plate: from the
    * plate's left end to the right edge of the picture's room. A name that would run out of that room
-   * is cut short, with an ellipsis, as in a window under 360 pixels wide, or above a detail card on
+   * is cut short, with an ellipsis, as in a window under 324 pixels wide, or above a detail card on
    * a phone, where the stack stands back. A cut that would leave only a few letters of the name
    * leaves the code alone. The room is measured with the stack at rest, where a tag is drawn at its
    * own size, so turning the stack changes no tag.
    */
   const leftEnd = new Vector3();
+  const along = new Vector3();
   function fittedTitles(): string[] {
     const most = pictureRoomAt(stage.window, constants, openPanelsOf(store.get())).right;
+    const atRest = stage.restView();
     return tierCounts.map(({ tier, plate, title, titleWidth }) => {
-      const room = most - stage.atRest(leftEnd.set(plate.x - plate.width / 2, plate.y, plate.z - plate.depth / 2)).x;
+      const from = atRest(leftEnd.set(plate.x - plate.width / 2, plate.y, plate.z - plate.depth / 2)).x;
+      /** How far along the plate from its left end a point is drawn, in pixels across the window. */
+      const across = (units: number): number => atRest(along.copy(leftEnd).setX(leftEnd.x + units)).x - from;
+      // A tag is drawn at its own size where it begins. It runs on toward the camera, so the rest of
+      // it is drawn a hair larger: `grown` is by how much for the whole title, and a shorter tag grows less.
+      const unitsPerPixel = 1 / across(1);
+      const grown = across(titleWidth * unitsPerPixel) / titleWidth;
+      const room = (most - from) / grown;
       if (titleWidth <= room) return title;
       // The letters of a tag are all of one width.
       const letters = Math.floor((room / titleWidth) * title.length);
