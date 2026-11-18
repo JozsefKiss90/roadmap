@@ -93,7 +93,7 @@ const BLUR_FRAGMENT = /* glsl */ `
 /**
  * @param scene The scene the pass draws, with `camera`.
  * @param plates Every plate of the stack. Each starts sharp.
- * @param plateThickness How thick a plate is drawn, in layout units, so that the mask's boxes match the picture's.
+ * @param plateThickness How thick the mask's boxes are, in layout units. The scene draws a plate's underside a set number of pixels under its face, so a box covers the face and only about as much of the underside.
  */
 export function createDepthBlur(
   scene: Scene,

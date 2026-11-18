@@ -257,7 +257,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **Values of one filter combine as "or", and filters combine as "and".** Designer and Analyst under "Used by", with Hub under "Hosting", leaves the Hub tools that either role uses.
 - **A tool the filters leave out fades and stays in place.** Its mark keeps its form and takes the guide's `map-faded`. Its row in the outline is dimmed, and so is its name in the list above a focused cell. It can still be hovered, clicked and selected. A selected mark keeps the selected fill.
 - **A cluster or tier row of the outline is dimmed** when the filters leave none of its tools in.
-- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. A change is announced; see "Accessibility".
+- **The count** at the head of the filters gives the tools that pass, as "276 of 752". Assistive technology is told "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. A change is announced; see "Accessibility".
 - **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 327 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
 - **"Clear"** clears every filter. It is there only while a filter is on.
 - **The numbers beside the values do not change.** Each is the number of all tools with that value, whatever else is chosen.
@@ -266,7 +266,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **The filters hold** wherever the map goes and whatever is selected.
 - **The change is a fade.** The marks change form in place over the fade duration. See "Motion and depth blur".
 
-**The legend** at the bottom left of the canvas shows the four decision-class steps with their names, after a tag that names it. Its squares are drawn from the same mark tokens as the marks. Its last item is the mark under the pointer, "Hover / selected": the two take the same fill. While tools are traced that fill means "traced", and the item says "Hover". While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. While a need is traced, it shows "Traced" and "Best fit" as well. Beside an open detail card the legend keeps left of it, on two rows if it must. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
+**The legend** at the bottom left of the canvas shows the four decision-class steps with their names, after a tag that names it. Its squares are drawn from the same mark tokens as the marks. Its last square is the mark under the pointer, "Hover / selected": the two take the same fill. While tools are traced that fill means "traced", and the square is named "Hover". While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. While a need is traced, it shows "Traced" and "Best fit" as well. Beside an open detail card the legend keeps left of it, on two rows or more if it must, and the phase strip stands over it however high it is. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
 
 ## Motion and depth blur
 

@@ -11,6 +11,7 @@
 import { STEP_NAMES } from './display';
 import type { DecisionStep } from './display';
 import { dressSwatch, element, stepSwatch } from './dom';
+import { MAP_TOKENS, colourOf, cssOf } from './tokens';
 
 /** What the label says of a mark. */
 export interface HoveredMark {
@@ -38,6 +39,10 @@ export function createHoverLabel(container: HTMLElement): HoverLabel {
   const square = stepSwatch('committed');
   const stepName = element('span', null);
   const leader = element('span', 'hover-label-leader');
+  // map-label-leader gives the hover label's leader a colour and a width of its own.
+  const { hoverLine, widthPx } = MAP_TOKENS['map-label-leader'];
+  leader.style.width = `${widthPx}px`;
+  leader.style.background = cssOf(colourOf(hoverLine));
   const label = element('div', 'hover-label', place, name, element('span', 'hover-label-class', square, stepName), leader);
   label.setAttribute('aria-hidden', 'true');
   label.hidden = true;

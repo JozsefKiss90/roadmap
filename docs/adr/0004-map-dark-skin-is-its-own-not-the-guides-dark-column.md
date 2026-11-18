@@ -22,6 +22,7 @@ The skin departs from the guide in these ways, each on purpose.
 
 ## Consequences
 
+- ADR 0001 names two deliberate exceptions to the guide in the Map section. This skin is a third, and the Map section lists it with them.
 - The guide's Map section has a table of dark roles, a dark column in "Map tokens" and a second table of contrast rows. `npm run contrast` measures both skins, each with its own roles.
 - `framework-map/src/tokens.ts` holds both skins and names the one the map is drawn in. The stylesheet carries that skin's values alone, and a test fails if the two disagree. Drawing the map in the light skin again means changing both, and giving the scene what to do without the three tokens the light skin lacks.
 - `accent` measures 1.32:1 against a committed mark and 1.56:1 against a planned one. This is accepted, because hover and selection are also shown by the ring, the cell's outline, the hover label and the detail card. If a trace of many tools reads as a field of committed marks, `accent` takes the warm value `count` has now, and `count` takes another.

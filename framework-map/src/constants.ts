@@ -91,7 +91,7 @@ export const constants = {
   phaseStripStackedPx: 16,
   /** The strip's room in the two layouts with the bar, with its counts one over the other. */
   phaseStripUnderBarPx: 80,
-  /** What a second row of the legend adds to that room, beside an open detail card: the height of an item. The strip itself stands over the legend as high as the legend is. */
+  /** What a second row of the legend adds to that room, beside an open detail card: the height of one step in it. The strip itself stands over the legend as high as the legend is. */
   legendSecondRowPx: 34,
 
   /**

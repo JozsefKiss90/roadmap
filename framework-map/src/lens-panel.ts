@@ -116,14 +116,9 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
     showRailPart(roles.element, lens?.type === 'role');
     if (heldFocus && roles.element.hidden) lenses.focus();
     roles.choose(lens?.type === 'role' ? lens.role : null);
-    if (narrows(lens)) {
-      const inReach = index.inReach(lens).size;
-      count.textContent = `${inReach} ${inReach === 1 ? 'tool' : 'tools'} in reach`;
-    } else {
-      // With no lens, or one that waits for a choice, every tool is in reach.
-      const tools = index.tools.length;
-      count.textContent = `${tools} ${tools === 1 ? 'tool' : 'tools'}`;
-    }
+    const counted = (tools: number): string => `${tools} ${tools === 1 ? 'tool' : 'tools'}`;
+    // With no lens, or one that waits for a choice, every tool is in reach, and the count is of them all.
+    count.textContent = narrows(lens) ? `${counted(index.inReach(lens).size)} in reach` : counted(index.tools.length);
   }
 
   render(store.get());

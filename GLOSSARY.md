@@ -41,7 +41,7 @@ The interactive 3D presentation of the framework.
 _Avoid_: Graph, visualisation, viewer
 
 **Plate**:
-The flat rectangle that stands for one tier in the map.
+The flat rectangle that stands for one tier in the map. It is drawn as a face over an underside, which gives it its thickness.
 _Avoid_: Plane, layer, disc
 
 **Cell**:
@@ -94,7 +94,7 @@ The five steps of the phase scrub, P0 to P4, at the bottom of the map; each give
 _Avoid_: Timeline, slider, stepper
 
 **Depth blur**:
-The slight blur on the plates under the focused one, at the tier and cluster distances. The focused plate is never blurred.
+The slight blur on the plates under the focused one, at the tier and cluster distances. The focused plate is never blurred. The dark skin has none, so it is switched off.
 _Avoid_: Depth of field, bokeh, defocus
 
 **Detail card**:

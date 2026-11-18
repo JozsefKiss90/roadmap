@@ -57,6 +57,7 @@ import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
 import { createDepthBlur } from './depth-blur';
 import type { GraphIndex } from './data';
+import type { ToolNode } from './graph';
 import { DECISION_STEPS, decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { createHoverLabel } from './hover-label';
@@ -102,8 +103,12 @@ const HOVER_RING_MARK: MarkToken = { fill: null, outline: HOVER_RING.line, width
 const HOVER_FILL_MARK: MarkToken = { fill: HOVER_RING.fill, outline: null, widthPx: 0, dashed: false };
 /** The underside of a plate. */
 const PLATE_SIDE = MAP_TOKENS['map-plate-side'];
-/** A plate seen from straight above would hide its underside however far under it lies. The camera never looks down that steeply, and this keeps the sum whole if it should. */
-const LEAST_SEEN_DROP = 0.2;
+/**
+ * The least share of a step down in the scene that is taken to show in the picture. From straight
+ * above none of it shows, and no drop would bring the underside into sight. The camera never looks
+ * down that steeply, and this keeps the sum whole if it should.
+ */
+const LEAST_SHARE_OF_DROP_SEEN = 0.2;
 
 /** Something the partner can click that is not a plate or a cell: it answers for a point of the picture. */
 export type Pickable = (x: number, y: number) => (() => void) | null;
@@ -492,7 +497,7 @@ export function createStage(
    * Puts the fill on the hovered mark and the outline on its cell, and sizes the ring so that it
    * stands its gap clear of the mark, in pixels on screen.
    */
-  function placeHoverRing(): void {
+  function placeHover(): void {
     if (!hovered) return;
     ring.position.set(hovered.x, hovered.y + MARK_LIFT * 1.5, hovered.z);
     const unitsPerPixel = unitsPerPixelAt(ring.position.x, ring.position.y, ring.position.z);
@@ -512,15 +517,15 @@ export function createStage(
   function placePlateSides(): void {
     camera.getWorldDirection(forward);
     // A step down in the scene is drawn shorter the more steeply the camera looks down on the stack.
-    const seen = Math.max(LEAST_SEEN_DROP, Math.sqrt(1 - forward.y * forward.y));
+    const shareSeen = Math.max(LEAST_SHARE_OF_DROP_SEEN, Math.sqrt(1 - forward.y * forward.y));
     for (const { plate, side } of tiers.values()) {
-      const drop = (PLATE_SIDE.depthPx * unitsPerPixelAt(plate.x, plate.y, plate.z)) / seen;
+      const drop = (PLATE_SIDE.depthPx * unitsPerPixelAt(plate.x, plate.y, plate.z)) / shareSeen;
       for (const part of side) part.position.y = plate.y - drop;
     }
   }
 
   /** What the hover label says of a tool: where its mark stands, its name and its step. */
-  function hoveredMark(tool: { id: string; label: string; cluster: string; decision_class: string }, tier: string): HoveredMark {
+  function hoveredMark(tool: ToolNode, tier: string): HoveredMark {
     const place = inGridOrder(index.toolsOf(tool.cluster)).findIndex((each) => each.id === tool.id) + 1;
     return {
       place: `${tier} · ${tool.cluster} · ${String(place).padStart(2, '0')}`,
@@ -541,7 +546,7 @@ export function createStage(
       hoverLabel.hide();
       return;
     }
-    placeHoverRing();
+    placeHover();
     // An open detail card at the right covers that side of the window, and the bar its top: the label keeps clear of both.
     const room = pictureRoomAt(windowSize, constants, openPanelsOf(store.get()));
     const offsetPx = byFinger ? constants.fingerLabelOffsetPx : constants.hoverLabelOffsetPx;
@@ -556,7 +561,7 @@ export function createStage(
   const windowSize = { width: 0, height: 0 };
   const frame: Frame = { width: 0, height: 0, inset: { top: 0, right: 0, bottom: 0, left: 0 } };
   const origin = { x: 0, y: 0 };
-  const listeners: (() => void)[] = [placePlateSides, placeHoverRing, () => traceDrawing.place(unitsPerPixelAt)];
+  const listeners: (() => void)[] = [placePlateSides, placeHover, () => traceDrawing.place(unitsPerPixelAt)];
   const notify = (): void => listeners.forEach((listener) => listener());
   const centre = new Vector3(
     (layout.bounds.min.x + layout.bounds.max.x) / 2,

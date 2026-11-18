@@ -215,7 +215,7 @@ Semantic role combinations — reference these by name in type specs.
 
 ## Map
 
-The map is the interactive 3D presentation of the Hermes OS tool framework. This section defines what the map needs and the rest of the guide does not cover. It adds tokens and changes none: every map token takes its colour from a semantic role above.
+The map is the interactive 3D presentation of the Hermes OS tool framework. This section defines what the map needs and the rest of the guide does not cover. It adds tokens and changes none: in the light skin every map token takes its colour from a semantic role above, and the dark skin takes its colours from roles of its own, below.
 
 The map has two skins. It is drawn in the dark one. The light one, which it was first drawn in, keeps its column in the tables below, and its contrast rows are still measured. `SKIN` in `framework-map/src/tokens.ts` names the skin the map is drawn in, and the map's stylesheet carries that skin's values.
 
@@ -223,14 +223,14 @@ The light skin takes every colour from the light column of the semantic roles ab
 
 ### Map roles, dark skin
 
-The values the map reads in its dark skin. The first nine are the guide's roles with values of the map's own. The last seven are roles this skin adds.
+The values the map reads in its dark skin. Nine are the guide's roles with values of the map's own. Seven are roles this skin adds: `paper-3`, `edge`, `count` and the four that begin with `class-`.
 
 | Role | Dark skin | Use on the map |
 |---|---|---|
 | `paper` | `#0B0B0C` | Page background, rail background, hover label background |
 | `paper-2` | `#202024` | The plate of a tier. Also a row or a control under the pointer, and a selected row |
 | `paper-3` | `#0E0E10` | The underside of a plate, which shows its thickness |
-| `ink` | `#E6E2DA` | Primary text, tier names, the fill of the lens that is on |
+| `ink` | `#E6E2DA` | Primary text, tier names, the fill of the chosen segment of the lens switch |
 | `ink-strong` | `#0B0B0C` | Text on an `ink` or an `accent` fill |
 | `muted` | `#9C9890` | Secondary text: section headings, counts in the outline, the build stamp, the search placeholder |
 | `soft` | `#9C9890` | The same value as `muted`. It stays a role so that the rules that name it resolve |
@@ -273,7 +273,7 @@ The stack stands on `paper`. Widths are in pixels on screen. They do not grow as
 | `map-focus-outline` | 2px `accent` outline, with a 2px gap | 2px `accent` outline, with a 2px gap | Keyboard focus, in the panels and on the canvas |
 | `map-faded` | `ink @ 0.12` | `edge @ 0.12` | A mark outside the active lens or filter |
 | `map-text-name` | `ink` | `ink` | Tier, cluster and tool names |
-| `map-text-count` | None | `count` | The count line beside each plate, and a tier's code in the outline |
+| `map-text-count` | None | `count` | The count line beside each plate, a tier's code in the outline, and the count of the tools beside the lens switch |
 | `map-text-selected` | `accent` | `accent` | The selected tool's name in the list above its cell, the selected row's name in the outline, and the traced need's name in the need list |
 | `map-text-tag` | `muted` | `muted` | Counts and tags. Also a tool's name in the list above its cell, when the lens or the filters leave the tool out, and a tier's name when the lens leaves none of its tools in reach |
 | `map-label-leader` | `soft` hairline, 1px | `muted` line, 1px, and from the hover label an `accent` line, 1px | The line from a cluster name down to its cell, and the bracket from a list of tool names to its cell. In the dark skin also the line from the hover label toward its mark |
@@ -441,11 +441,11 @@ The plate, its underside, its edge and the cell line are decorative here too, an
 | `map-tier-name` | Instrument Serif | 26px | 400 | Tier names |
 | `map-cluster-name` | Geist (sans) | 13px | 600 | Cluster names |
 | `map-tool-name` | Geist (sans) | 12px | 500 | Tool names |
-| `map-count` | Geist Mono | 11px | 400, tracked 0.10em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters. Also a phase and its number of needs, in the need list. A tier's count line beside its plate and the count beside the lens switch are in `map-text-count`, and so is a tier's code in the outline, which has no tracking. A tier's code and name over its plate under the bar are in the same face at 10px |
+| `map-count` | Geist Mono | 11px | 400, tracked 0.10em, uppercase | Tool counts, on the canvas, beside the lens switch and in the filters. A count drawn on the canvas has no tracking, and a tier's count line in the static picture is tracked 0.12em. Also a phase and its number of needs, in the need list. A tier's count line beside its plate and the count beside the lens switch are in `map-text-count`, and so is a tier's code in the outline, which has no tracking. A tier's code and name over its plate under the bar are in the same face at 10px |
 | `map-tag` | Geist Mono | 11px | 500, tracked 0.08em, uppercase | Kind, gate and other tags in the detail card. A tag in the rail or the search results is at 400, tracked 0.10em. The build stamp is at 400, tracked 0.04em, on a line of one and a half times its size, all of it in `muted`, with the build identifier in the small letters a commit is written in |
 | `map-card-name` | Geist (sans) | 20px | 600 | The name at the head of the detail card, and of the list of keys |
 | `map-card-body` | Geist (sans) | 13px | 400; 600 for the decision class | Text in the detail card; its opening line is 14px |
-| `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, the names of the steps in the legend, and the line beside "Needs" that asks for a need |
+| `map-card-note` | Geist (sans) | 12px | 400 | Notes under a value in the detail card, and the line beside "Needs" that asks for a need |
 | `map-card-heading` | Geist Mono | 11px | 600, tracked 0.08em, uppercase | Section headings in the detail card |
 | `map-rail-heading` | Geist Mono | 11px | 400, tracked 0.10em, uppercase, in `muted` | Section headings in the rail, the search results and the list of keys. The tag at the head of the legend is the same at 500, tracked 0.12em, in `ink-strong` on `ink` |
 | `map-rail-row` | Geist (sans) | 13px | 400; 600 for a row that is opened, selected, or where the map is | Rows of the outline. A search result's name is 13px at 500, the "Keys" button and the "nothing matches" line 13px at 400, the search field 14px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400. A row of the need list is 13px at 400, and 600 when its need is traced. A segment of the lens switch is 13px at 400, and 600 when chosen. The segment of the lens switch that is chosen is filled with `ink` and named in `ink-strong`, "None" as much as a lens; a chosen role takes `paper-2` and a 2px `ink` ring. A step of the phase strip has its phase at 13px and 600 over its counts in `map-card-note`; the phase that is shown takes `paper-2` and the 2px `ink` ring, as a chosen role does |
@@ -462,7 +462,7 @@ The switch for the single keys, in the list of keys, is a checkbox as the filter
 
 - **The rail** is 240 pixels wide, with a 1px `rule` at its right edge. Its parts stand 20 pixels in from each side and 22 pixels under one another, and the title 28 pixels from the top. The lines between its parts are `rule`. The borders of its controls are `rule-solid`: the search box, 40 pixels high, the lens switch, with segments 32 pixels high, and a key cap. A checkbox keeps a `soft` border, because the border is all there is of it until it is chosen.
 - **The outline** has a `rule` under each tier. A tier's code stands in a 20-pixel column, in `map-text-count`. What an opened row holds stands in from it, behind a 1px `rule-solid` line. A name too long for its row takes a second line and is not cut, as the text-spacing rule below asks.
-- **The legend** stands 32 pixels in from the rail and from the foot of the window, in a 1px `rule` frame. Its tag, "Decision class", comes first. Then each step and each state is an item 34 pixels high, with a 12-pixel square in the form and colour of its mark and its name at 13px, and a `rule` between two items. An item that is not a decision class stands behind a `rule-solid` line. The last item is the mark under the pointer, "Hover / selected", which is "Hover" while tools are traced.
+- **The legend** stands 32 pixels in from the rail and from the foot of the window, in a 1px `rule` frame. Its tag, "Decision class", comes first. Then each step and each state stands 34 pixels high, with a 12-pixel square in the form and colour of its mark and its name at 13px, and a `rule` between two of them. A state, which is not a decision class, stands behind a `rule-solid` line. The last is the mark under the pointer, "Hover / selected", which is "Hover" while tools are traced. Beside an open detail card they take a second row where they must, and the phase strip stands over the legend however high it is.
 - **The hover label** has a 1px `accent` border and stands to the right of the pointer and above it. A 1px `accent` leader, 20 pixels long, runs in the pointer's own column from the label's near edge toward the mark, and ends short of it.
 - **What lies behind an open panel is dimmed** with `paper` at 72%: the canvas beside the open rail, and the page behind the list of keys.
 

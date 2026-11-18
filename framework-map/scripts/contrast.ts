@@ -56,23 +56,21 @@ const TOKENS_COLUMNS = ['Token', 'Light skin', 'Dark skin', 'Use'];
 const ROWS_COLUMNS = ['Token', 'Colour', 'Sits on', 'Use', 'Minimum', 'Measured'];
 
 /** Where the guide gives a skin's roles, its values of the map tokens and its contrast rows. */
-interface Skin {
+interface SkinTables {
   name: SkinName;
   rolesHeading: string;
-  /** The column of the roles table that holds the skin's values, counted from 0, and as a reader counts it. */
+  /** The column of the roles table that holds the skin's values, counted from 0. */
   rolesColumn: number;
-  rolesColumnName: string;
   /** The column of the Map tokens table that holds the skin's values. */
   tokensColumn: number;
   rowsHeading: string;
 }
 
-const SKINS: readonly Skin[] = [
+const SKINS: readonly SkinTables[] = [
   {
     name: 'light',
     rolesHeading: '### Semantic roles',
     rolesColumn: 2,
-    rolesColumnName: 'third',
     tokensColumn: 1,
     rowsHeading: '### Map contrast rows',
   },
@@ -80,11 +78,13 @@ const SKINS: readonly Skin[] = [
     name: 'dark',
     rolesHeading: '### Map roles, dark skin',
     rolesColumn: 1,
-    rolesColumnName: 'second',
     tokensColumn: 2,
     rowsHeading: '### Map contrast rows, dark skin',
   },
 ];
+
+/** A column of a table as a reader counts it, by its place counted from 0. */
+const COLUMN_NAMES = ['first', 'second', 'third', 'fourth'];
 
 /** What the Map tokens table says of a token that a skin does not have. */
 const NOT_IN_SKIN = /^none$/i;
@@ -177,13 +177,13 @@ export const minimumText = (minimum: number | null): string => (minimum === null
 const isUse = (use: string): use is ContrastUse => Object.hasOwn(MINIMUMS, use);
 
 /** A skin's value of each of its semantic roles, by role name. */
-function rolesOf(markdown: string, skin: Skin, findings: string[]): Map<string, Rgba> {
+function rolesOf(markdown: string, skin: SkinTables, findings: string[]): Map<string, Rgba> {
   const roles = new Map<string, Rgba>();
   const table = tableUnder(markdown, skin.rolesHeading);
   if (!table) return roles;
   if (!table.ruled || !new RegExp(skin.name, 'i').test(table.header[skin.rolesColumn] ?? '')) {
     findings.push(
-      `the "${skin.rolesHeading}" table must have its ${skin.name} values in the ${skin.rolesColumnName} column`,
+      `the "${skin.rolesHeading}" table must have its ${skin.name} values in the ${COLUMN_NAMES[skin.rolesColumn]} column`,
     );
     return roles;
   }
@@ -209,7 +209,7 @@ function mapTable(markdown: string, heading: string, columns: string[], findings
  * Measures every contrast row of one skin, with the skin's own roles.
  * @param tokenRows The body of the Map tokens table. It is empty if the table is at fault.
  */
-function checkSkin(markdown: string, skin: Skin, tokenRows: string[][], rows: ContrastRow[], findings: string[]): void {
+function checkSkin(markdown: string, skin: SkinTables, tokenRows: string[][], rows: ContrastRow[], findings: string[]): void {
   const faultsBefore = findings.length;
   const roles = rolesOf(markdown, skin, findings);
   if (findings.length > faultsBefore) return;

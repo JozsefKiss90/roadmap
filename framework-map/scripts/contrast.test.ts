@@ -4,8 +4,8 @@ import { checkMapContrast } from './contrast.ts';
 
 /**
  * A style guide holding the given semantic roles (light value only matters), the map's dark roles
- * and the map tables. The `dark` options are the dark skin's roles, its values of the tokens and
- * its contrast rows; a test of the light skin leaves them as they are.
+ * and the map tables. A row of `tokens` gives the token's value in each skin. The `dark` options
+ * are the dark skin's roles and its contrast rows; a test of the light skin leaves them as they are.
  */
 const guide = (options: {
   roles?: string[];

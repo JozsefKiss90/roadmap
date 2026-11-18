@@ -244,7 +244,7 @@ Where the build differs from this spec, and why:
 2. **Two measured ratios differ in the second decimal.** Committed on the plate is 8.49:1 (8.46 here) and planned on `paper` is 8.47:1 (8.48 here). Section 8 blended each see-through colour to a whole hex value first; `npm run contrast` does not round. The guide states what the check measures.
 3. **Rows added to section 8**, because the check wants a row for every token: `map-hover-cell`, `map-label-leader` in `accent` and in `muted`, and `map-text-count` on `paper-2` (a tier's code in a selected outline row).
 4. **`map-label-leader` names two roles.** `muted` for the cluster-name leaders, as section 2 says they keep, and `accent` for the hover label's leader.
-5. **The legend does not print each colour's value.** With the values the legend is about 1,400 pixels wide, and the full layout begins at 1,366 with a 240-pixel rail. The surface swatches, which section 7 calls optional, are not built either.
+5. **The legend does not print each colour's value.** With the values the legend is about 1,300 pixels wide, and the room for it is 1,062 pixels where the full layout begins, so it would stand on two rows at rest in every window under about 1,600 pixels. The surface swatches, which section 7 calls optional, are not built either.
 6. **Outline names take a second line; they are not cut with an ellipsis.** The guide's text-spacing rule says no name of a control is cut, and `npm run accessibility` checks it.
 7. **Outline row separators use `rule`**, as the note in section 1 allows.
 8. **The outline keeps its chevrons**, and tiers start open, as before: the interactions stay.
@@ -255,6 +255,10 @@ Where the build differs from this spec, and why:
 13. **The hover label's first line is tier, cluster and place**, as "T6 · 6A · 06". The cluster's name is no longer on the label; the outline and the detail card give it.
 14. **Canvas counts are not tracked.** They are drawn by a library with no letter spacing, as before. The counts of the page are at 0.10em.
 15. **A checkbox keeps a `soft` border**, not `rule-solid`: the border is all there is of an empty checkbox, and `rule-solid` measures 1.80:1.
+16. **The hover label's leader stands beside the label, not under it**, 12 pixels to its left in the pointer's own column, as the concept's artboard has it (10 pixels there).
+17. **Section 6's weights are applied to what the concept shows**: the rail's headings, counts and tags, the lens switch, the outline, the search field, the key caps, the build stamp, the legend and the hover label. The detail card, the filters' rows, the search results and the names on the canvas keep the weights they had.
+18. **The legend's hover square is a plain `accent` square**, as in the concept, with no ring: it stands for the selected mark too, which has none.
+19. **The depth blur is switched off by `depthBlur` in `src/constants.ts`**, the switch it already had, and not from the skin's name.
 
 Checked: `npm test` (493 unit tests, 23 generator tests), `npm run build`, `npm run accessibility`, `npm run touch`. The fault checks of `npm run screenshots` were run on all 29 states at every viewport with reduced motion off, without saving pictures: no label, panel, selection or control fault.
 

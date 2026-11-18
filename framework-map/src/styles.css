@@ -271,11 +271,9 @@ body {
   height: 8px;
 }
 
-/* src/hover-label.ts places it: over the point the label is shown for, and as long as the label stands off it. */
+/* src/hover-label.ts places it, in the point's own column, and gives it the colour and the width of its token. */
 .hover-label-leader {
   position: absolute;
-  width: 1px;
-  background: var(--accent);
 }
 
 /* The detail card: docked on the right, present only while something is selected. */
@@ -1185,8 +1183,8 @@ body {
 .need-span {
   flex: none;
   color: var(--muted);
-  font: 500 11px/20px var(--font-mono);
-  letter-spacing: 0.08em;
+  font: 400 11px/20px var(--font-mono);
+  letter-spacing: 0.1em;
 }
 
 /*
@@ -1407,7 +1405,7 @@ body {
 /*
  * The legend: the four decision-class steps, at the bottom left of the canvas, 32 pixels in from
  * the rail and from the foot. It stands on paper of its own, because close in a plate runs under
- * it. It is one framed row: a tag that names it, then one item for each step and each state.
+ * it. It is one framed row: a tag that names it, then each step and each state with its square.
  */
 .legend {
   position: absolute;
@@ -1440,7 +1438,7 @@ body {
   right: var(--phase-strip-side);
   /*
    * 16 pixels over the legend, which stands 32 pixels off the foot. src/legend.ts says how high the
-   * legend is: one row of items, or more beside an open detail card.
+   * legend is: one row of steps and states, or more beside an open detail card.
    */
   bottom: calc(48px + var(--legend-height, 36px));
   left: calc(var(--rail-width) + var(--phase-strip-side));
@@ -1573,7 +1571,7 @@ body {
   }
 }
 
-/* Beside an open detail card the legend keeps left of it, and its items go to a second row if they must. */
+/* Beside an open detail card the legend keeps left of it, and its steps and states go to a second row if they must. */
 #app:has(.detail-card:not([hidden])) .legend {
   box-sizing: border-box;
   max-width: calc(100% - var(--rail-width) - var(--detail-card-width) - 64px);
@@ -1592,8 +1590,8 @@ body {
 }
 
 /*
- * An item is 34 pixels high, with a rule at its left. The line over it is a shadow, so that it
- * shows between two rows of items and lies on the frame's own line over the first row.
+ * A step or a state is 34 pixels high, with a rule at its left. The line over it is a shadow, so
+ * that it shows between two rows and lies on the frame's own line over the first row.
  */
 .legend-steps li {
   display: flex;
@@ -1649,7 +1647,7 @@ body {
   border-bottom: 1px solid var(--rule);
 }
 
-.outline-size {
+.outline-tiers {
   margin: 0;
   color: var(--muted);
   font: 400 11px/16px var(--font-mono);
@@ -2155,7 +2153,7 @@ body {
   max-height: calc(100% - var(--bar-height) - var(--detail-card-height) - 16px);
 }
 
-/* One item to a row, each under a rule in place of the one at its left. */
+/* One step or state to a row, each under a rule in place of the one at its left. */
 :root[data-bar] .legend-steps {
   flex-direction: column;
   flex-wrap: nowrap;
@@ -2232,7 +2230,9 @@ body {
     padding-bottom: 14px;
   }
 
-  .filters-head {
+  /* The second rule is for the head of a part that is open on its own under the bar, which has a rule of its own above. */
+  .filters-head,
+  :root[data-bar] .rail:not([data-collapsed]) :is(.filters-head, .outline-head, .needs-head) {
     padding-top: 14px;
   }
 

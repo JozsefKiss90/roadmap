@@ -4,7 +4,7 @@
  * While a lens or a filter is on, it also shows the faded state of a tool
  * left out, named for what leaves it out. While a need is traced, it shows
  * the traced mark and the best-fit ring too, and under the phase scrub the
- * traced mark. Its last item is the mark under the pointer, which takes the
+ * traced mark. The last square is the mark under the pointer, which takes the
  * fill the selected mark has.
  *
  * Under the bar, in the narrow and the upright page layout, the window has no
@@ -52,11 +52,11 @@ export function mountLegend(app: HTMLElement, store: Store): Legend {
   selectedSquare.setAttribute('aria-hidden', 'true');
   const selected = element('li', null, selectedSquare, 'Selected');
   // The mark under the pointer and the selected mark take one fill. While tools are traced that fill
-  // means "traced", and the selection has the item before this one.
+  // means "traced", and the selection has the square before this one.
   const hoverSquare = element('span', 'swatch swatch-traced');
   hoverSquare.setAttribute('aria-hidden', 'true');
-  const hoverLabel = element('span', null);
-  const hover = element('li', 'legend-apart', hoverSquare, hoverLabel);
+  const hoverName = element('span', null);
+  const hover = element('li', 'legend-apart', hoverSquare, hoverName);
   steps.append(faded, traced, bestFit, selected, hover);
 
   const legend = element('section', 'legend', heading, steps);
@@ -64,7 +64,7 @@ export function mountLegend(app: HTMLElement, store: Store): Legend {
   legend.setAttribute('aria-label', 'Legend: the decision-class steps');
   legend.id = 'legend';
   app.append(legend);
-  // The phase strip stands over the legend, however many rows its items take. src/styles.css reads the height.
+  // The phase strip stands over the legend, however many rows its steps and states take. src/styles.css reads the height.
   new ResizeObserver(() => {
     document.documentElement.style.setProperty('--legend-height', `${legend.offsetHeight}px`);
   }).observe(legend);
@@ -96,7 +96,7 @@ export function mountLegend(app: HTMLElement, store: Store): Legend {
     traced.hidden = bestFit.hidden && scrubbedPhaseOf(lens) === null;
     // The selection's ring, while the selected fill means "traced".
     selected.hidden = !traces(lens) || selection?.type === 'need' || selection === null;
-    hoverLabel.textContent = traces(lens) ? 'Hover' : 'Hover / selected';
+    hoverName.textContent = traces(lens) ? 'Hover' : 'Hover / selected';
   };
   show();
   store.subscribe(show);

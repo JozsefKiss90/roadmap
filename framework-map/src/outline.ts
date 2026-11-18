@@ -348,8 +348,8 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
 
   const heading = element('h2', 'rail-heading', 'Outline');
   // The count of the tiers stands beside the heading, as the count of the tools does beside the lens switch.
-  const size = element('p', 'outline-size', `${index.tiers.length} tiers`);
-  const nav = element('nav', 'outline', element('div', 'outline-head', heading, size), tree);
+  const tierCount = element('p', 'outline-tiers', `${index.tiers.length} tiers`);
+  const nav = element('nav', 'outline', element('div', 'outline-head', heading, tierCount), tree);
   nav.setAttribute('aria-label', 'Outline');
   // The canvas names this element as its equivalent, with `aria-details` in framework-map.html.
   nav.id = 'outline';
