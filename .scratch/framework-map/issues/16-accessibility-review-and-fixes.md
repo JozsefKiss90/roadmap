@@ -4,7 +4,7 @@
 
 The canvas itself cannot be read by a screen reader. The outline tree is its accessible equivalent, so the review checks that equivalence as well as the panels.
 
-**Blocked by:** 14, 15
+**Blocked by:** 14, 15, 15b
 
 **Status:** ready-for-agent
 
