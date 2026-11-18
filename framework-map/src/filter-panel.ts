@@ -48,6 +48,8 @@ const isCommittedOnly = (filters: Filters): boolean =>
   filters.decision.length === COMMITTED_ONLY.length && COMMITTED_ONLY.every((each) => filters.decision.includes(each));
 
 export interface FilterPanel {
+  /** The part's own element in the rail, for the icon that opens it. */
+  readonly element: HTMLElement;
   /** Opens the filters if they are folded, and puts the keyboard focus on "committed only", their first control. */
   focus(): void;
 }
@@ -168,6 +170,7 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
     if (state.filters !== previous.filters || state.lens !== previous.lens) render(state);
   });
   return {
+    element: panel,
     focus() {
       fold.open();
       committed.focus();

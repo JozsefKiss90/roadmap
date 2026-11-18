@@ -75,6 +75,8 @@ function segments(
 }
 
 export interface LensPanel {
+  /** The part's own element in the rail, for the icon that opens it. */
+  readonly element: HTMLElement;
   /** Puts the keyboard focus on the lens switch, at the lens that is on. */
   focus(): void;
 }
@@ -127,5 +129,5 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
   store.subscribe((state, previous) => {
     if (state.lens !== previous.lens) render(state);
   });
-  return { focus: () => lenses.focus() };
+  return { element: panel, focus: () => lenses.focus() };
 }

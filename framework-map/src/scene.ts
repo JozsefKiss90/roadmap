@@ -46,7 +46,7 @@ import {
 } from 'three';
 import type { Object3D, PerspectiveCamera } from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { radians, towardCamera, placeToFit } from './camera';
+import { FLAT_CORNERS, radians, towardCamera, placeToFit } from './camera';
 import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
 import { createDepthBlur } from './depth-blur';
@@ -58,9 +58,20 @@ import { listShape, staircaseHeight } from './label-layout';
 import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, blendMaterial, markMaterial } from './mark-material';
 import { AT_ONCE, durationsNow, fadeMsBetween, hold, run } from './motion';
-import { insetLeftPxAt, railPxAt } from './page-layout';
+import {
+  hasBar,
+  namesFitFor,
+  openPanelsOf,
+  pageIsZoomed,
+  pageLayoutAt,
+  pictureMarginsAt,
+  pictureRoomAt,
+  restInsetsAt,
+} from './page-layout';
 import { pickOnStack } from './pick';
 import type { StackHit } from './pick';
+import { createPress } from './press';
+import type { PressPoint, PressPointer } from './press';
 import { createSelectionDrawing } from './selection-drawing';
 import { createTraceDrawing } from './trace-drawing';
 import { AT_STACK, scrubbedPhaseOf, tracedNeedOf, traces } from './state';
@@ -100,6 +111,11 @@ export interface Stage {
   onCameraChange(listener: () => void): void;
   /** Lets something else in the scene, such as a label, take clicks. It is asked before the plates. */
   addPickable(pickable: Pickable): void;
+  /**
+   * What the selected tool's mark or the selected cluster's cell covers, in pixels of the window; null with
+   * nothing selected, or a need. The screenshot script checks that no panel lies over it.
+   */
+  selectionRect(): { left: number; top: number; right: number; bottom: number } | null;
   /** Applies changed constants: the field of view, the limits, and the camera's place for the current distance. */
   applyConstants(): void;
 }
@@ -120,8 +136,6 @@ interface MarkNode {
 
 /** A faded tier is drawn before the others, so its marks never lie over the marks of the focused plate. */
 const UNDER_THE_REST = -1;
-/** A press that moves the pointer further than this is a drag, not a click. */
-const CLICK_SLOP_PX = 5;
 
 /** A 1px line in a token's colour. `fullOpacity` is its opacity on a plate that is not faded. */
 interface Line {
@@ -414,7 +428,7 @@ export function createStage(
   ring.renderOrder = OVER_THE_MARKS;
   ring.visible = false;
   graph.scene().add(ring);
-  const hoverLabel = createHoverLabel(container, constants.hoverLabelOffsetPx);
+  const hoverLabel = createHoverLabel(container);
   let hovered: MarkLayout | null = null;
   const fromCamera = new Vector3();
   const forward = new Vector3();
@@ -435,8 +449,11 @@ export function createStage(
     ring.scale.setScalar(side / MARK_SHARE_OF_QUAD);
   }
 
-  /** Shows the ring and the label for a tool's mark, with the pointer at a point of the picture. Null hides both. */
-  function hover(toolId: string | null, at?: { x: number; y: number }): void {
+  /**
+   * Shows the ring and the label for a tool's mark, with the pointer at a point of the picture. Null hides both.
+   * @param byFinger Whether a finger held in place asked for it. The label then stands clear of the finger.
+   */
+  function hover(toolId: string | null, at?: PressPoint, byFinger = false): void {
     const tool = toolId === null ? undefined : index.tool(toolId);
     hovered = tool ? (markOf.get(tool.id) ?? null) : null;
     ring.visible = hovered !== null;
@@ -445,11 +462,12 @@ export function createStage(
       return;
     }
     placeHoverRing();
-    // An open detail card covers the right of the window, so the label keeps left of it.
-    const rightEdge = windowSize.width - (store.get().selection ? constants.detailCardPx : 0);
+    // An open detail card at the right covers that side of the window, and the bar its top: the label keeps clear of both.
+    const room = pictureRoomAt(windowSize, constants, openPanelsOf(store.get()));
     // At the cluster distance the breadcrumb already names the focused cluster.
     const cluster = tool.cluster === store.get().cluster ? null : (index.cluster(tool.cluster)?.label ?? null);
-    hoverLabel.show(at.x + origin.x, at.y + origin.y, rightEdge, tool.label, cluster);
+    const offsetPx = byFinger ? constants.fingerLabelOffsetPx : constants.hoverLabelOffsetPx;
+    hoverLabel.show(at.x + origin.x, at.y + origin.y, room, tool.label, cluster, offsetPx);
   }
 
   controls.enablePan = false;
@@ -503,25 +521,27 @@ export function createStage(
    */
   function placeOf(state: MapState): CameraPlace {
     const field = constants.fieldOfViewDegrees;
-    // The rail covers the left of the window and an open detail card the right, so the plate or cell stands clear of both.
-    const card = state.selection ? constants.detailCardPx : 0;
-    // Beside the card the legend may take a second row, and the strip stands over that.
-    const strip =
-      scrubbedPhaseOf(state.lens) === null ? 0 : constants.phaseStripPx + (card > 0 ? constants.legendSecondRowPx : 0);
+    // The rail or the bar, an open detail card and the phase strip each cover a part of the window, and
+    // the plate or cell stands clear of them all. Beside the card the legend may take a second row, and
+    // the strip stands over that.
+    const room = pictureRoomAt(windowSize, constants, openPanelsOf(state));
+    const margins = pictureMarginsAt(windowSize, constants);
+    // Under the bar, names with no room are left out, and the plate or cell has the room to itself.
+    const named = namesFitFor(state, index, windowSize, constants);
     const cell = state.distance === 'cluster' ? cellOf.get(state.cluster ?? '') : undefined;
     if (cell) {
       const names = listShape(index.toolsOf(cell.cluster).length, constants.toolListMostRows);
-      const listRoom = names.rows * constants.toolRowPx + constants.toolListGapPx;
+      const listRoom = named ? names.rows * constants.toolRowPx + constants.toolListGapPx : 0;
       const framed = holding(flat(cell), selectionDrawing.reachOf(state.selection));
       const fit = (roomAbove: number): CameraPlace =>
         placeToFit(
           framed,
           frame,
           inPicture(
-            railPxAt(windowSize.width, constants) + constants.nearInsetSidePx,
-            constants.annotationTopPx + roomAbove,
-            windowSize.width - constants.nearInsetSidePx - card,
-            windowSize.height - constants.insetBottomPx - strip,
+            room.left + margins.side,
+            room.top + margins.top + roomAbove,
+            room.right - margins.side,
+            room.bottom - margins.bottom,
           ),
           field,
           constants.clusterTiltDegrees,
@@ -542,26 +562,23 @@ export function createStage(
     const plate = state.distance === 'stack' ? undefined : tiers.get(state.tier ?? '')?.plate;
     if (plate) {
       const names = layout.cells.filter((each) => each.tier === plate.tier).length;
-      const top =
-        constants.annotationTopPx + staircaseHeight(names, constants.clusterRowPx, constants.clusterNameGapPx);
       const region = inPicture(
-        railPxAt(windowSize.width, constants) + constants.nearInsetSidePx,
-        top,
-        windowSize.width - constants.tierInsetRightPx - card,
-        windowSize.height - constants.insetBottomPx - strip,
+        room.left + margins.side,
+        room.top + margins.top + (named ? staircaseHeight(names, constants.clusterRowPx, constants.clusterNameGapPx) : 0),
+        // The last cluster's name runs on past the plate.
+        room.right - (named ? constants.tierInsetRightPx : margins.side),
+        room.bottom - margins.bottom,
       );
       return placeToFit(flat(plate), frame, region, field, constants.tierTiltDegrees, 0, {
         mostPixelsPerUnit: constants.tierMostPixelsPerUnit,
         align: 'top',
       });
     }
-    const region = {
-      left: frame.inset.left,
-      top: frame.inset.top,
-      right: frame.width - frame.inset.right - card,
-      bottom: frame.height - frame.inset.bottom - strip,
-    };
-    return placeToFit(layout.bounds, frame, region, field, constants.restTiltDegrees, 0);
+    const inset = restInsetsAt(windowSize, constants);
+    const region = inPicture(inset.left, inset.top, room.right - inset.right, room.bottom - inset.bottom);
+    // Under the bar each tier's count stands over its plate, and a more level camera opens the room for it.
+    const tilt = hasBar(pageLayoutAt(windowSize, constants)) ? constants.underBarRestTiltDegrees : constants.restTiltDegrees;
+    return placeToFit(layout.bounds, frame, region, field, tilt, 0);
   }
 
   function limitsOf(state: MapState, place: CameraPlace): Limits {
@@ -704,14 +721,14 @@ export function createStage(
     // middle of the area inside the insets. So the picture is made larger than
     // the window by the difference between opposite insets, and the window
     // shows the part of it that puts the axis there.
-    // In the compact layout the rail is a column of icons, and the stack takes the room it gives up.
-    const insetLeftPx = insetLeftPxAt(windowSize.width, constants);
-    const extraX = insetLeftPx - constants.insetRightPx;
-    const extraY = constants.insetTopPx - constants.insetBottomPx;
+    // The insets follow the page layout: the stack takes the room the rail gives up.
+    const inset = restInsetsAt(windowSize, constants);
+    const extraX = inset.left - inset.right;
+    const extraY = inset.top - inset.bottom;
     frame.width = windowSize.width + Math.abs(extraX);
     frame.height = windowSize.height + Math.abs(extraY);
-    const besideX = (frame.width - (windowSize.width - insetLeftPx - constants.insetRightPx)) / 2;
-    const besideY = (frame.height - (windowSize.height - constants.insetTopPx - constants.insetBottomPx)) / 2;
+    const besideX = (frame.width - (windowSize.width - inset.left - inset.right)) / 2;
+    const besideY = (frame.height - (windowSize.height - inset.top - inset.bottom)) / 2;
     frame.inset = { top: besideY, right: besideX, bottom: besideY, left: besideX };
     origin.x = Math.min(0, extraX);
     origin.y = Math.min(0, extraY);
@@ -740,9 +757,14 @@ export function createStage(
 
   function onResize(): void {
     const previous = restRange;
+    const layoutBefore = pageLayoutAt(windowSize, constants);
     const state = store.get();
     if (!fitWindow()) return;
-    if (state.distance === 'stack' && previous > 0 && controls.enabled) {
+    // A window that comes under the bar, leaves it, or is turned under it, as a phone is, has its panels
+    // somewhere else and its stack at another tilt: the camera takes its place anew.
+    const layoutNow = pageLayoutAt(windowSize, constants);
+    const panelsStay = layoutNow === layoutBefore || (!hasBar(layoutNow) && !hasBar(layoutBefore));
+    if (state.distance === 'stack' && previous > 0 && controls.enabled && panelsStay) {
       // Keeps the partner's zoom and angle at rest, as a share of the rest range.
       applyLimits(limitsOf(state, placeOf(state)));
       const out = camera.position.clone().sub(centre);
@@ -828,33 +850,106 @@ export function createStage(
     return state.distance === 'cluster' ? () => store.focusTier(tier) : null;
   }
 
-  const pointerAt = (event: PointerEvent): { x: number; y: number } => {
-    const box = canvasHost.getBoundingClientRect();
-    return { x: event.clientX - box.left, y: event.clientY - box.top };
+  /**
+   * What lies under a point of the picture for a finger, which is no point: the nearest mark within
+   * `reachPx` of it counts as under it.
+   */
+  const underFinger = (x: number, y: number, reachPx: number): StackHit | null => {
+    raycaster.setFromCamera(new Vector2((x / frame.width) * 2 - 1, 1 - (y / frame.height) * 2), camera);
+    const { target } = controls;
+    return pickOnStack(raycaster.ray, layout, isFaded, reachPx * unitsPerPixelAt(target.x, target.y, target.z));
   };
-  let pressedAt: { x: number; y: number } | null = null;
+
+  /**
+   * What a tap of a finger on a point of the picture does. A label is asked first, as for a click. A
+   * mark drawn too small for a finger is passed over, so the tap is on its cell: a finger then goes
+   * in one step at a time, from a plate to a cell to a mark. A mark large enough is met from a little
+   * way off, so a tap between two marks is not lost.
+   */
+  function fingerActionAt(x: number, y: number): (() => void) | null {
+    const { action } = under(x, y);
+    if (action) return action;
+    const hit = underFinger(x, y, constants.fingerTapReachPx);
+    if (!hit) return null;
+    const mark = hit.tool === null ? undefined : markOf.get(hit.tool);
+    const tooSmall = mark !== undefined && mark.size / unitsPerPixelAt(mark.x, mark.y, mark.z) < constants.fingerMarkPx;
+    return actionOn(tooSmall ? { ...hit, tool: null } : hit);
+  }
+
+  // A press is a tap, a drag, a hold or a pinch: src/press.ts tells which. The orbit controls turn
+  // the stack with a drag and change the distance with a pinch, on their own.
+  const press = createPress(
+    { slopPx: constants.clickSlopPx, touchSlopPx: constants.touchSlopPx, holdMs: constants.holdMs },
+    {
+      tap(at, byFinger) {
+        // A tap during a flight would be picked against a camera that is still moving.
+        if (!controls.enabled) return;
+        (byFinger ? fingerActionAt(at.x, at.y) : actionAt(at.x, at.y).action)?.();
+      },
+      // A finger held in place shows what a mouse's hover shows. It stays until the next press, or until the finger drags on.
+      hold(at) {
+        if (!controls.enabled) return;
+        hover(underFinger(at.x, at.y, constants.fingerHoldReachPx)?.tool ?? null, at, true);
+        heldAt = hovered ? at : null;
+      },
+    },
+  );
+  /** Where a finger is held in place with the hover label on show, until it lets go. */
+  let heldAt: PressPoint | null = null;
+  const pointerOf = (event: PointerEvent): PressPointer => {
+    const box = canvasHost.getBoundingClientRect();
+    return {
+      id: event.pointerId,
+      x: event.clientX - box.left,
+      y: event.clientY - box.top,
+      touch: event.pointerType === 'touch',
+      primary: event.button === 0,
+    };
+  };
   canvasHost.addEventListener('pointerdown', (event) => {
-    pressedAt = event.button === 0 ? pointerAt(event) : null;
+    press.down(pointerOf(event));
     hover(null);
   });
-  canvasHost.addEventListener('pointerleave', () => hover(null));
-  canvasHost.addEventListener('pointerup', (event) => {
-    const released = pointerAt(event);
-    const pressed = pressedAt;
-    pressedAt = null;
-    if (!pressed || Math.hypot(released.x - pressed.x, released.y - pressed.y) > CLICK_SLOP_PX) return;
-    // A click during a flight would be picked against a camera that is still moving.
-    if (!controls.enabled) return;
-    actionAt(released.x, released.y).action?.();
+  // A press ends wherever its pointer is let go. Let go on the canvas, it may be a tap. Let go anywhere
+  // else, as over a panel, it is over and no tap: or the press would count that pointer as down for ever,
+  // and take the next finger for the second of a pinch.
+  window.addEventListener('pointerup', (event) => {
+    heldAt = null;
+    if (event.target instanceof Node && canvasHost.contains(event.target)) press.up(pointerOf(event));
+    else press.cancel(event.pointerId);
+  });
+  window.addEventListener('pointercancel', (event) => {
+    heldAt = null;
+    press.cancel(event.pointerId);
+  });
+  // A finger leaves the canvas when it is lifted, and what it held in place to see stays.
+  canvasHost.addEventListener('pointerleave', (event) => {
+    if (event.pointerType !== 'touch') hover(null);
   });
   canvasHost.addEventListener('pointermove', (event) => {
-    // A camera in flight, or one the partner is turning, has no steady picture to hover over.
-    if (event.buttons !== 0 || !controls.enabled) return;
-    const at = pointerAt(event);
+    const at = pointerOf(event);
+    press.move(at);
+    // A held finger that drags on turns the stack, and the label would be left where the mark no longer is.
+    if (heldAt && Math.hypot(at.x - heldAt.x, at.y - heldAt.y) > constants.touchSlopPx) {
+      heldAt = null;
+      hover(null);
+    }
+    // A finger has no hover. A camera in flight, or one the partner is turning, has no steady picture to hover over.
+    if (at.touch || event.buttons !== 0 || !controls.enabled) return;
     const { action, hit } = actionAt(at.x, at.y);
     canvasHost.style.cursor = action ? 'pointer' : '';
     hover(hit?.tool ?? null, at);
   });
+
+  // While the page itself is zoomed, as a partner with low vision may zoom it, a gesture on the
+  // canvas moves the page, as it does anywhere else: or the canvas would hold the partner in the
+  // zoomed page. At the page's own size the canvas takes every gesture, so none scrolls or zooms the page.
+  const viewport = window.visualViewport;
+  const followPageZoom = (): void => {
+    renderer.domElement.style.touchAction = pageIsZoomed() ? 'auto' : 'none';
+  };
+  viewport?.addEventListener('resize', followPageZoom);
+  followPageZoom();
 
   const projected = new Vector3();
   return {
@@ -874,6 +969,21 @@ export function createStage(
       listener();
     },
     addPickable: (pickable) => void pickables.push(pickable),
+    selectionRect() {
+      const { selection } = store.get();
+      const drawn = selection?.type === 'tool' ? markOf.get(selection.id) : selection?.type === 'cluster' ? cellOf.get(selection.id) : undefined;
+      if (!drawn) return null;
+      const [width, depth] = 'size' in drawn ? [drawn.size, drawn.size] : [drawn.width, drawn.depth];
+      const rect = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+      for (const [alongX, alongZ] of FLAT_CORNERS) {
+        const at = this.toPicture(projected.set(drawn.x + (alongX * width) / 2, drawn.y, drawn.z + (alongZ * depth) / 2));
+        rect.left = Math.min(rect.left, at.x + origin.x);
+        rect.right = Math.max(rect.right, at.x + origin.x);
+        rect.top = Math.min(rect.top, at.y + origin.y);
+        rect.bottom = Math.max(rect.bottom, at.y + origin.y);
+      }
+      return rect;
+    },
     applyConstants() {
       if (fitWindow()) goTo(store.get(), false);
       notify();

@@ -17,9 +17,9 @@ declare global {
   interface Window {
     /**
      * What the screenshot script reads from the page, beside the "ready" signal: where the labels
-     * stand, and whether a flight, a fade or a panel is still under way.
+     * stand, where the selection is drawn, and whether a flight, a fade or a panel is still under way.
      */
-    frameworkMap?: { labels(): LabelRect[]; isMoving(): boolean };
+    frameworkMap?: { labels(): LabelRect[]; selection(): LabelRect | null; isMoving(): boolean };
   }
 }
 
@@ -27,8 +27,14 @@ const root = document.documentElement;
 
 function applyPageConstants(): void {
   root.style.setProperty('--title-size', `${constants.titleSizePx}px`);
-  root.style.setProperty('--detail-card-width', `${constants.detailCardPx}px`);
   root.style.setProperty('--rail-open-width', `${constants.railPx}px`);
+  root.style.setProperty('--bar-row', `${constants.barRowPx}px`);
+  root.style.setProperty('--crumb-row', `${constants.crumbRowPx}px`);
+  root.style.setProperty('--bar-icon', `${constants.barIconPx}px`);
+  root.style.setProperty('--bar-gap', `${constants.barGapPx}px`);
+  root.style.setProperty('--bar-edge', `${constants.barEdgePx}px`);
+  root.style.setProperty('--rail-part-width', `${constants.railPartPx}px`);
+  root.style.setProperty('--phase-strip-side', `${constants.phaseStripSidePx}px`);
   root.style.setProperty('--legend-second-row', `${constants.legendSecondRowPx}px`);
 }
 
@@ -46,7 +52,7 @@ async function start(): Promise<void> {
   if (!hasWebGL()) {
     // No scene is made, so nothing moves and no label is drawn.
     mountFallback(app, index, constants, __BUILD_ID__, picture);
-    window.frameworkMap = { labels: () => [], isMoving: () => false };
+    window.frameworkMap = { labels: () => [], selection: () => null, isMoving: () => false };
     return;
   }
   // The store starts from the URL fragment, so the page opens at the distance a link names.
@@ -55,14 +61,15 @@ async function start(): Promise<void> {
 
   const stage = createStage(container, index, layout, constants, store);
   const labels = addLabels(stage, index, layout, constants, store);
-  mountPanels(app, index, store, constants, __BUILD_ID__);
-  window.frameworkMap = { labels: () => labels.rects(), isMoving };
+  const panels = mountPanels(app, index, store, constants, __BUILD_ID__);
+  window.frameworkMap = { labels: () => labels.rects(), selection: () => stage.selectionRect(), isMoving };
   await labels.settled();
 
   if (import.meta.env.DEV) {
     const { mountTuning } = await import('./dev/tuning');
     mountTuning(constants, () => {
       applyPageConstants();
+      panels.applyConstants();
       stage.applyConstants();
     });
   }

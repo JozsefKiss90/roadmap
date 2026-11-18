@@ -6,14 +6,28 @@
  * the traced mark and the best-fit ring too, and under the phase scrub the
  * traced mark.
  *
+ * Under the bar, in the narrow and the upright page layout, the window has no
+ * room to keep the legend on show. It then opens on request, from an icon in
+ * the bar, with one step to a row, and leaves at the next press outside it.
+ * src/styles.css keeps it on show in the full and the compact layout,
+ * whatever the icon last did.
+ *
  * It is one of the panels: it reads the state store, and knows nothing of the scene.
  */
+import { Shapes } from 'lucide';
 import { DECISION_STEPS, STEP_NAMES, fadedName } from './display';
-import { dressSwatch, element, stepSwatch } from './dom';
+import { dressSwatch, element, iconButton, stepSwatch } from './dom';
+import { fadeIn } from './motion';
 import { isFiltered, narrows, scrubbedPhaseOf, traces } from './state';
 import type { Store } from './state';
 
-export function mountLegend(app: HTMLElement, store: Store): void {
+/** What the rail's icons need from the legend. */
+export interface Legend {
+  /** The icon that opens and closes the legend under the bar. It stands in the bar. */
+  readonly toggle: HTMLButtonElement;
+}
+
+export function mountLegend(app: HTMLElement, store: Store): Legend {
   const heading = element('h2', 'rail-heading', 'Decision class');
   const steps = element(
     'ul',
@@ -41,7 +55,25 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   const legend = element('section', 'legend', heading, steps);
   // Named apart from the filter of the same heading.
   legend.setAttribute('aria-label', 'Legend: the decision-class steps');
+  legend.id = 'legend';
   app.append(legend);
+
+  const toggle = iconButton('rail-icon rail-icon-legend', Shapes, 'Legend');
+  toggle.setAttribute('aria-controls', legend.id);
+  const setOpen = (open: boolean): void => {
+    if (open === legend.hasAttribute('data-open')) return;
+    legend.toggleAttribute('data-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.toggleAttribute('data-on', open);
+    // It fades in as a panel does, and leaves at once.
+    if (open) fadeIn([legend]);
+  };
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.addEventListener('click', () => setOpen(!legend.hasAttribute('data-open')));
+  // It lies over the picture, so it leaves at the next press that is not on it or on its icon.
+  document.addEventListener('pointerdown', (event) => {
+    if (event.target instanceof Node && !legend.contains(event.target) && !toggle.contains(event.target)) setOpen(false);
+  });
 
   const show = (): void => {
     const { lens, filters, selection } = store.get();
@@ -56,4 +88,5 @@ export function mountLegend(app: HTMLElement, store: Store): void {
   };
   show();
   store.subscribe(show);
+  return { toggle };
 }

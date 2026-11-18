@@ -30,12 +30,28 @@ export const constants = {
   /** The rail as a column of icons, in the compact layout. */
   railIconsPx: 56,
   /**
-   * The window widths where the layout changes (see src/page-layout.ts). Below
-   * the first the rail is a column of icons; below the second a message stands
-   * in place of the map.
+   * The window widths where the page layout changes (see src/page-layout.ts). Below
+   * the first the rail is a column of icons. Below the second it is a bar across
+   * the top: the narrow layout in a window wider than it is tall, and otherwise the
+   * upright one. Below the third the layout is upright whatever the window's shape.
    */
   compactBelowPx: 1366,
   narrowBelowPx: 1024,
+  uprightBelowPx: 480,
+  /**
+   * The bar: its row, which is an icon and 4 pixels over and under it, and the row the breadcrumb
+   * takes under it in the upright layout. Then an icon of the bar, which is the least a finger
+   * needs, the gap between two, and the clear space at the bar's ends.
+   */
+  barRowPx: 52,
+  crumbRowPx: 44,
+  barIconPx: 44,
+  barGapPx: 4,
+  barEdgePx: 8,
+  /** The width of a part of the rail that is open on its own under the bar. A narrower window leaves 40 pixels of the canvas beside it. */
+  railPartPx: 320,
+  /** The share of the window's height the detail card takes at the bottom, in the upright layout. */
+  cardHeightShare: 0.45,
 
   /**
    * The part of the window kept clear around the stack at rest, in pixels. The
@@ -46,8 +62,28 @@ export const constants = {
   insetRightPx: 40,
   insetBottomPx: 64,
   insetLeftPx: 512,
+  /**
+   * The same in the two layouts with the bar, where no column of tier names stands beside the
+   * stack and the legend opens on request: the margin at the sides and the bottom, and the room
+   * under the bar for the line that says what to choose, with the count over the top plate under it.
+   */
+  underBarEdgePx: 16,
+  underBarTopPx: 44,
+  /** The stack's tilt at rest in those two layouts: a little more level, so each tier's count has room over its plate. */
+  underBarRestTiltDegrees: 64,
   /** The room the phase strip takes above the legend, while the phase scrub is on. The stack keeps clear of it. */
   phaseStripPx: 60,
+  /** The clear space at each side of the strip: from the rail or the window's edge, and from an open detail card. */
+  phaseStripSidePx: 16,
+  /**
+   * A step's two counts stand side by side where the strip is at least this wide, and one over the
+   * other where it is not: on a phone, and beside a detail card in a window too narrow for both.
+   * The second line of counts makes the strip this much taller.
+   */
+  phaseStripSideBySidePx: 624,
+  phaseStripStackedPx: 16,
+  /** The strip's room in the two layouts with the bar, with its counts one over the other. */
+  phaseStripUnderBarPx: 80,
   /** What a second row of the legend adds to that room, beside an open detail card. The strip is lifted by as much. */
   legendSecondRowPx: 24,
 
@@ -109,6 +145,8 @@ export const constants = {
   countGapPx: 7,
   /** The least clear space between one tier's label and the next. With less, the names are left out and the counts stay. */
   tierLabelGapPx: 4,
+  /** Under the bar, where each tier's count stands over its plate: from the plate's highest point up to the count. */
+  countOverPlatePx: 2,
   /** Sizes on screen, from the style guide's "Map type" table. */
   tierNamePx: 20,
   clusterNamePx: 13,
@@ -131,6 +169,16 @@ export const constants = {
   listEdgePx: 24,
   /** A name too long for the list's room is cut short with an ellipsis, but never below this width. */
   toolNameLeastPx: 80,
+  /** The room a gate badge is given when the list's least width is worked out. */
+  toolBadgeRoomPx: 60,
+  /**
+   * In the two layouts with the bar, names that have no room are left out. The cluster names need
+   * this much left for the plate: across, beside the room of the last name, and down, under the
+   * names. The tool names need this much left under them for the cell.
+   */
+  leastPlateWidthPx: 320,
+  leastPlateHeightPx: 96,
+  leastCellHeightPx: 72,
   /** The kind icon, and the space between an icon, a name and a gate badge. */
   toolIconPx: 14,
   toolPartGapPx: 7,
@@ -139,6 +187,25 @@ export const constants = {
 
   /** The hover label: how far it stands from the pointer, to the right and above. */
   hoverLabelOffsetPx: 12,
+  /** The same for a finger held in place, which covers more of the picture than a pointer does. */
+  fingerLabelOffsetPx: 28,
+
+  /**
+   * A press on the canvas (see src/press.ts). A press that moves further than the slop is a drag,
+   * not a click; a finger is less steady than a mouse. A finger that rests in place this long is a hold.
+   */
+  clickSlopPx: 5,
+  touchSlopPx: 10,
+  holdMs: 500,
+  /** A finger's tap passes over a mark drawn smaller than this, and lands on its cell. */
+  fingerMarkPx: 10,
+  /** How far from a mark a finger may land and still meet it: with a tap, and with a hold. */
+  fingerTapReachPx: 8,
+  fingerHoldReachPx: 14,
+  /** The clear space at each side of the fallback page: beside the picture at its own size, and in a window too narrow for that. */
+  fallbackSidePx: 32,
+  fallbackSideStackedPx: 16,
+
   /** Where the link to the tool matrix leads: the export that sits beside the map's file. */
   toolMatrixHref: 'Hermes%20OS%20tool%20matrix.xlsx',
 };

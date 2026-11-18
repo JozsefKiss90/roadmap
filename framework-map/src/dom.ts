@@ -2,6 +2,7 @@
  * dom: the small helpers the panels build their elements with.
  */
 import { ArrowUpRight, createElement } from 'lucide';
+import type { IconNode } from 'lucide';
 import { decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { MARK_TOKEN_OF_STEP, cssOf, markPartColour } from './tokens';
@@ -17,6 +18,17 @@ export function element<K extends keyof HTMLElementTagNameMap>(
   if (className) made.className = className;
   made.append(...children.filter((child): child is Node | string => Boolean(child)));
   return made;
+}
+
+/** A button that shows an icon alone. Its label is its name, and the text shown on hover. */
+export function iconButton(className: string, icon: IconNode, label: string): HTMLButtonElement {
+  const drawn = createElement(icon);
+  drawn.setAttribute('aria-hidden', 'true');
+  const button = element('button', className, drawn);
+  button.type = 'button';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  return button;
 }
 
 /** Gives a square the form of a decision-class step, in the faded state or not. */

@@ -20,6 +20,8 @@ import { listsNeeds, scrubbedPhaseOf, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
 export interface NeedList {
+  /** The part's own element in the rail, for the icon that opens it. */
+  readonly element: HTMLElement;
   /** Puts the keyboard focus on the chosen need, or on the first need listed when none is chosen. */
   focus(): void;
 }
@@ -145,6 +147,7 @@ export function mountNeedList(
   });
 
   return {
+    element: panel,
     focus() {
       (rowsOfNeed(chosen)[0] ?? firstRow())?.focus();
     },

@@ -61,6 +61,21 @@ describe('pickOnStack', () => {
     expect(pickOnStack(ray, layout)).toEqual({ tier: 'T0', cluster: '0B', tool: null });
   });
 
+  it('finds the nearest mark within reach of a finger that lands between marks', () => {
+    // 0.04 from the edge of tool:b, and 0.24 from the edge of tool:a.
+    expect(pickOnStack(down(2.6, -1), layout, undefined, 0.3)).toEqual({ tier: 'T0', cluster: '0B', tool: 'tool:b' });
+    expect(pickOnStack(down(2.4, -1.5), layout, undefined, 0.3)).toEqual({ tier: 'T0', cluster: '0B', tool: 'tool:a' });
+  });
+
+  it('finds no mark for a finger that lands further from every mark than it reaches', () => {
+    expect(pickOnStack(down(5, 1), layout, undefined, 0.3)).toEqual({ tier: 'T0', cluster: '0B', tool: null });
+    expect(pickOnStack(down(2.6, -1), layout, undefined, 0.01)).toEqual({ tier: 'T0', cluster: '0B', tool: null });
+  });
+
+  it('finds the mark under the finger before a nearer neighbour', () => {
+    expect(pickOnStack(down(2.3, -1), layout, undefined, 2)).toEqual({ tier: 'T0', cluster: '0B', tool: 'tool:a' });
+  });
+
   it('finds nothing for a ray that points away from the plates, or runs level', () => {
     expect(pickOnStack({ origin: { x: 0, y: 100, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, layout)).toBeNull();
     expect(pickOnStack({ origin: { x: -50, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 } }, layout)).toBeNull();

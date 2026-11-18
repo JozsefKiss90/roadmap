@@ -14,7 +14,7 @@ const TOUCH_PX = 1;
  * none when all is well.
  *
  * @param {readonly LabelRect[] | null} labels What the page reported, or null if it reported nothing.
- * @param {{ width: number, height: number, left?: number }} viewport The part of the window no panel covers: it runs from `left`, or from 0, to `width`.
+ * @param {{ width: number, height: number, left?: number, top?: number }} viewport The part of the window no panel covers: it runs from `left`, or from 0, to `width`, and from `top`, or from 0, to `height`.
  * @param {number} mostLabels
  * @returns {string[]}
  */
@@ -27,7 +27,12 @@ export function labelFaults(labels, viewport, mostLabels) {
 
   if (labels.length > mostLabels) faults.push(`${labels.length} labels on screen, more than ${mostLabels}`);
   labels.forEach((rect, i) => {
-    if (rect.left < (viewport.left ?? 0) || rect.top < 0 || rect.right > viewport.width || rect.bottom > viewport.height) {
+    if (
+      rect.left < (viewport.left ?? 0) ||
+      rect.top < (viewport.top ?? 0) ||
+      rect.right > viewport.width ||
+      rect.bottom > viewport.height
+    ) {
       faults.push(`a label runs out of the window: ${show(rect)}`);
     }
     for (const other of labels.slice(i + 1)) {

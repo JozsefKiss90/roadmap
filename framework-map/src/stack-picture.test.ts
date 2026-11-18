@@ -15,12 +15,14 @@ const picture = stackPicture(layoutStack(index), index);
 const countOf = (pattern: RegExp): number => [...picture.matchAll(pattern)].length;
 const numbersOf = (attribute: string): number[] =>
   [...picture.matchAll(new RegExp(` ${attribute}="([^"]+)"`, 'g'))].map((match) => Number(match[1]));
+/** Each tier's drawing, from the top of the picture down. */
+const drawings = [...picture.matchAll(/<svg\b.*?<\/svg>/g)].map(([drawing]) => drawing);
 
 describe('the static picture of the stack', () => {
-  it('is one SVG picture, marked as the picture of the stack', () => {
-    expect(picture.startsWith('<svg data-stack-picture ')).toBe(true);
-    expect(picture.endsWith('</svg>')).toBe(true);
-    expect(countOf(/<svg\b/g)).toBe(1);
+  it('is one block, marked as the picture of the stack, with one drawing for each tier', () => {
+    expect(picture.startsWith('<div data-stack-picture>')).toBe(true);
+    expect(picture.endsWith('</div>')).toBe(true);
+    expect(drawings).toHaveLength(8);
   });
 
   it('draws one plate for each tier, one cell for each cluster and one mark for each tool', () => {
@@ -44,10 +46,21 @@ describe('the static picture of the stack', () => {
     expect(countOf(/class="picture-name"/g)).toBe(8);
   });
 
-  it('puts the top tier at the top', () => {
+  it('writes no name inside a drawing, so a small window can draw the plates smaller and the names at their size', () => {
+    expect(picture).not.toContain('<text');
+    // A drawing is elements alone: nothing stands between one tag and the next.
+    for (const drawing of drawings) expect(drawing).not.toMatch(/>[^<]+</);
+  });
+
+  it('puts the top tier first, with each tier’s marks in its own drawing', () => {
     expect(picture.indexOf('T7 · 33 TOOLS')).toBeGreaterThan(-1);
-    const yOf = (text: string): number => Number(new RegExp(`y="([^"]+)">${text}<`).exec(picture)?.[1]);
-    expect(yOf('T7 · 33 TOOLS')).toBeLessThan(yOf('T0 · 99 TOOLS'));
+    expect(picture.indexOf('T7 · 33 TOOLS')).toBeLessThan(picture.indexOf('T0 · 99 TOOLS'));
+    expect(drawings.map((drawing) => [...drawing.matchAll(/picture-mark /g)].length)).toEqual([33, 104, 86, 92, 154, 65, 119, 99]);
+  });
+
+  it('gives every drawing the same frame, so the plates share their left edge at any size', () => {
+    const frames = new Set([...picture.matchAll(/viewBox="([^"]+)"/g)].map((match) => match[1]));
+    expect(frames.size).toBe(1);
   });
 
   it('keeps everything inside its own frame', () => {

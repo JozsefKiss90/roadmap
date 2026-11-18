@@ -1,4 +1,4 @@
-/** The static picture of the stack, as SVG markup made by the build (see src/stack-picture.ts). */
+/** The static picture of the stack, as markup made by the build (see src/stack-picture.ts). */
 declare module 'virtual:stack-picture' {
   const picture: string;
   export default picture;

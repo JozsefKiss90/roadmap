@@ -38,6 +38,14 @@ export interface Box {
 
 export const radians = (degrees: number): number => (degrees * Math.PI) / 180;
 
+/** The four corners of a rectangle that lies flat, as steps from its centre along x and along z. */
+export const FLAT_CORNERS: readonly (readonly [number, number])[] = [
+  [-1, -1],
+  [1, -1],
+  [1, 1],
+  [-1, 1],
+];
+
 const dot = (a: Point, b: Point): number => a.x * b.x + a.y * b.y + a.z * b.z;
 
 /** The unit vector from the orbit target toward the camera. */

@@ -5,6 +5,10 @@
  * the stack that the build inlined (see src/stack-picture.ts), says why in a
  * few words, and links to the tool matrix, which lists every tool. It makes
  * no scene, so the missing WebGL is no console error.
+ *
+ * The page fits a window of any width. Where the window is too narrow for the
+ * tier names to stand beside the plates, each name stands over its plate, and
+ * the plates are drawn as wide as the window allows. The names keep their size.
  */
 import { buildStamp } from './build-stamp';
 import type { Constants } from './constants';
@@ -27,7 +31,7 @@ export function hasWebGL(): boolean {
 
 /**
  * Puts the fallback page in place of the map.
- * @param picture The static picture of the stack, as SVG markup made by the build.
+ * @param picture The static picture of the stack, as markup made by the build.
  */
 export function mountFallback(
   app: HTMLElement,
@@ -87,9 +91,22 @@ export function mountFallback(
     ),
   );
   // The explanation begins where the picture's plates do: right of its column of tier names.
-  const { marginPx, nameColumnPx, nameGapPx } = PICTURE_METRICS;
-  page.style.setProperty('--picture-names', `${marginPx + nameColumnPx}px`);
+  const { marginPx, nameColumnPx, nameGapPx, rowPx } = PICTURE_METRICS;
+  page.style.setProperty('--picture-names', `${nameColumnPx}px`);
   page.style.setProperty('--picture-name-gap', `${nameGapPx}px`);
   page.style.setProperty('--picture-margin', `${marginPx}px`);
+  page.style.setProperty('--picture-row', `${rowPx}px`);
   app.replaceChildren(page);
+
+  // Every tier's drawing is as wide as the widest plate. A window with no room for that beside the
+  // names has the names over the plates, and less clear space at its sides.
+  const platesPx = figure.querySelector('svg')?.width.baseVal.value ?? 0;
+  const besidePx = nameColumnPx + nameGapPx + platesPx + 2 * constants.fallbackSidePx;
+  const fit = (): void => {
+    const stacked = document.documentElement.clientWidth < besidePx;
+    page.toggleAttribute('data-stacked', stacked);
+    page.style.setProperty('--fallback-side', `${stacked ? constants.fallbackSideStackedPx : constants.fallbackSidePx}px`);
+  };
+  fit();
+  window.addEventListener('resize', fit);
 }

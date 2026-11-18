@@ -12,7 +12,8 @@ Run these from this folder, after `npm install`.
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
 | `npm run contrast` | Measures the map's contrast rows in the style guide; add `-- path/to/style-guide.md` to check another file |
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
-| `npm run screenshots` | Opens the built file in each named state at 1280×720, 1366×768 and 1920×1080, with reduced motion off and on, and saves a screenshot to `../screenshots/` |
+| `npm run screenshots` | Opens the built file in each named state at ten sizes, from a 360×640 phone to 1920×1080, with reduced motion off and on, and saves a screenshot to `../screenshots/`. It takes about twenty-five minutes |
+| `npm run touch` | Drives the built file as a phone would, with an emulated touch screen, and says what it found; see "Touch" |
 | `npm test` | Runs the unit tests, then the generator's tests in `../tool-discovery/` |
 | `npm run typecheck` | Type-checks without building |
 | `npm run dev` | Starts the dev server with the tuning panel |
@@ -21,7 +22,7 @@ Run these from this folder, after `npm install`.
 
 - `vite-plugin-singlefile` inlines the code, the styles and the fonts. The graph JSON in `../tool-discovery/` is imported as text, so it is inlined too.
 - `scripts/publish.mjs` refuses to copy the built file to the repository root if it is over 5 MB, loads anything from another file, lacks the graph or the static picture of the stack, or contains the tuning panel.
-- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It opens each state with the system's reduced-motion setting off and then on, and fails if a state does not come to rest, or if anything is under way with reduced motion on. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail or under the detail card; and if two panels overlap or a panel runs out of the window. It uses the installed Chrome or Edge.
+- `scripts/screenshots.mjs` opens the built file from `file://` and fails on a console error, an uncaught error, a missing "ready" signal, or any network request. It opens each state with the system's reduced-motion setting off and then on, and fails if a state does not come to rest, or if anything is under way with reduced motion on. It also fails if a state shows more than 60 labels, two labels that overlap, or a label that runs out of the window, under the rail, under the bar or under the detail card; if two panels overlap or a panel runs out of the window; if the rail, the bar, the detail card or the phase strip lies over the selected mark or cell; and if the page is wider than its window. At the phone and tablet sizes it emulates a touch screen, and fails if a control is smaller than 44 by 44 pixels. It says each failure as it finds it. It uses the installed Chrome or Edge.
 
 ## How the stack is drawn
 
@@ -38,12 +39,15 @@ Run these from this folder, after `npm install`.
 | `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token, in the faded state or not |
 | `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
 | `src/trace-drawing.ts` | What a need trace adds to its marks: the home cell's outline, the lines to the traced tools, the best-fit rings and the selected tool's ring |
-| `src/pick.ts` | Which plate, cell and mark lie under the pointer |
-| `src/hover-label.ts` | The label beside the pointer that names the mark under it |
+| `src/pick.ts` | Which plate, cell and mark lie under the pointer, or within reach of a finger |
+| `src/press.ts` | What a press on the canvas is: a tap, a drag, a finger held in place, or a pinch |
+| `src/hover-label.ts` | The label beside the pointer, or over a finger held in place, that names the mark under it |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
 | `src/label-layout.ts` | The arithmetic for where cluster and tool names stand |
 | `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
-| `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card and the list of keys, and takes the keys that work anywhere |
+| `src/page-layout.ts` | Which page layout a window gets, the room its panels leave the picture, and whether the names of clusters and tools have room in it |
+| `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card, the line that says what to choose and the list of keys, and takes the keys that work anywhere |
+| `src/rail-collapse.ts` | The rail as icons: a column of them in the compact layout, and the bar in the narrow and the upright one |
 | `src/detail-card.ts` | The detail card, in its tool, cluster and need forms |
 | `src/outline.ts` | The outline: the tree of tiers, clusters and tools in the rail |
 | `src/lens-panel.ts` | The lens switch in the rail, with the roles of the role lens and the number of tools in reach |
@@ -80,7 +84,7 @@ The map has three distances: stack, tier and cluster. `src/state.ts` holds the d
 - **The URL fragment names the focus and the selection.** `#tier=T3` opens at the tier distance and `#cluster=1A` at the cluster distance. `select=` adds the selection, as in `#cluster=4A&select=tool:serena`. An id the graph lacks opens the stack at rest.
 - **Close in, the camera stays near the front.** At the tier and cluster distances it turns 30 degrees to either side at most, because the names stand above the plate.
 - **Labels keep their size on screen.** Each is anchored to a point of the stack and offset from it in pixels. `src/label-layout.ts` works out the offsets, and `src/scene.ts` leaves room for them when it places the camera.
-- **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen. The screenshot script reads it.
+- **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen, and `window.frameworkMap.selection()` the rectangle of the selected mark or cell. The screenshot script reads both.
 
 ## Selection and the detail card
 
@@ -96,7 +100,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 - **A need's detail card opens at the stack distance.** The whole stack then stands left of the card. In a narrow window the plates come too close for the tier names, which are left out; each tier keeps its count, which begins with its code.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
 - **Escape closes the detail card first.** The next Escape steps out one distance.
-- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. At the cluster distance the label gives the name alone, because the breadcrumb names the cluster. From the stack, a click still goes to the tier.
+- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. At the cluster distance the label gives the name alone, because the breadcrumb names the cluster. From the stack, a click still goes to the tier. By touch, a finger held in place shows the same; see "Touch".
 - **The selected mark takes the accent fill.** It no longer shows its decision class, so the detail card states it, with a square in the mark's own form. The square is drawn from the same mark token as the mark.
 - **The selection shows in three places in the scene.** The selected tool's mark is filled, its name in the list above the cell is in the accent colour, and a selected cluster's cell is outlined.
 - **`implements` lines.** A selected tool has a line to each cluster it implements. A selected cluster has a line to each tool that implements it. The detail card lists the same clusters and tools.
@@ -109,7 +113,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 ## The rail: outline, search and keyboard
 
-The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters, the outline and the build stamp, and the need list while the need trace or the phase scrub is on. Below 1366 pixels it stands as a column of icons; see "Window sizes, the fallback page and the build stamp". The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
+The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters, the outline and the build stamp, and the need list while the need trace or the phase scrub is on. Below 1366 pixels it stands as a column of icons, and below 1024 pixels as a bar across the top; see "Page layouts, the fallback page and the build stamp". The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
 **The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
@@ -150,7 +154,7 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 - **Focus is always shown.** One rule in `src/styles.css` gives whatever holds the keyboard focus the guide's `map-focus-outline`.
 - **Focus is never lost.** When Escape closes a detail card that holds the focus, the focus goes to the outline, at the row for where the map is.
 - **Changes are announced.** A live region says what is now selected, or where the map has gone when nothing is selected. The search says how many results it found.
-- **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width.
+- **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width, and `pictureRoomAt` in `src/page-layout.ts` gives the room the panels leave the picture in each page layout.
 - **A long tool name is cut short with an ellipsis** in the list above a cell, where the list would not fit between the rail and the open detail card. The outline, the hover label and the detail card give the name in full.
 
 ## The role lens
@@ -247,7 +251,7 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **A panel that closes keeps its content while it fades**, and takes no click and no focus. It leaves the page when the fade ends, so the legend and the phase strip take its room then.
 - **A part of the rail fades in and leaves at once.** That holds for the need list, the row of roles, and the filters and the outline when they unfold. A part that closes gives its room to the part that opens, so the two cannot be on the page together.
 - **With the system's reduced-motion setting on, every duration is zero.** The camera cuts, and every fade is made at once. The setting is read at each change, so it holds without a reload.
-- **Nothing moves while the partner does nothing.** No timer and no loop starts a change.
+- **Nothing moves while the partner does nothing.** No timer and no loop starts a change. The one timer on the page is the half second of a hold, which a finger starts and which moves nothing.
 - **The page says whether it is moving.** `window.frameworkMap.isMoving()` is true while a flight, a fade or a panel is under way. The screenshot script waits for it to be false.
 
 **Depth blur.** At the tier and cluster distances the plates under the focused one are blurred a little: the more, the further under it they lie. `src/depth-blur.ts` draws it.
@@ -261,32 +265,70 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **There is no glow and no vignette.** The blur is the map's only postprocessing. Antialiasing is the renderer's own and is always on.
 - **The tuning panel has a "Motion" and a "Depth blur" folder.** A value settled there is copied into `src/constants.ts` by hand.
 
-## Window sizes, the fallback page and the build stamp
+## Page layouts, the fallback page and the build stamp
 
-**Three page layouts, by the window's width.** `src/page-layout.ts` decides which, and names it on the `<html>` element as `data-layout`. The widths are `compactBelowPx` and `narrowBelowPx` in `src/constants.ts`.
+**Four page layouts, by the size and shape of the window.** The map is drawn in every one, from 360 pixels wide upward. `src/page-layout.ts` decides which, and names it on the `<html>` element as `data-layout`. The two layouts with the bar also carry `data-bar`. The widths are `compactBelowPx`, `narrowBelowPx` and `uprightBelowPx` in `src/constants.ts`.
 
-| Layout | Window width | What a partner gets |
+| Layout | Window | What a partner gets |
 | --- | --- | --- |
 | Full | 1366 pixels and wider | The rail stands open down the left |
 | Compact | 1024 to 1365 pixels | The rail stands as a 56-pixel column of icons, and the canvas has the rest |
-| Narrow | Below 1024 pixels | A short message in place of the map, which asks for a wider window |
+| Narrow | 480 to 1023 pixels, and wider than tall: a phone on its side | The rail stands as a bar across the top, with the breadcrumb in its row. The detail card stands under the bar at the right |
+| Upright | Under 1024 pixels and at least as tall as wide, or under 480 pixels: a phone or a tablet held upright | The bar, with the breadcrumb in a row of its own under it. The detail card opens from the bottom |
 
-1280×720 is the smallest supported size. The compact layout also serves windows down to 1024 pixels, which are not supported and are not checked.
+360×640 is the smallest supported size. The screenshot script opens every state at 360×640, 390×844, 768×1024, 844×390, 1024×768, 1152×720, 1280×720, 1366×768, 1920×1080 and 1366×1024. It opens 360×640, 390×844, 768×1024, 844×390, 1024×768 and 1366×1024 as a phone or a tablet, with a touch screen.
 
-- **The picture is fitted to the room beside the icons.** The scene and the labels ask `railPxAt` for the rail's width at the window's width, so the picture and the panels cannot disagree. The stack at rest takes the room the rail gives up.
+- **The picture is fitted to the room the panels leave.** The scene and the labels ask `pictureRoomAt` for that room with the window's size, so the picture and the panels cannot disagree. A selection is never under the rail, the bar or the detail card.
+- **Turning a phone, or resizing a window across page layouts, keeps the selection, the lens, the filters and the keyboard focus.** The first three are in the store, which no page layout touches. The focus stays where it is; where what holds it leaves the page, the icon of its part takes it, or the part itself. A part of the rail that is open under the bar stays open when a phone is turned, so a partner can go on typing in it.
+- **The camera's angle is kept between the full and the compact layout, and at a change of size within a layout.** Where a window comes under the bar, leaves it, or is turned under it, the panels stand somewhere else and the stack at another tilt, and the camera takes its place anew.
+- **A link opens the same in every page layout.** The URL fragment names no window.
+
+**The compact layout.**
+
 - **An icon opens the rail over the canvas** and goes to its part: the search box, the lens switch, the need list, the filters or the outline. The need list's icon is there only while the list is. The icon at the foot opens the list of keys.
 - **An icon shows that its part is at work.** While a lens is on, or a filter is chosen, its icon is `ink` on `paper-2`, and its name ends in "on".
 - **The canvas beside the open rail is dimmed**, as the page is behind the list of keys.
 - **The open rail closes** with the button beside the title, with a press on the page outside it, or when the keyboard focus leaves it. The list of keys leaves it open. Escape keeps its own meaning and does not close it.
 - **`/` and `3` open the rail**, because they go to the search box and the need list. When a detail card or the phase strip closes while it holds the focus, the icon of the part takes the focus, and the rail stays as icons.
-- **The detail card lies over the canvas at every size**, and the picture keeps clear of it. With the rail as icons, 1280 pixels leave the picture more room beside an open card than 1366 pixels do with the rail open.
-- **Under the narrow message the map keeps running**, out of sight, so it is right the moment the window is widened. The keys that work anywhere do nothing there.
+- **The detail card lies over the canvas**, and the picture keeps clear of it.
+- **From 1024 to 1279 pixels** the layout is the same, with less room. Beside an open detail card a window under 1,072 pixels has no room for the phase strip's five steps with their counts side by side, and the two counts of a step stand one over the other; see "The phase strip" below.
+
+**The narrow and the upright layout: the bar.** `src/rail-collapse.ts` lays the same icons out as a row, and `src/styles.css` places the panels.
+
+- **An icon opens its own part of the rail, alone**, over the canvas from the left: 320 pixels wide, or the window less 40 pixels. A small window has no room for the parts to share. The lens switch and the need list open together, because a need is chosen there. Each open part has the title above it and the "Keys" button and the build stamp at its foot. The search box alone has no foot, and on a phone on its side no title either: an on-screen keyboard leaves little height, and the results need it.
+- **Choosing something the map goes to closes the open part**: a search result, a row of the outline, a need. A change of lens, role or filter leaves it open. It also closes as the compact rail does.
+- **The legend opens on request**, from the last icon of the bar, with one step to a row. It leaves at the next press outside it.
+- **The breadcrumb** stands in the bar's row in the narrow layout and in a row under it in the upright one, from the left. The crumb between the stack's and the last gives way first.
+- **The detail card in the upright layout** is as wide as the window and takes 45% of its height, `cardHeightShare`. The picture is fitted to the room above it. In the narrow layout the card is 360 pixels wide, or half the window where that is less.
+- **The phase strip** stands at the foot of the picture's room: over the card in the upright layout, left of it in the narrow one. A step's two counts stand side by side where the strip is at least 624 pixels wide, `phaseStripSideBySidePx`, and one over the other where it is not: on a phone, and beside a detail card in a window too narrow for both. `phaseStripStackedAt` in `src/page-layout.ts` decides, for the strip and for the picture's room alike.
+- **At the stack distance each tier's count stands over its plate**, and the tier names are left out: there is no room for the column of names. The camera stands a little more level, `smallRestTiltDegrees`, which opens the room for the counts. Beside a detail card and the phase strip on a phone the plates stand closer than a count is tall, and the counts are left out too.
+- **Names that have no room are left out, never drawn smaller.** The names of a tier's clusters stand above its plate, and the names of a cluster's tools above its cell, where `namesFitFor` in `src/page-layout.ts` finds room for them. The scene, the labels and the line under the breadcrumb all ask it. On a phone held upright the tools' names have room for a cluster of up to nineteen tools with no card open, and the clusters' names have none. On a tablet nearly every list has room.
+- **A line under the breadcrumb says what to choose** where names are left out and nothing is selected: "Choose a cell to read its cluster." or "Choose a mark to read its tool." The detail card and the outline give every name.
+- **The search box and its results keep to what is in sight.** The open part is as tall as the browser's visual viewport, which shrinks while a phone's on-screen keyboard is up. The results stand under the field and scroll in what is left.
+- **A phone's notch and home bar.** The page does not ask the browser to draw under them: its viewport has no `viewport-fit=cover`. So the browser keeps the page clear of the notch, and no panel can be under it. The phase strip stands 16 pixels off the window's foot, clear of the bar a phone on its side draws there for going home.
+
+**Touch.** `src/press.ts` tells what a press on the canvas is, and `src/scene.ts` acts on it. The orbit controls of three.js take the drag and the pinch.
+
+| Gesture | What it does |
+| --- | --- |
+| Tap | Selects, as a click does: a plate goes to its tier, a cell selects its cluster, a mark its tool, a name what it names |
+| Drag | Orbits the stack, within the camera's limits |
+| Pinch | Changes the camera's distance, within the same limits |
+| Hold: a finger kept in place for half a second | Shows the hover label and the ring for the nearest mark under the finger. They stay until the next touch. Letting go selects nothing |
+
+- **A finger goes in one step at a time.** A mark drawn under 10 pixels, `fingerMarkPx`, is too small to tap, and a tap on it lands on its cell. So from a tier on a phone a tap selects the cluster, and from the cluster a tap selects the tool. A mark large enough is met from 8 pixels off, so a tap between two marks is not lost.
+- **Two fingers are never a tap**, however little one of them moved, and a finger that has dragged is never a tap. A mouse's click is judged as it always was, by where the button is let go.
+- **A hold's label keeps under the bar and left of the detail card**, and goes when the finger drags on.
+- **No gesture on the canvas scrolls or zooms the page.** The canvas has `touch-action: none`. A quick second tap on a panel does not zoom the page either.
+- **A pinch on a panel still zooms the page**, for a partner who needs larger text. While the page is zoomed, a gesture on the canvas moves the page, as anywhere else, so the canvas cannot hold a partner in the zoomed page. At the page's own size the canvas takes its gestures back.
+- **Every control is at least 44 by 44 pixels where a touch screen is the main pointer**, `(pointer: coarse)`, in every page layout. A laptop with a touch screen has a mouse as its main pointer: it keeps the laptop's sizes, and its screen still takes the tap, the drag, the pinch and the hold.
+- **`npm run touch`** runs `scripts/touch-check.mjs`. It opens the built file in an emulated phone and checks the gestures, every task by touch alone, a phone turned on its side, one link at every size, reduced motion, and a laptop with a touch screen. It is an emulation: it tells the page how much of the window is in sight, as an on-screen keyboard would, and has no real keyboard to raise.
 
 **The fallback page.** `src/fallback.ts` asks the browser for WebGL before any scene is made. Without it the page shows the title, a short explanation, a link to the tool matrix, the static picture of the stack, the four decision-class steps and the build stamp. There is no console error, and a URL fragment changes nothing.
 
-- **The static picture is drawn by the build.** `src/stack-picture.ts` is a pure function of the layout. `vite.config.ts` runs it and inlines its SVG markup as the module `virtual:stack-picture`, as it does the layout itself (ADR 0002). The picture adds about 0.07 MB to the built file.
-- **It shows the stack at rest**: each plate with its cells and marks, each mark in the form of its decision-class step, and each tier's count and name. A mark's outline has the width its mark token gives, and is drawn inside the mark. It takes its colours from the map's tokens in `src/styles.css`.
-- **It is never scaled.** It is 1,166 pixels wide, and the page scrolls where the window is smaller, so its names keep to the text floor.
+- **The static picture is drawn by the build.** `src/stack-picture.ts` is a pure function of the layout. `vite.config.ts` runs it and inlines its markup as the module `virtual:stack-picture`, as it does the layout itself (ADR 0002). The picture adds about 0.07 MB to the built file.
+- **It shows the stack at rest**: a row for each tier, with its count and name and a drawing of its plate, cells and marks. Each mark is in the form of its decision-class step. A mark's outline has the width its mark token gives, and is drawn inside the mark. It takes its colours from the map's tokens in `src/styles.css`.
+- **It fits a window of any width.** The names are text of the page and keep their size. In a window of 1,233 pixels or more they stand beside the plates, which are drawn at their own size. In a narrower one each tier's count and name stand over its plate, and the plates are drawn as wide as the window allows. The page never scrolls sideways; it scrolls down where it must.
 
 **The build stamp** is at the foot of the rail and of the fallback page: the data date over the build identifier. The map ships as one file (ADR 0003), so it is how a partner tells whether their copy is current.
 
@@ -339,4 +381,4 @@ The page sets `data-ready="true"` on the `<html>` element once its first render 
 
 ## Adding a screenshot state
 
-Add a name and a URL fragment to `scripts/screenshot-states.mjs`. A state that needs the keyboard to reach it also lists its keys: `['press', '/']` presses a key and `['type', 'semantic']` types text. A state is opened at every viewport unless it names its own with `at`. `webgl: false` opens it in a browser that gives the page no WebGL.
+Add a name and a URL fragment to `scripts/screenshot-states.mjs`. A state that needs more than its fragment to reach it also lists its `steps`: `['press', '/']` presses a key, `['type', 'semantic']` types text, and `['tap', '.rail-close']` taps what a selector finds, or clicks it where the viewport has no touch screen. A state is opened at every viewport unless it names its own with `at`. A viewport with `touch: true` is opened as a phone or a tablet. `webgl: false` opens the state in a browser that gives the page no WebGL.

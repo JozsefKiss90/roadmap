@@ -98,27 +98,35 @@ The slight blur on the plates under the focused one, at the tier and cluster dis
 _Avoid_: Depth of field, bokeh, defocus
 
 **Detail card**:
-The side panel that describes the selected tool, cluster or need.
-_Avoid_: Tooltip, inspector, sidebar
+The panel that describes the selected tool, cluster or need. It stands at the right of the map, and at the bottom in the upright page layout.
+_Avoid_: Tooltip, inspector, sidebar, bottom sheet
 
 **Rail**:
-The column down the left of the map that holds the title, the search box, the lens switch, the need list, the filters, the outline and the build stamp. In the compact page layout it stands as a column of icons.
+The column down the left of the map that holds the title, the search box, the lens switch, the need list, the filters, the outline and the build stamp. In the compact page layout it stands as a column of icons, and in the narrow and the upright one as the bar.
 _Avoid_: Sidebar, left panel, navigation
 
+**Bar**:
+The row of icons across the top of the map that the rail stands as in the narrow and the upright page layout. An icon opens its own part of the rail over the canvas.
+_Avoid_: Toolbar, header, menu, navigation bar
+
 **Page layout**:
-How the panels are arranged for the width of the window: full, compact, or the narrow message in place of the map.
+How the panels are arranged for the size and shape of the window: full, compact, narrow or upright. The map is drawn in all four.
 _Avoid_: Breakpoint, responsive mode, view
 
-**Narrow message**:
-The short message that stands in place of the map in a window too narrow for it, and asks for a wider one.
-_Avoid_: Error page, mobile view
+**Narrow layout**:
+The page layout of a window under 1,024 pixels wide that is wider than it is tall, such as a phone on its side: the bar across the top, with the breadcrumb in its row, and the detail card at the right.
+_Avoid_: Landscape mode, tablet view
+
+**Upright layout**:
+The page layout of a window under 1,024 pixels wide that is at least as tall as it is wide, such as a phone held upright, and of every window under 480 pixels: the bar across the top, the breadcrumb in a row under it, and the detail card at the bottom.
+_Avoid_: Portrait mode, mobile view, phone layout
 
 **Fallback page**:
 The page a partner gets in place of the map where the browser has no WebGL: the static picture, a short explanation and a link to the tool matrix.
 _Avoid_: Error page, degraded mode, lite version
 
 **Static picture**:
-The drawing of the stack at rest that stands in for the map where the browser has no WebGL.
+The drawing of the stack at rest that stands in for the map where the browser has no WebGL: each tier's count and name, with a drawing of its plate.
 _Avoid_: Screenshot, fallback image, thumbnail
 
 **Build stamp**:
@@ -138,8 +146,12 @@ The tree of tiers, clusters and tools in the rail; it reaches everything the can
 _Avoid_: Tree view, list, index
 
 **Hover label**:
-The small label beside the pointer that names the tool under it and its cluster.
+The small label that names a tool and its cluster: beside the pointer for the mark under it, and over a finger for the mark it holds.
 _Avoid_: Tooltip, popup
+
+**Hold**:
+A finger kept in place on the canvas for half a second. It shows the hover label, as a mouse's hover does, and selects nothing.
+_Avoid_: Long press, long tap
 
 **Overlap group**:
 A named set of tools that do the same job; the detail card lists a tool's fellow members.
@@ -154,7 +166,7 @@ One of the seven ways to narrow the map to the tools that have a chosen value; t
 _Avoid_: Lens (when it means a filter)
 
 **Legend**:
-The panel at the bottom left of the map that names the four decision-class steps, and the states a lens or a filter adds to them.
+The panel at the bottom left of the map that names the four decision-class steps, and the states a lens or a filter adds to them. Under the bar it opens on request, from its icon.
 _Avoid_: Key (a key is on the keyboard)
 
 **View**:

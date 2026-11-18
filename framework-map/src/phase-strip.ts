@@ -12,9 +12,11 @@
  * It is one of the panels: it reads the state store and writes to it, and
  * knows nothing of the scene.
  */
+import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { element } from './dom';
 import { showPanel } from './motion';
+import { phaseStripStackedAt, windowNow } from './page-layout';
 import { scrubbedPhaseOf } from './state';
 import type { MapState, Store } from './state';
 
@@ -29,7 +31,13 @@ const counted = (count: number, one: string, many: string): string => `${count} 
  * @param onClosedWithFocus Called when the strip closes while it holds the keyboard focus, so the
  *   focus can go somewhere that is still on the page.
  */
-export function mountPhaseStrip(app: HTMLElement, index: GraphIndex, store: Store, onClosedWithFocus: () => void): PhaseStrip {
+export function mountPhaseStrip(
+  app: HTMLElement,
+  index: GraphIndex,
+  store: Store,
+  constants: Constants,
+  onClosedWithFocus: () => void,
+): PhaseStrip {
   const inputs = new Map<string, HTMLInputElement>();
   const steps = index.phases.map((phase) => {
     const input = element('input', null);
@@ -40,16 +48,16 @@ export function mountPhaseStrip(app: HTMLElement, index: GraphIndex, store: Stor
       if (input.checked) store.showPhaseScrub(phase);
     });
     inputs.set(phase, input);
+    const needs = counted(index.needsIn(phase).length, 'need', 'needs');
+    const tools = counted(index.toolCountIn(phase), 'tool', 'tools');
     return element(
       'label',
       'phase-step',
       input,
       element('span', 'phase-step-name', phase),
-      element(
-        'span',
-        'phase-step-counts',
-        `${counted(index.needsIn(phase).length, 'need', 'needs')} · ${counted(index.toolCountIn(phase), 'tool', 'tools')}`,
-      ),
+      element('span', 'phase-step-counts', `${needs} · ${tools}`),
+      // The same two counts, one over the other, for a strip with no room for them side by side. src/styles.css shows the one form or the other.
+      element('span', 'phase-step-counts phase-step-counts-stacked', element('span', null, needs), element('span', null, tools)),
     );
   });
   const row = element('div', 'phase-steps', ...steps);
@@ -69,12 +77,19 @@ export function mountPhaseStrip(app: HTMLElement, index: GraphIndex, store: Stor
     if (heldFocus && phase === null) onClosedWithFocus();
   }
 
+  /** Stands the counts one over the other where the window leaves the strip no room for them side by side. */
+  const fit = (): void =>
+    void strip.toggleAttribute('data-stacked', phaseStripStackedAt(windowNow(), constants, store.get().selection !== null));
+
   // The page may open with the strip, which is then there at once.
   strip.hidden = true;
+  fit();
   render(store.get(), true);
   store.subscribe((state, previous) => {
+    fit();
     if (state.lens !== previous.lens) render(state);
   });
+  window.addEventListener('resize', fit);
 
   return { focus: () => row.querySelector<HTMLInputElement>('input:checked')?.focus() };
 }

@@ -107,7 +107,7 @@ The look is simple and minimal with a polished finish, drawn from the existing "
 
 54. As a partner on a laptop with integrated graphics, I want the map to stay smooth while I orbit, so that it is usable on my machine.
 55. As a partner whose browser has no WebGL, I want a static picture of the stack, a short explanation and a link to the matrix, so that I am not left with a blank page.
-56. As a partner on a window narrower than the map supports, I want a short message instead of a broken layout, so that I know to widen the window.
+56. As a partner on a phone, a tablet or a small window, I want the whole map, drawn and usable by touch, so that I am not tied to a laptop. (Amended by ticket 15b on the Architect's decision of 2026-11-18. The story asked for a short message in a window narrower than the map supports.)
 
 ### Keeping the map current
 
@@ -170,6 +170,7 @@ The look is simple and minimal with a polished finish, drawn from the existing "
 ### Navigation and interaction
 
 - Camera: orbit around the stack's vertical axis, with fixed limits on tilt and zoom and a narrow perspective lens for a near-axonometric look. No free flight.
+- Touch (ticket 15b): a tap selects as a click does, a drag orbits, a pinch changes the distance within the same limits, and a finger held in place shows what a hover shows. No gesture on the canvas scrolls or zooms the page at its own size. A pinch on a panel still zooms the page, for a partner who needs larger text, and in a page so zoomed a gesture on the canvas moves the page.
 - Clicking a tier, cluster or tool flies to it. Escape closes the detail card if it is open, otherwise steps out one distance.
 - Focusing a tier fades the plates above it and tilts the camera toward top-down. Plates never move apart.
 - Detail card: one panel docked on the right, 360 pixels wide, with three forms.
@@ -188,7 +189,7 @@ The look is simple and minimal with a polished finish, drawn from the existing "
 - Left rail, 240 pixels: lens switch, filters, the outline tree, the need list when the need trace is active, and the build stamp.
 - Right: the detail card, present only when something is selected.
 - Bottom: the phase strip, present only in the phase scrub. Bottom left: the decision-class legend.
-- Designed for 1366×768 to 1920×1080; 1280×720 is the smallest supported size. At 1280 wide the left rail collapses to icons and the detail card overlays the canvas. Below 1024 wide a short message replaces the canvas.
+- Designed for 1366×768 to 1920×1080. The map is drawn, and every task can be done, from 360 pixels wide upward; 360×640 is the smallest supported size. Below 1366 wide the left rail collapses to icons and the detail card overlays the canvas. Below 1024 wide the rail stands as a bar across the top and its parts open over the canvas; the page layouts there are in the style guide's map section. (Amended by ticket 15b on the Architect's decision of 2026-11-18. This line made 1280×720 the smallest supported size and asked for a short message in place of the canvas below 1024 wide.)
 - Panels are plain DOM around the canvas, with Lucide icons.
 
 ### Visual language (ADR 0001)
@@ -275,7 +276,6 @@ A good test here checks behaviour a partner or the build would notice, through a
 
 - An overlap-group lens, and any second view.
 - A dark skin.
-- Phones and tablets.
 - Editing data from the map.
 - A presenter or guided-tour mode.
 - Embedding the map inside the roadmap page.
@@ -287,6 +287,10 @@ A good test here checks behaviour a partner or the build would notice, through a
 - Pixel-comparison testing of screenshots.
 
 ## Further Notes
+
+### Amendments
+
+- 2026-11-18, ticket 15b, on the Architect's decision: "Phones and tablets" left the out-of-scope list; the message below 1,024 pixels was withdrawn; story 56, the line on window sizes and the line on touch say what replaces them.
 
 ### Open questions
 

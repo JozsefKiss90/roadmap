@@ -26,6 +26,8 @@ const GROUPS: readonly (readonly [Group, string, string, string])[] = [
 ];
 
 export interface SearchBox {
+  /** The part's own element in the rail, for the icon that opens it. */
+  readonly element: HTMLElement;
   focus(): void;
 }
 
@@ -226,5 +228,5 @@ export function mountSearchBox(
     choose((event.target as HTMLElement).closest<HTMLElement>('[role="option"]') ?? undefined);
   });
 
-  return { focus: () => input.focus() };
+  return { element: box, focus: () => input.focus() };
 }

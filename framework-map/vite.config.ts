@@ -20,7 +20,7 @@ const inToolDiscovery = (name: string): string =>
  * never computes them, and they are never written into the graph JSON.
  *
  * The static picture of the stack, for a browser with no WebGL, is drawn from
- * the same layout and served as `virtual:stack-picture`: SVG markup, as text.
+ * the same layout and served as `virtual:stack-picture`: markup, as text.
  */
 function stackModules(): Plugin {
   const layoutId = 'virtual:stack-layout';
