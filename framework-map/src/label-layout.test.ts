@@ -1,5 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { listLayout, listShape, nameCap, staircaseHeight, staircaseRise } from './label-layout';
+import {
+  listLayout,
+  listShape,
+  nameCap,
+  staircaseHeight,
+  staircaseRise,
+  standingStretch,
+  tierLabelBlock,
+  tierNamesFit,
+} from './label-layout';
+
+describe('a tier label, which stands in the scene along its plate', () => {
+  it('is stretched by what the camera at rest takes from it, so it is drawn at its own size there', () => {
+    const stretch = standingStretch(55, 20);
+    // The turn narrows it by the cosine, and the tilt shortens it by the sine.
+    expect(stretch.along * Math.cos((20 * Math.PI) / 180)).toBeCloseTo(1, 12);
+    expect(stretch.up * Math.sin((55 * Math.PI) / 180)).toBeCloseTo(1, 12);
+  });
+
+  it('is not stretched along its plate by a camera that stands face on', () => {
+    expect(standingStretch(55, 0).along).toBe(1);
+  });
+
+  const sizes = {
+    labelGapPx: 32,
+    labelColumnPx: 344,
+    labelCountPx: 164,
+    labelRisePx: 10,
+    countGapPx: 7,
+    tagPx: 11,
+    tierNamePx: 20,
+    tierLabelGapPx: 4,
+  };
+
+  it('covers its gap and its column beside the plate, its count above the plate and its name across it', () => {
+    expect(tierLabelBlock(sizes)).toEqual({ near: 32, far: 376, above: 28, below: 14 });
+  });
+
+  it('covers less with its name left out: the room of a count, level with the plate', () => {
+    expect(tierLabelBlock(sizes, false)).toEqual({ near: 32, far: 196, above: 5.5, below: 5.5 });
+  });
+
+  it('has room for its name where the plates stand its height and a clear space apart', () => {
+    expect(tierNamesFit(46, sizes)).toBe(true);
+    expect(tierNamesFit(45.9, sizes)).toBe(false);
+  });
+});
 
 describe('the staircase of cluster names', () => {
   it('stands the rightmost name nearest the plate and each name to its left one row higher', () => {

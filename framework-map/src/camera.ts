@@ -85,8 +85,21 @@ function cornersOf(box: Box): Point[] {
 }
 
 /** How many pixels of the picture one unit of tangent covers. */
-const pixelsPerTangent = (pictureHeight: number, fieldOfViewDegrees: number): number =>
+export const pixelsPerTangent = (pictureHeight: number, fieldOfViewDegrees: number): number =>
   pictureHeight / 2 / Math.tan(radians(fieldOfViewDegrees) / 2);
+
+/** Where a point is drawn with the camera at a place, in pixels from the picture's top left corner. */
+export function pictureOf(
+  point: Point,
+  place: CameraPlace,
+  picture: { width: number; height: number },
+  fieldOfViewDegrees: number,
+): { x: number; y: number } {
+  const { out, right, up } = acrossAndUp(place.tiltDegrees, place.turnDegrees);
+  const from = { x: point.x - place.target.x, y: point.y - place.target.y, z: point.z - place.target.z };
+  const pixelsPerUnit = pixelsPerTangent(picture.height, fieldOfViewDegrees) / (place.range - dot(from, out));
+  return { x: picture.width / 2 + dot(from, right) * pixelsPerUnit, y: picture.height / 2 - dot(from, up) * pixelsPerUnit };
+}
 
 /**
  * How far from the centre of a box the camera must be for the whole box to fit
@@ -115,6 +128,92 @@ export function rangeToFit(
     );
   }
   return range;
+}
+
+/**
+ * The place that fits a set of points inside a region of the picture, as near as the camera can
+ * stand. Unlike `placeToFit` it takes the points as they are, and not the box around them, so it
+ * suits a stack seen at a turn: there the box's corners reach well past the plates.
+ *
+ * The points are centred in the region, across and from top to bottom. The camera's target
+ * keeps on the vertical line through `origin` wherever the region is centred on the picture
+ * and the points are as wide to one side of `origin` as to the other, so the stack still
+ * turns about its own axis.
+ *
+ * @param points The points to hold inside the region.
+ * @param beside Points that stand in a margin kept for them beside the region, as the tier labels
+ *   do. They are held between the region's top and bottom, and not between its sides.
+ * @param origin The point the others are measured from: the middle of the stack.
+ * @param tiltDegrees More than 0: a camera straight above has no height to slide its target along.
+ */
+export function placeToFitPoints(
+  points: readonly Point[],
+  beside: readonly Point[],
+  origin: Point,
+  picture: { width: number; height: number },
+  region: Region,
+  fieldOfViewDegrees: number,
+  tiltDegrees: number,
+  turnDegrees: number,
+): CameraPlace {
+  // With no point there is nothing to fit, and the camera looks at the origin.
+  if (points.length === 0) return { target: { ...origin }, range: Number.EPSILON, tiltDegrees, turnDegrees };
+  const { out, right, up } = acrossAndUp(tiltDegrees, turnDegrees);
+  const pixelsPerTan = pixelsPerTangent(picture.height, fieldOfViewDegrees);
+  // The region's sides as tangents from the middle of the picture: to the right, and upward.
+  // A region with no size still gets a finite answer.
+  const least = 1 / pixelsPerTan;
+  const tanLeft = (region.left - picture.width / 2) / pixelsPerTan;
+  const tanRight = Math.max((region.right - picture.width / 2) / pixelsPerTan, tanLeft + least);
+  const tanBottom = (picture.height / 2 - region.bottom) / pixelsPerTan;
+  const tanTop = Math.max((picture.height / 2 - region.top) / pixelsPerTan, tanBottom + least);
+
+  // With the camera at `side` across, `rise` up and `back` out from the origin, a point at
+  // (a, depth) is drawn at the tangent (a - side) / (back - depth). Held under a tangent `most`,
+  // that is side >= a + most * depth - most * back: a straight line in `back`. So each side of the
+  // region gives one such line, and the nearest camera stands where the lines of two opposite
+  // sides meet.
+  let farthestRight = -Infinity;
+  let farthestLeft = Infinity;
+  let highest = -Infinity;
+  let lowest = Infinity;
+  let nearest = -Infinity;
+  const measure = (point: Point): { a: number; b: number; depth: number } => {
+    const from = { x: point.x - origin.x, y: point.y - origin.y, z: point.z - origin.z };
+    return { a: dot(from, right), b: dot(from, up), depth: dot(from, out) };
+  };
+  for (const point of points) {
+    const { a, depth } = measure(point);
+    farthestRight = Math.max(farthestRight, a + tanRight * depth);
+    farthestLeft = Math.min(farthestLeft, a + tanLeft * depth);
+  }
+  for (const point of [...points, ...beside]) {
+    const { b, depth } = measure(point);
+    highest = Math.max(highest, b + tanTop * depth);
+    lowest = Math.min(lowest, b + tanBottom * depth);
+    nearest = Math.max(nearest, depth);
+  }
+  const back = Math.max(
+    (farthestRight - farthestLeft) / (tanRight - tanLeft),
+    (highest - lowest) / (tanTop - tanBottom),
+    // The camera stands in front of every point, and a single point still gets a camera that is somewhere.
+    nearest + Number.EPSILON,
+    Number.EPSILON,
+  );
+  const side = (farthestRight - tanRight * back + (farthestLeft - tanLeft * back)) / 2;
+  const rise = (highest - tanTop * back + (lowest - tanBottom * back)) / 2;
+
+  // The camera looks along `out`, so its target may be any point on that line. The one at the
+  // height `rise / sin(tilt)` above the origin has no step toward the camera in it: the vertical
+  // axis is `up` and `out` mixed by the tilt.
+  const tilt = radians(tiltDegrees);
+  const lift = rise / Math.sin(tilt);
+  return {
+    target: { x: origin.x + right.x * side, y: origin.y + lift, z: origin.z + right.z * side },
+    range: back - lift * Math.cos(tilt),
+    tiltDegrees,
+    turnDegrees,
+  };
 }
 
 export interface FitOptions {

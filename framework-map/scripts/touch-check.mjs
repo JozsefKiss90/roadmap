@@ -126,7 +126,7 @@ async function pinch(/** @type {import('playwright').CDPSession} */ session, /**
 
 /**
  * One of the labels the page reported. A page that reported fewer has failed its check already.
- * @param {{ left: number, top: number, right: number, bottom: number }[]} labels
+ * @param {import('./label-faults.mjs').LabelRect[]} labels
  */
 function labelAt(labels, /** @type {number} */ at) {
   const label = labels.at(at);
@@ -135,8 +135,35 @@ function labelAt(labels, /** @type {number} */ at) {
 }
 
 /**
+ * A point of the window measured from a label's bottom edge: `along` pixels from the edge's left end toward
+ * its right, and `over` pixels above it. A tier's label stands in the scene at an angle, as its plate does,
+ * so the plate is found along the label and not beside the rectangle around it.
+ * @param {import('./label-faults.mjs').LabelRect} label
+ */
+function fromLabel(label, /** @type {number} */ along, /** @type {number} */ over) {
+  const [from, to, top] = label.corners ?? [];
+  if (!from || !to || !top) throw new Error('The page reported a label without its corners.');
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  const height = Math.hypot(top.x - to.x, top.y - to.y);
+  return {
+    x: from.x + ((to.x - from.x) * along) / length + ((top.x - to.x) * over) / height,
+    y: from.y + ((to.y - from.y) * along) / length + ((top.y - to.y) * over) / height,
+  };
+}
+
+/** How long a label's bottom edge is, in pixels. */
+function bottomEdgeOf(/** @type {import('./label-faults.mjs').LabelRect} */ label) {
+  const [from, to] = label.corners ?? [];
+  if (!from || !to) throw new Error('The page reported a label without its corners.');
+  return Math.hypot(to.x - from.x, to.y - from.y);
+}
+
+/** A point on the top tier's plate under the bar, where the tier's tag stands on the plate's far edge, from its left end. */
+const plateUnderCount = (/** @type {import('./label-faults.mjs').LabelRect} */ count) => fromLabel(count, 30, -7);
+
+/**
  * How far the first label stands from the last, down the window: it grows as the camera comes closer.
- * @param {{ left: number, top: number, right: number, bottom: number }[]} labels
+ * @param {import('./label-faults.mjs').LabelRect[]} labels
  */
 const spread = (labels) => (labels.length < 2 ? 0 : Math.abs(labelAt(labels, -1).top - labelAt(labels, 0).top));
 
@@ -146,7 +173,7 @@ try {
   const { context, page, touches } = await open(PHONE);
   const start = await read(page);
   check('the map opens in the upright page layout', start.layout === 'upright', start.layout);
-  check('the stack is drawn, with a count over each plate', start.labels.length === 8, `${start.labels.length} labels`);
+  check('the stack is drawn, with a count on each plate', start.labels.length === 8, `${start.labels.length} labels`);
   check('the canvas takes every gesture itself', start.canvasTouchAction === 'none', start.canvasTouchAction);
 
   // A drag orbits. The counts stand over their plates, so they move as the stack turns.
@@ -211,8 +238,9 @@ try {
   await page.waitForSelector('html[data-ready="true"]', { state: 'attached' });
   await atRest(page);
   const rested = await read(page);
-  // The count of the top tier stands over its plate's left end.
-  await page.touchscreen.tap(labelAt(rested.labels, 0).left + 30, labelAt(rested.labels, 0).bottom + 12);
+  // The tag of the top tier stands on the far edge of its plate, from the plate's left end.
+  const topPlate = plateUnderCount(labelAt(rested.labels, 0));
+  await page.touchscreen.tap(topPlate.x, topPlate.y);
   await atRest(page);
   const atTier = await read(page);
   check('a tap on a plate goes to its tier', atTier.fragment === 'tier=T7', atTier.fragment);
@@ -410,7 +438,8 @@ try {
   await still.page.tap(icon('Legend'));
   check('the legend opens at once', (await moving()) === false);
   const stillAt = await read(still.page);
-  await still.page.touchscreen.tap(labelAt(stillAt.labels, 0).left + 30, labelAt(stillAt.labels, 0).bottom + 12);
+  const stillPlate = plateUnderCount(labelAt(stillAt.labels, 0));
+  await still.page.touchscreen.tap(stillPlate.x, stillPlate.y);
   check('the camera cuts to a tier', (await moving()) === false && (await read(still.page)).fragment === 'tier=T7');
   await still.page.evaluate(() => {
     location.hash = 'cluster=4A&select=tool:serena';
@@ -423,7 +452,9 @@ try {
   const laptop = await open({ width: 1366, height: 768, touch: true }, { mobile: false });
   const desk = await read(laptop.page);
   check('the page layout is the full one', desk.layout === 'full', desk.layout);
-  const plate = { x: labelAt(desk.labels, 0).right + 80, y: labelAt(desk.labels, 0).top + 30 };
+  // The top tier's label runs along its plate and ends a gap short of it: the plate is 80 pixels on, level with the label.
+  const topLabel = labelAt(desk.labels, 0);
+  const plate = fromLabel(topLabel, bottomEdgeOf(topLabel) + 80, 14);
   await laptop.page.mouse.move(plate.x, plate.y);
   await laptop.page.mouse.move(plate.x + 2, plate.y + 2);
   const cursor = await laptop.page.evaluate(() => /** @type {HTMLElement | null} */ (document.querySelector('#stage > div'))?.style.cursor);

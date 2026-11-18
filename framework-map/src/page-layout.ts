@@ -130,8 +130,8 @@ export function pictureRoomAt(size: WindowSize, constants: Constants, open: Open
 
 /**
  * The margins the stack keeps at rest, from the edges of the window. The left
- * one holds the rail and, beside it, the column of tier names; the bottom one
- * holds the legend. Under the bar there is no such column and the legend opens
+ * one holds the rail and, beside it, the tier labels; the bottom one holds the
+ * legend. Under the bar no label stands beside the stack and the legend opens
  * on request, so the margins are small, and the top one holds the bar.
  */
 export function restInsetsAt(
@@ -148,6 +148,17 @@ export function restInsetsAt(
     bottom: constants.insetBottomPx,
     // It holds the rail, so it gives the stack whatever room the rail gives up.
     left: constants.insetLeftPx - (constants.railPx - railPxAt(size, constants)),
+  };
+}
+
+/**
+ * The camera's angle at rest: its tilt and its turn. Under the bar each tier's tag stands over
+ * its plate, and a more level camera opens the room for it.
+ */
+export function restAngleAt(size: WindowSize, constants: Constants): { tiltDegrees: number; turnDegrees: number } {
+  return {
+    tiltDegrees: underBarAt(size, constants) ? constants.underBarRestTiltDegrees : constants.restTiltDegrees,
+    turnDegrees: constants.restTurnDegrees,
   };
 }
 

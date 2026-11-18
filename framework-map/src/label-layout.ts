@@ -1,7 +1,10 @@
 /**
- * label-layout: where the names of a tier's clusters and of a cluster's tools
- * stand, in pixels. Pure arithmetic; src/labels.ts draws the result and
- * src/scene.ts leaves room for it.
+ * label-layout: where a tier's label, the names of a tier's clusters and the
+ * names of a cluster's tools stand, in pixels. Pure arithmetic; src/labels.ts
+ * draws the result and src/scene.ts leaves room for it.
+ *
+ * A tier's label stands in the scene at the left end of its plate, upright,
+ * and runs along the plate: its count over its name.
  *
  * Cluster names stand above their plate as a staircase. Each starts at its
  * cell's left edge, one row above the name of the cell to its right, so a name
@@ -10,6 +13,64 @@
  * Tool names stand above their cell as a list in columns, in the order the
  * cell's grid is filled.
  */
+
+/** A tier name's line, as a multiple of its size. */
+export const TIER_NAME_LINE_HEIGHT = 1.2;
+
+/**
+ * A tier's label stands upright in the scene and runs along its plate, so the camera sees it at
+ * an angle: its turn narrows the label and its tilt makes it shorter. The label is stretched by
+ * these two numbers, along the plate and upward, so that at rest it is drawn at its own size.
+ * As the partner turns or tilts the camera, the label then changes as its plate does.
+ */
+export function standingStretch(restTiltDegrees: number, restTurnDegrees: number): { along: number; up: number } {
+  const radians = (degrees: number): number => (degrees * Math.PI) / 180;
+  return { along: 1 / Math.cos(radians(restTurnDegrees)), up: 1 / Math.sin(radians(restTiltDegrees)) };
+}
+
+/** The sizes a tier's label is made of: all of them are in src/constants.ts. */
+export interface TierLabelSizes {
+  labelGapPx: number;
+  labelColumnPx: number;
+  labelCountPx: number;
+  labelRisePx: number;
+  countGapPx: number;
+  tagPx: number;
+  tierNamePx: number;
+  tierLabelGapPx: number;
+}
+
+/**
+ * What a tier's label covers beside its plate, in pixels of the label: from the end of the plate
+ * to the label's near and far ends, and how far it stands above and below the plate's top face.
+ * The far end is the room kept for the longest name, or for the longest count where the names
+ * are left out. A count on its own stands level with the plate's top face. src/scene.ts leaves
+ * the room for the label.
+ * @param names Whether the label has its name under its count.
+ */
+export function tierLabelBlock(
+  sizes: TierLabelSizes,
+  names = true,
+): { near: number; far: number; above: number; below: number } {
+  if (!names) {
+    return { near: sizes.labelGapPx, far: sizes.labelGapPx + sizes.labelCountPx, above: sizes.tagPx / 2, below: sizes.tagPx / 2 };
+  }
+  return {
+    near: sizes.labelGapPx,
+    far: sizes.labelGapPx + sizes.labelColumnPx,
+    above: sizes.labelRisePx + sizes.countGapPx + sizes.tagPx,
+    below: sizes.tierNamePx * TIER_NAME_LINE_HEIGHT - sizes.labelRisePx,
+  };
+}
+
+/**
+ * Whether plates that stand `apartPx` from one to the next on screen leave each tier's label
+ * the room for its name: the label's height, and a clear space to the next label.
+ */
+export function tierNamesFit(apartPx: number, sizes: TierLabelSizes): boolean {
+  const block = tierLabelBlock(sizes);
+  return apartPx >= block.above + block.below + sizes.tierLabelGapPx;
+}
 
 /** How far above its cell the foot of a cluster name stands. `position` counts cells from the left. */
 export function staircaseRise(position: number, count: number, rowPx: number, gapPx: number): number {

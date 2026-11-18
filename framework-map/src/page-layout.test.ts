@@ -12,6 +12,7 @@ import {
   pictureMarginsAt,
   pictureRoomAt,
   railPxAt,
+  restAngleAt,
   restInsetsAt,
   toolNamesFitAt,
 } from './page-layout';
@@ -211,6 +212,14 @@ describe('the margins the picture keeps inside its room', () => {
   it('are small in the two layouts with the bar, where no column of tier names stands beside the stack', () => {
     expect(restInsetsAt(at(360, 640), constants)).toEqual({ top: 140, right: 16, bottom: 16, left: 16 });
     expect(restInsetsAt(at(844, 390), constants)).toEqual({ top: 96, right: 16, bottom: 16, left: 16 });
+  });
+
+  it('come with a camera at rest that is turned, and that stands more level under the bar', () => {
+    const angles = { ...constants, restTiltDegrees: 55, underBarRestTiltDegrees: 64, restTurnDegrees: 20 };
+    expect(restAngleAt(at(1366, 768), angles)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
+    expect(restAngleAt(at(1280, 720), angles)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
+    expect(restAngleAt(at(360, 640), angles)).toEqual({ tiltDegrees: 64, turnDegrees: 20 });
+    expect(restAngleAt(at(844, 390), angles)).toEqual({ tiltDegrees: 64, turnDegrees: 20 });
   });
 
   it('are the settled ones close in, and small in the two layouts with the bar', () => {

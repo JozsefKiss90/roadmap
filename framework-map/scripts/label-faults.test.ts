@@ -47,6 +47,40 @@ describe('labelFaults', () => {
     expect(labelFaults(many, viewport, 60)).toEqual(['61 labels on screen, more than 60']);
   });
 
+  /** A label that stands at an angle: `width` across, `height` tall, and `fall` lower at its right end than at its left. */
+  const slanted = (left: number, top: number, width = 300, height = 40, fall = 100) => ({
+    left,
+    top,
+    right: left + width,
+    bottom: top + height + fall,
+    corners: [
+      { x: left, y: top + height },
+      { x: left + width, y: top + height + fall },
+      { x: left + width, y: top + fall },
+      { x: left, y: top },
+    ],
+  });
+
+  it('lets two labels at an angle stand one over the other, though the rectangles around them overlap', () => {
+    expect(labelFaults([slanted(300, 80), slanted(300, 130), slanted(300, 180)], viewport, 60)).toEqual([]);
+  });
+
+  it('reports two labels at an angle whose shapes overlap', () => {
+    const faults = labelFaults([slanted(300, 80), slanted(300, 110)], viewport, 60);
+    expect(faults).toHaveLength(1);
+    expect(faults[0]).toMatch(/overlap/);
+  });
+
+  it('checks a label at an angle against a label that reported no corners', () => {
+    // The rectangle lies in the corner the slanted label leaves empty, and then on the label itself.
+    expect(labelFaults([slanted(300, 80), rect(480, 90, 100, 16)], viewport, 60)).toEqual([]);
+    expect(labelFaults([slanted(300, 80), rect(320, 100, 100, 16)], viewport, 60)[0]).toMatch(/overlap/);
+  });
+
+  it('reports a label at an angle that runs out of the window at one corner', () => {
+    expect(labelFaults([slanted(300, 700)], viewport, 60)[0]).toMatch(/out of the window/);
+  });
+
   it('reports a page that did not say what its labels are', () => {
     expect(labelFaults(null, viewport, 60)).toEqual(['the page did not report its labels']);
   });

@@ -14,13 +14,19 @@ export const constants = {
   fieldOfViewDegrees: 3,
   /** The camera's tilt at rest, from straight down (0) toward level (90). */
   restTiltDegrees: 55,
+  /**
+   * The camera's turn at rest, around the stack's vertical axis. Face on, at 0, the plates read as
+   * flat strips. At a turn each plate runs back from its near end, and the stack reads as a solid.
+   * A wider turn makes the stack taller in the picture, so it is drawn smaller to fit.
+   */
+  restTurnDegrees: 20,
   /** The limits on tilt. The upper one keeps the camera above every plate. */
   minTiltDegrees: 46,
   maxTiltDegrees: 72,
   /**
    * The limits on zoom, as multiples of the camera's range at rest. The tier labels
-   * keep their size on screen, so the least tilt and the farthest zoom are
-   * also what keeps one label clear of the next.
+   * keep their size as the camera comes closer or stands back, so the farthest zoom
+   * is also what keeps one label clear of the next.
    */
   nearestZoom: 0.4,
   farthestZoom: 1.1,
@@ -55,17 +61,17 @@ export const constants = {
 
   /**
    * The part of the window kept clear around the stack at rest, in pixels. The
-   * left one holds the rail and, beside it, the column of tier names. The
-   * bottom one holds the legend.
+   * left one holds the rail and, beside it, the tier labels: 24 pixels clear of the
+   * rail, then `labelColumnPx` and `labelGapPx`. The bottom one holds the legend.
    */
   insetTopPx: 76,
   insetRightPx: 40,
   insetBottomPx: 64,
-  insetLeftPx: 512,
+  insetLeftPx: 640,
   /**
-   * The same in the two layouts with the bar, where no column of tier names stands beside the
+   * The same in the two layouts with the bar, where no tier label stands beside the
    * stack and the legend opens on request: the margin at the sides and the bottom, and the room
-   * under the bar for the line that says what to choose, with the count over the top plate under it.
+   * under the bar for the line that says what to choose, with the tag over the top plate under it.
    */
   underBarEdgePx: 16,
   underBarTopPx: 44,
@@ -136,16 +142,23 @@ export const constants = {
   /** How thick a plate is, in layout units. */
   plateThickness: 0.16,
 
-  /** The tier labels: a column to the left of the stack. */
-  labelColumnPx: 216,
+  /**
+   * The tier labels: each stands in the scene at the left end of its plate, and runs along it.
+   * `labelColumnPx` is the room kept for a tier name: the longest is 336 pixels and stands on one
+   * line, and a longer one would be broken into two. `labelGapPx` is from the end of a label to the
+   * end of its plate. Where the names are left out, the stack takes the room they would have had,
+   * down to `labelCountPx`: the room of the longest count, which is a tier's tools in reach.
+   */
+  labelColumnPx: 344,
+  labelCountPx: 164,
   labelGapPx: 32,
-  /** How far the top of a tier name sits above the middle of its plate. */
+  /** How far the top of a tier name sits above the top face of its plate. */
   labelRisePx: 10,
   /** From the top of a tier name up to the bottom of its count. */
   countGapPx: 7,
   /** The least clear space between one tier's label and the next. With less, the names are left out and the counts stay. */
   tierLabelGapPx: 4,
-  /** Under the bar, where each tier's count stands over its plate: from the plate's highest point up to the count. */
+  /** Under the bar, where each tier's tag stands on the far edge of its plate: from that edge up to the tag. */
   countOverPlatePx: 2,
   /** Sizes on screen, from the style guide's "Map type" table. */
   tierNamePx: 20,

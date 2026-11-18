@@ -2,6 +2,10 @@
  * scene: draws plates, cells and marks from the layout, and moves the camera
  * between the three distances.
  *
+ * At rest the camera stands at a turn, so each plate runs back from its near
+ * end and the stack reads as a solid, and as near as holds every plate and
+ * every tier label inside the window's insets.
+ *
  * 3d-force-graph is the renderer and the camera (ADR 0002). Every mark is one
  * of its nodes, pinned where the layout put it; no simulation runs and no link
  * is drawn. Plates and cells are plain objects added to its scene.
@@ -46,7 +50,7 @@ import {
 } from 'three';
 import type { Object3D, PerspectiveCamera } from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FLAT_CORNERS, radians, towardCamera, placeToFit } from './camera';
+import { FLAT_CORNERS, pictureOf, pixelsPerTangent, radians, towardCamera, placeToFit, placeToFitPoints } from './camera';
 import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
 import { createDepthBlur } from './depth-blur';
@@ -54,8 +58,8 @@ import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { createHoverLabel } from './hover-label';
-import { listShape, staircaseHeight } from './label-layout';
-import type { CellLayout, MarkLayout, PlateLayout, StackLayout } from './layout';
+import { listShape, staircaseHeight, standingStretch, tierLabelBlock, tierNamesFit } from './label-layout';
+import type { CellLayout, MarkLayout, PlateLayout, Point, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, blendMaterial, markMaterial } from './mark-material';
 import { AT_ONCE, durationsNow, fadeMsBetween, hold, run } from './motion';
 import {
@@ -66,6 +70,7 @@ import {
   pageLayoutAt,
   pictureMarginsAt,
   pictureRoomAt,
+  restAngleAt,
   restInsetsAt,
 } from './page-layout';
 import { pickOnStack } from './pick';
@@ -111,6 +116,16 @@ export interface Stage {
   onCameraChange(listener: () => void): void;
   /** Lets something else in the scene, such as a label, take clicks. It is asked before the plates. */
   addPickable(pickable: Pickable): void;
+  /**
+   * Whether the camera's place at rest leaves each tier's label the room for its name. Where it
+   * does not, the stack has taken that room, and only the counts have a place beside it.
+   */
+  tierNamesHaveRoom(): boolean;
+  /**
+   * Where a point of the scene is drawn with the camera at rest for the state the map is in, in
+   * pixels of the window. A label asks it for the room it has at rest, however the stack is turned.
+   */
+  atRest(point: Vector3): { x: number; y: number };
   /**
    * What the selected tool's mark or the selected cluster's cell covers, in pixels of the window; null with
    * nothing selected, or a need. The screenshot script checks that no panel lies over it.
@@ -509,9 +524,87 @@ export function createStage(
         }
       : box;
 
+  /** Every corner of every plate: of its top face, and of its underside. */
+  const plateCorners: Point[] = layout.plates.flatMap((plate) =>
+    [0, constants.plateThickness].flatMap((under) =>
+      FLAT_CORNERS.map(([alongX, alongZ]) => ({
+        x: plate.x + (alongX * plate.width) / 2,
+        y: plate.y - under,
+        z: plate.z + (alongZ * plate.depth) / 2,
+      })),
+    ),
+  );
+
+  /**
+   * The corners of what the tier labels cover at rest, where each stands at the left end of its
+   * plate: in the full and the compact layout. A label keeps its size on screen, so what it
+   * covers in the scene follows from how many layout units a pixel is.
+   * @param names Whether each label has its name under its count.
+   */
+  function tierLabelCorners(
+    unitsPerPixel: number,
+    angle: { tiltDegrees: number; turnDegrees: number },
+    names: boolean,
+  ): Point[] {
+    const stretch = standingStretch(angle.tiltDegrees, angle.turnDegrees);
+    const block = tierLabelBlock(constants, names);
+    return layout.plates.flatMap((plate) =>
+      [block.near, block.far].flatMap((along) =>
+        [block.above, -block.below].map((over) => ({
+          x: layout.bounds.min.x - along * stretch.along * unitsPerPixel,
+          y: plate.y + over * stretch.up * unitsPerPixel,
+          z: plate.z,
+        })),
+      ),
+    );
+  }
+
+  /** The least height from one plate to the next. */
+  const plateSpacing = Math.min(
+    Infinity,
+    ...layout.plates.flatMap((plate) => layout.plates.map((other) => Math.abs(plate.y - other.y)).filter((apart) => apart > 0)),
+  );
+
+  /**
+   * Where the camera stands at rest for a state: turned a little, so the stack reads as a solid,
+   * and as near as holds every plate inside the rest insets and clear of the open panels. The
+   * tier labels stand in the left inset, and are held between the top and the bottom.
+   *
+   * Where the plates then stand too close on screen for the tier names, as beside a detail
+   * card in a window that is not wide, the names are left out. The stack takes the room they
+   * would have had, and `names` is false.
+   */
+  function restFit(state: MapState): { place: CameraPlace; names: boolean } {
+    const room = pictureRoomAt(windowSize, constants, openPanelsOf(state));
+    const inset = restInsetsAt(windowSize, constants);
+    const angle = restAngleAt(windowSize, constants);
+    const field = constants.fieldOfViewDegrees;
+    const pixelsPerTan = pixelsPerTangent(frame.height, field);
+    const fit = (left: number, names: boolean | null): CameraPlace => {
+      const region = inPicture(left, inset.top, room.right - inset.right, room.bottom - inset.bottom);
+      const within = (labels: Point[]): CameraPlace =>
+        placeToFitPoints(plateCorners, labels, centre, frame, region, field, angle.tiltDegrees, angle.turnDegrees);
+      let place = within([]);
+      if (names === null) return place;
+      // What the labels cover follows from the camera's range, and the range from what they cover.
+      // The labels are about a sixth of the fit, so each round leaves a sixth of the error before
+      // it, and five rounds settle it to well under a pixel.
+      for (let round = 0; round < 5; round += 1) {
+        place = within(tierLabelCorners(place.range / pixelsPerTan, angle, names));
+      }
+      return place;
+    };
+    // Under the bar no label stands beside the stack.
+    if (hasBar(pageLayoutAt(windowSize, constants))) return { place: fit(inset.left, null), names: false };
+    const withNames = fit(inset.left, true);
+    const apartPx = (plateSpacing * Math.sin(radians(angle.tiltDegrees)) * pixelsPerTan) / withNames.range;
+    if (tierNamesFit(apartPx, constants)) return { place: withNames, names: true };
+    return { place: fit(inset.left - (constants.labelColumnPx - constants.labelCountPx), false), names: false };
+  }
+
   /**
    * Where the camera stands for a state. At rest the whole stack fits inside
-   * the insets. At the tier distance the focused plate stands under the room
+   * the insets, with its tier labels. At the tier distance the focused plate stands under the room
    * its cluster names need, and at the cluster distance the focused cell
    * stands under the room its tool names need. A selection with `implements`
    * lines has their far ends in the picture too. A need's detail card opens at
@@ -574,11 +667,7 @@ export function createStage(
         align: 'top',
       });
     }
-    const inset = restInsetsAt(windowSize, constants);
-    const region = inPicture(inset.left, inset.top, room.right - inset.right, room.bottom - inset.bottom);
-    // Under the bar each tier's count stands over its plate, and a more level camera opens the room for it.
-    const tilt = hasBar(pageLayoutAt(windowSize, constants)) ? constants.underBarRestTiltDegrees : constants.restTiltDegrees;
-    return placeToFit(layout.bounds, frame, region, field, tilt, 0);
+    return restFit(state).place;
   }
 
   function limitsOf(state: MapState, place: CameraPlace): Limits {
@@ -765,10 +854,13 @@ export function createStage(
     const layoutNow = pageLayoutAt(windowSize, constants);
     const panelsStay = layoutNow === layoutBefore || (!hasBar(layoutNow) && !hasBar(layoutBefore));
     if (state.distance === 'stack' && previous > 0 && controls.enabled && panelsStay) {
-      // Keeps the partner's zoom and angle at rest, as a share of the rest range.
-      applyLimits(limitsOf(state, placeOf(state)));
-      const out = camera.position.clone().sub(centre);
-      camera.position.copy(centre).addScaledVector(out, restRange / previous);
+      // Keeps the partner's zoom and angle at rest, as a share of the rest range, about the
+      // point the camera now looks at when it is at rest.
+      const place = placeOf(state);
+      applyLimits(limitsOf(state, place));
+      const out = camera.position.clone().sub(controls.target);
+      controls.target.set(place.target.x, place.target.y, place.target.z);
+      camera.position.copy(controls.target).addScaledVector(out, restRange / previous);
       controls.update();
     } else {
       goTo(state, false);
@@ -969,6 +1061,11 @@ export function createStage(
       listener();
     },
     addPickable: (pickable) => void pickables.push(pickable),
+    tierNamesHaveRoom: () => restFit(store.get()).names,
+    atRest(point) {
+      const at = pictureOf(point, restFit(store.get()).place, frame, constants.fieldOfViewDegrees);
+      return { x: at.x + origin.x, y: at.y + origin.y };
+    },
     selectionRect() {
       const { selection } = store.get();
       const drawn = selection?.type === 'tool' ? markOf.get(selection.id) : selection?.type === 'cluster' ? cellOf.get(selection.id) : undefined;

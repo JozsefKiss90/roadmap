@@ -1,10 +1,13 @@
 /**
  * labels: text in the scene, by distance.
  *
- * - Stack distance: each tier's name and tool count, in a column to the left
- *   of the stack, each at the height of its plate. Under the bar, in the
- *   narrow and the upright page layout, there is no room for the column:
- *   each tier's count stands over its plate, and the names are left out.
+ * - Stack distance: each tier's tool count and name, at the left end of its
+ *   plate. The label stands in the scene, upright, and runs along its plate,
+ *   so it turns and tilts with the stack as the plate does. Under the bar, in
+ *   the narrow and the upright page layout, there is no room beside the
+ *   stack: one tag stands on the far edge of each plate and gives its tier's
+ *   code and name, with no count. A name that would run out of the window
+ *   is cut short.
  * - Tier distance: the names of the focused tier's clusters, as a staircase
  *   above its plate. Each name stands on a leader line that rises from its
  *   cell's back left corner.
@@ -18,9 +21,13 @@
  * left out where they have no room (see src/page-layout.ts). No name is ever
  * drawn smaller to make it fit.
  *
- * Every label keeps its size on screen. A label is anchored to a point of the
- * stack and offset from it in pixels, so it follows its plate or cell as the
- * camera moves. The labels read the distance and focus from the state store,
+ * Every label keeps its size as the camera comes closer or stands back. A
+ * label is anchored to a point of the stack and offset from it in pixels, so
+ * it follows its plate or cell as the camera moves. A cluster's or a tool's
+ * name faces the camera. A tier's label does not: it is drawn at its own size
+ * at rest, and from another angle it is seen as its plate is. Seen from
+ * behind the stack, it stands at the other end of its plate and is turned
+ * round, so it still reads from left to right. The labels read the distance and focus from the state store,
  * and write to it when the partner clicks a name: a tier name goes to its
  * tier, and a cluster or tool name selects what it names.
  */
@@ -33,7 +40,10 @@ import {
   LineBasicMaterial,
   LineSegments,
   LinearFilter,
+  Mesh,
   MeshBasicMaterial,
+  PlaneGeometry,
+  Quaternion,
   SRGBColorSpace,
   Sprite,
   SpriteMaterial,
@@ -44,15 +54,15 @@ import { Text } from 'troika-three-text';
 import toolNameFontUrl from '@fontsource/geist/files/geist-latin-500-normal.woff?url';
 import clusterNameFontUrl from '@fontsource/geist/files/geist-latin-600-normal.woff?url';
 import tierNameFontUrl from '@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff?url';
-import { FLAT_CORNERS, radians } from './camera';
+import { radians } from './camera';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { gateBadge, kindIcon, tierCountText as countText } from './display';
 import type { KindIcon } from './display';
 import { drawKindIcon } from './icons';
-import { listLayout, nameCap, staircaseRise } from './label-layout';
+import { TIER_NAME_LINE_HEIGHT, listLayout, nameCap, staircaseRise, standingStretch } from './label-layout';
 import type { PlateLayout, StackLayout } from './layout';
-import { namesFitFor, openPanelsOf, pictureRoomAt, underBarAt } from './page-layout';
+import { namesFitFor, openPanelsOf, pictureRoomAt, restAngleAt, underBarAt } from './page-layout';
 import type { Stage } from './scene';
 import { narrows } from './state';
 import type { MapState, Store } from './state';
@@ -68,6 +78,9 @@ const OVERSAMPLING = 2;
 /** Names stand above their plate or cell, so they are drawn over whatever lies behind them. */
 const OVER_THE_STACK = 2;
 
+/** The fewest letters of a tier's name its tag gives after the tier's code, where the name is cut short. With room for less, the tag gives the code alone. */
+const LEAST_TIER_NAME_LETTERS = 4;
+
 /** A tier's count while a lens is on: the tools in reach on its plate, out of all it holds. */
 const reachText = (tierId: string, inReach: number, tools: number): string =>
   `${tierId} · ${inReach} of ${tools} in reach`.toUpperCase();
@@ -78,6 +91,11 @@ export interface LabelRect {
   top: number;
   right: number;
   bottom: number;
+  /**
+   * A label's four corners, in order round it. A tier's label stands in the scene at an angle, so
+   * it covers less than the rectangle around it.
+   */
+  corners?: { x: number; y: number }[];
 }
 
 export interface Labels {
@@ -96,8 +114,52 @@ interface Label {
   dy: number;
   /** What the label covers, in pixels to the right of and above the group's origin. */
   box: { left: number; bottom: number; right: number; top: number };
+  /** Whether the label stands in the scene, along its plate. Any other label faces the camera. */
+  standing: boolean;
+  /** One pixel of the label to the right, and one up, as steps in the scene. Set when the label is placed. */
+  across: Vector3;
+  rise: Vector3;
   /** What a click on the label does. */
   action?: () => void;
+}
+
+/** The corners of a label's box, in order round it. */
+const BOX_CORNERS = [
+  ['left', 'bottom'],
+  ['right', 'bottom'],
+  ['right', 'top'],
+  ['left', 'top'],
+] as const;
+
+/** A standing label as it is seen from in front of the stack, and turned round to be read from behind it. */
+const FROM_THE_FRONT = new Quaternion();
+const FROM_BEHIND = new Quaternion(0, 1, 0, 0);
+
+/** The rectangle a standing count is drawn on. Its origin is its bottom left corner, as a tag's is. */
+const TAG_FACE = new PlaneGeometry(1, 1).translate(0.5, 0.5, 0);
+
+/** A count that stands in the scene. */
+interface StandingTag {
+  face: Mesh<PlaneGeometry, MeshBasicMaterial>;
+  /** Its size, in pixels. */
+  readonly width: number;
+  readonly height: number;
+  /** Draws another text on it: in the colour of a tag, or in the one given. */
+  write(text: string, colour?: string): void;
+}
+
+/** Whether a point lies inside a shape whose corners are given in order round it, and which has no dent. */
+function holds(corners: readonly { x: number; y: number }[], x: number, y: number): boolean {
+  let side = 0;
+  for (let at = 0; at < corners.length; at += 1) {
+    const from = corners[at]!;
+    const to = corners[(at + 1) % corners.length]!;
+    const turn = Math.sign((to.x - from.x) * (y - from.y) - (to.y - from.y) * (x - from.x));
+    if (turn === 0) continue;
+    if (side !== 0 && turn !== side) return false;
+    side = turn;
+  }
+  return true;
 }
 
 /** A text material that is not hidden by plates. Every name shares it; troika derives its own from it. */
@@ -131,13 +193,47 @@ export function addLabels(
     return sprite;
   }
 
-  // Stack distance: tier names and counts.
-  const halfWidth = (layout.bounds.max.x - layout.bounds.min.x) / 2;
-  const axis = {
-    x: (layout.bounds.min.x + layout.bounds.max.x) / 2,
-    z: (layout.bounds.min.z + layout.bounds.max.z) / 2,
-  };
-  const middle = new Vector3(axis.x, (layout.bounds.min.y + layout.bounds.max.y) / 2, axis.z);
+  /** How wide a tag of a text is, in pixels. */
+  function tagWidth(text: string): number {
+    const drawn = tag(text);
+    const width = drawn.scale.x;
+    drawn.material.map?.dispose();
+    drawn.material.dispose();
+    return width;
+  }
+
+  /**
+   * A tag that stands in the scene as its label does. A sprite always faces the camera, so the tag
+   * is drawn on a rectangle instead: the sprite is never in the scene, and only draws the text and
+   * measures it.
+   */
+  function standingTag(text: string): StandingTag {
+    const drawn = tag(text);
+    const material = new MeshBasicMaterial({ map: drawn.material.map, transparent: true });
+    const face = new Mesh(TAG_FACE, material);
+    const fit = (): void => {
+      // The sprite draws each text on a texture of its own.
+      material.map = drawn.material.map;
+      face.scale.set(drawn.scale.x, drawn.scale.y, 1);
+    };
+    fit();
+    return {
+      face,
+      get width() {
+        return drawn.scale.x;
+      },
+      get height() {
+        return drawn.scale.y;
+      },
+      write(next, colour = tagColour) {
+        drawn.color = colour;
+        drawn.text = next;
+        fit();
+      },
+    };
+  }
+
+  // Stack distance: tier counts and names.
   const pending: Promise<void>[] = [];
   /**
    * Each tier's name and count, with its label and how far its name reaches down and across, to set
@@ -147,15 +243,32 @@ export function addLabels(
     tier: string;
     plate: PlateLayout;
     name: Text;
-    count: SpriteText;
+    count: StandingTag;
     label: Label;
-    nameRight: number;
+    nameWidth: number;
     nameBottom: number;
+    /** The tier's code and name as a tag gives them, and how wide that tag is, in pixels. */
+    title: string;
+    titleWidth: number;
+    /** The code and name as the tag has room for them: a name that would run out of the window is cut short. */
+    shownTitle: string;
   }[] = [];
   const tierCountText = (tierId: string, lens: MapState['lens']): string =>
     narrows(lens)
       ? reachText(tierId, index.toolCountOf(tierId, lens), index.toolCountOf(tierId))
       : countText(tierId, index.toolCountOf(tierId));
+  /**
+   * A tier's code and name, as its tag gives them on the far edge of its plate. The code has no dot
+   * after it there: with one, the longest name runs out of a window 360 pixels wide.
+   */
+  const tierTitleText = (tier: { id: string; label: string }): string => `${tier.id} ${tier.label}`.toUpperCase();
+  /**
+   * What a tier's tag reads. On the far edge of its plate, as under the bar, the tag stands for the
+   * tier's name, which has no room of its own there: it gives the tier's code and name, and no count.
+   * @param shownTitle The code and name, cut short where the window has no room for all of it.
+   */
+  const tierTagText = (tierId: string, shownTitle: string, lens: MapState['lens']): string =>
+    countsOverPlates ? shownTitle : tierCountText(tierId, lens);
   /** A tier with no tool in reach has its name in the colour of a tag, as its row in the outline is dimmed. */
   const tierNameColour = (tierId: string, lens: MapState['lens']) =>
     narrows(lens) && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
@@ -169,33 +282,50 @@ export function addLabels(
     name.text = tier.label;
     name.font = tierNameFontUrl;
     name.fontSize = constants.tierNamePx;
-    name.lineHeight = 1.2;
+    name.lineHeight = TIER_NAME_LINE_HEIGHT;
+    // A name ends where its plate begins. Every name has room on one line.
     name.maxWidth = constants.labelColumnPx;
-    name.anchorX = 'left';
+    name.textAlign = 'right';
+    name.anchorX = 'right';
     name.anchorY = 'top';
     name.color = tierNameColour(tier.id, store.get().lens);
     group.add(name);
 
-    const count = tag(tierCountText(tier.id, store.get().lens));
-    count.center.set(0, 0);
-    count.position.set(0, constants.countGapPx, 0);
-    group.add(count);
+    const count = standingTag(tierCountText(tier.id, store.get().lens));
+    count.face.position.set(0, constants.countGapPx, 0);
+    group.add(count.face);
 
     const label: Label = {
       group,
-      anchor: new Vector3(axis.x, plate.y, axis.z),
+      // Where the label is anchored depends on where the camera stands: place() sets it.
+      anchor: new Vector3(layout.bounds.min.x, plate.y, plate.z),
       dx: 0,
-      dy: constants.labelRisePx,
-      box: { left: 0, bottom: 0, right: count.scale.x, top: constants.countGapPx + count.scale.y },
+      dy: 0,
+      box: { left: 0, bottom: 0, right: 0, top: 0 },
+      standing: true,
+      across: new Vector3(),
+      rise: new Vector3(),
       action: () => store.focusTier(tier.id),
     };
-    const counted = { tier: tier.id, plate, name, count, label, nameRight: 0, nameBottom: 0 };
+    const title = tierTitleText(tier);
+    const counted = {
+      tier: tier.id,
+      plate,
+      name,
+      count,
+      label,
+      nameWidth: 0,
+      nameBottom: 0,
+      title,
+      titleWidth: tagWidth(title),
+      shownTitle: title,
+    };
     tierCounts.push(counted);
     pending.push(
       typeset(name).then(() => {
-        const [, bottom, right] = blockOf(name);
+        const [left, bottom] = blockOf(name);
         counted.nameBottom = bottom;
-        counted.nameRight = right;
+        counted.nameWidth = -left;
         boxTierLabels();
       }),
     );
@@ -249,6 +379,9 @@ export function addLabels(
         dx: 0,
         dy: rise,
         box: { left: 0, bottom: 0, right: 0, top: constants.clusterRowPx },
+        standing: false,
+        across: new Vector3(),
+        rise: new Vector3(),
         action: () => store.select(cluster.id),
       };
       pending.push(
@@ -287,38 +420,51 @@ export function addLabels(
 
   /** Whether the tier names are left out, because the plates stand too close on screen for them. */
   let tierNamesOut = false;
-  /** Whether each tier's count stands over its plate, as under the bar, and not in the column beside the stack. */
+  /** Whether each tier's tag stands on the far edge of its plate, as under the bar, and not at the end of the plate. It then gives the tier's name, and no count. */
   let countsOverPlates = false;
-  /** Whether the counts over the plates are left out as well, because the plates stand closer on screen than a count is tall. */
+  /** Whether the tags over the plates are left out as well, because the plates stand closer on screen than a tag is tall. */
   let tierCountsOut = false;
 
   /** Whether the window's page layout has the bar: the narrow or the upright one. */
   const underBar = (): boolean => underBarAt(stage.window, constants);
-  const corner = new Vector3();
 
   /**
-   * Sets what each tier label covers: its count, and its name unless the names are left out.
-   * A count on its own stands level with the middle of its plate, where the name would begin.
+   * Sets where each tier label stands from its anchor and what it covers: its count, and its name
+   * unless the names are left out. At the end of its plate a label ends a gap short of the plate,
+   * with the top face of the plate a little under the top of its name; a count on its own stands
+   * level with that face. On the far edge of its plate a tag begins where the plate does.
    */
   function boxTierLabels(): void {
-    for (const { name, count, label, nameRight, nameBottom } of tierCounts) {
-      // Under the bar a count stands over its plate, close under the plate above, and is drawn over both.
-      // In the column beside the stack it is part of the scene, as it was.
-      count.material.depthTest = !countsOverPlates;
-      count.material.depthWrite = !countsOverPlates;
-      count.renderOrder = countsOverPlates ? OVER_THE_STACK : 0;
+    for (const { name, count, label, nameWidth, nameBottom } of tierCounts) {
+      // Under the bar a tag stands on the far edge of its plate, close under the plate above, and is drawn over both.
+      // At the end of its plate it is part of the scene, and a plate that stands before it hides it.
+      const { material } = count.face;
+      material.depthTest = !countsOverPlates;
+      material.depthWrite = !countsOverPlates;
+      count.face.renderOrder = countsOverPlates ? OVER_THE_STACK : 0;
       name.visible = !tierNamesOut;
-      label.dy = tierNamesOut ? -(constants.countGapPx + count.scale.y / 2) : constants.labelRisePx;
+      count.face.position.x = countsOverPlates ? 0 : -count.width;
+      label.dx = countsOverPlates ? 0 : -constants.labelGapPx;
+      label.dy = countsOverPlates
+        ? constants.countOverPlatePx - constants.countGapPx
+        : tierNamesOut
+          ? -(constants.countGapPx + count.height / 2)
+          : constants.labelRisePx;
+      label.box.left = countsOverPlates ? 0 : -(tierNamesOut ? count.width : Math.max(count.width, nameWidth));
+      label.box.right = countsOverPlates ? count.width : 0;
       label.box.bottom = tierNamesOut ? constants.countGapPx : nameBottom;
-      label.box.right = tierNamesOut ? count.scale.x : Math.max(count.scale.x, nameRight);
+      label.box.top = constants.countGapPx + count.height;
     }
   }
 
-  /** Sets each tier's count for the lens: the tools in reach on its plate, or all of its tools with no lens. */
+  /**
+   * Sets each tier's count for the lens: the tools in reach on its plate, or all of its tools with no lens.
+   * On the far edge of its plate the tag gives the tier's name instead, in the colour its name would have.
+   */
   function showTierCounts(lens: MapState['lens']): void {
-    for (const { tier, name, count } of tierCounts) {
+    for (const { tier, name, count, shownTitle } of tierCounts) {
       name.color = tierNameColour(tier, lens);
-      count.text = tierCountText(tier, lens);
+      count.write(tierTagText(tier, shownTitle, lens), countsOverPlates ? tierNameColour(tier, lens) : tagColour);
     }
     boxTierLabels();
   }
@@ -441,6 +587,9 @@ export function addLabels(
       dx: 0,
       dy: 0,
       box: { left: 0, bottom: -constants.toolRowPx / 2, right: 0, top: constants.toolRowPx / 2 },
+      standing: false,
+      across: new Vector3(),
+      rise: new Vector3(),
       action: () => store.select(tool),
     }));
     toolLabels = labels;
@@ -558,6 +707,27 @@ export function addLabels(
     place();
   }
 
+  /**
+   * Each tier's code and name as its tag has room for them on the far edge of its plate: from the
+   * plate's left end to the right edge of the picture's room. A name that would run out of that room
+   * is cut short, with an ellipsis, as in a window under 360 pixels wide, or above a detail card on
+   * a phone, where the stack stands back. A cut that would leave only a few letters of the name
+   * leaves the code alone. The room is measured with the stack at rest, where a tag is drawn at its
+   * own size, so turning the stack changes no tag.
+   */
+  const leftEnd = new Vector3();
+  function fittedTitles(): string[] {
+    const most = pictureRoomAt(stage.window, constants, openPanelsOf(store.get())).right;
+    return tierCounts.map(({ tier, plate, title, titleWidth }) => {
+      const room = most - stage.atRest(leftEnd.set(plate.x - plate.width / 2, plate.y, plate.z - plate.depth / 2)).x;
+      if (titleWidth <= room) return title;
+      // The letters of a tag are all of one width.
+      const letters = Math.floor((room / titleWidth) * title.length);
+      if (letters < tier.length + 1 + LEAST_TIER_NAME_LETTERS + 1) return tier.toUpperCase();
+      return `${title.slice(0, letters - 1).trimEnd()}…`;
+    });
+  }
+
   const right = new Vector3();
   const up = new Vector3();
   const forward = new Vector3();
@@ -572,63 +742,82 @@ export function addLabels(
     const unitsPerPixelAt = (point: Vector3): number =>
       (2 * fromCamera.copy(point).sub(camera.position).dot(forward) * tanHalfField) / frame.height;
 
-    // The tier column's distance from the axis is set in pixels, measured at
-    // the middle of the stack, so every tier label starts at the same place
-    // across the screen.
-    const columnReachPx = halfWidth / unitsPerPixelAt(middle) + constants.labelGapPx + constants.labelColumnPx;
-    for (const label of tierLabels) label.dx = -columnReachPx;
+    // A tier's label stands in the scene, upright, and runs along its plate. It is stretched so
+    // that at rest it is drawn at its own size; `tall` is how many pixels of the picture one of
+    // its pixels then takes from top to bottom, which is 1 at rest and follows the camera's tilt.
+    const angle = restAngleAt(stage.window, constants);
+    const stretch = standingStretch(angle.tiltDegrees, angle.turnDegrees);
+    const tall = stretch.up * up.y;
+    // From behind the stack the plates' right ends are at the left of the picture. The labels
+    // stand there then, turned round, so they are in the same part of the window and still read
+    // from left to right. The change comes as the labels are seen edge on.
+    const behind = right.x < 0;
+    const end = behind ? 1 : -1;
+
+    // Under the bar there is no room beside the stack: the names are left out, and each tier's tag
+    // stands on the far edge of its plate, from the end that is at the left of the picture.
+    // Elsewhere each label stands past the end of the stack, level with its plate.
+    const over = underBar();
+    for (const { plate, label } of tierCounts) {
+      if (over) label.anchor.set(plate.x + (end * plate.width) / 2, plate.y, plate.z + (end * plate.depth) / 2);
+      else label.anchor.set(behind ? layout.bounds.max.x : layout.bounds.min.x, plate.y, plate.z);
+    }
 
     // Where the stack stands back, as it does beside a need's detail card in a narrow window, the
-    // plates come closer on screen than a name is tall. The names are then left out, and each
-    // tier keeps its count, which begins with the tier's code. Under the bar there is no room for
-    // the column at all: the names are left out, and each count stands over its plate.
-    const over = underBar();
+    // plates come closer on screen than a label is tall. The names are then left out, and each
+    // tier keeps its count, which begins with the tier's code. The scene gives the stack the room
+    // the names would have had, so they stay out there however close the camera comes.
     const heights = tierCounts.map(({ label }) => stage.toPicture(label.anchor).y);
+    const apart = (at: number): number => Math.abs(heights[at]! - heights[at - 1]!);
     const out =
       over ||
+      !stage.tierNamesHaveRoom() ||
       tierCounts.some(
-        ({ label, nameBottom }, at) => at > 0 && heights[at]! - heights[at - 1]! < label.box.top - nameBottom + constants.tierLabelGapPx,
+        ({ label, nameBottom }, at) => at > 0 && apart(at) < (label.box.top - nameBottom) * tall + constants.tierLabelGapPx,
       );
-    if (out !== tierNamesOut || over !== countsOverPlates) {
+    // On the far edge of its plate a tag gives its tier's code and name, cut short where the window
+    // has no room for all of it.
+    const titles = over ? fittedTitles() : null;
+    const retitled = titles !== null && tierCounts.some(({ shownTitle }, at) => shownTitle !== titles[at]);
+    if (out !== tierNamesOut || over !== countsOverPlates || retitled) {
       tierNamesOut = out;
+      // A tag reads otherwise on the far edge of its plate than beside it, so it is written again.
+      const written = over !== countsOverPlates || retitled;
       countsOverPlates = over;
-      boxTierLabels();
+      if (titles) tierCounts.forEach((counted, at) => (counted.shownTitle = titles[at]!));
+      if (written) showTierCounts(store.get().lens);
+      else boxTierLabels();
     }
     tierCountsOut = false;
     if (over) {
-      // A count begins at the left end of what its plate covers in the picture, and stands a little over its highest point.
-      for (const { plate, label } of tierCounts) {
-        const anchor = stage.toPicture(label.anchor);
-        let left = Infinity;
-        let top = Infinity;
-        for (const [alongX, alongZ] of FLAT_CORNERS) {
-          const at = stage.toPicture(
-            corner.set(plate.x + (alongX * plate.width) / 2, plate.y, plate.z + (alongZ * plate.depth) / 2),
-          );
-          left = Math.min(left, at.x);
-          top = Math.min(top, at.y);
-        }
-        label.dx = left - anchor.x;
-        label.dy = anchor.y - top + constants.countOverPlatePx - constants.countGapPx;
-      }
-      // Beside a detail card and the phase strip a phone leaves the stack so little room that a count
-      // would lie on the plate over its own. The counts are then left out too; the outline counts each
-      // tier. The room is measured as it is with the stack face on, so turning the stack hides no count.
-      const countPx = (tierCounts[0]?.count.scale.y ?? 0) + constants.countOverPlatePx;
+      // Beside a detail card and the phase strip a phone leaves the stack so little room that a tag
+      // would lie on the plate over its own. The tags are then left out too; the outline names each
+      // tier. The room is measured as it is with the stack face on, so turning the stack hides no tag.
+      const countPx = ((tierCounts[0]?.count.height ?? 0) + constants.countOverPlatePx) * tall;
       tierCountsOut = tierCounts.some(({ plate, label }, at) => {
         if (at === 0) return false;
         const deepPx = (plate.depth * Math.abs(forward.y)) / unitsPerPixelAt(label.anchor);
-        return Math.abs(heights[at]! - heights[at - 1]!) - deepPx < countPx;
+        return apart(at) - deepPx < countPx;
       });
     }
     const atStack = store.get().distance === 'stack';
     for (const label of tierLabels) label.group.visible = atStack && !tierCountsOut;
 
-    for (const { group, anchor, dx, dy } of shown()) {
+    for (const label of shown()) {
+      const { group, anchor } = label;
       const unitsPerPixel = unitsPerPixelAt(anchor);
-      group.position.copy(anchor).addScaledVector(right, dx * unitsPerPixel).addScaledVector(up, dy * unitsPerPixel);
-      group.quaternion.copy(camera.quaternion);
-      group.scale.setScalar(unitsPerPixel);
+      if (label.standing) {
+        label.across.set(-end, 0, 0).multiplyScalar(stretch.along * unitsPerPixel);
+        label.rise.set(0, stretch.up * unitsPerPixel, 0);
+        group.quaternion.copy(behind ? FROM_BEHIND : FROM_THE_FRONT);
+        group.scale.set(stretch.along * unitsPerPixel, stretch.up * unitsPerPixel, unitsPerPixel);
+      } else {
+        label.across.copy(right).multiplyScalar(unitsPerPixel);
+        label.rise.copy(up).multiplyScalar(unitsPerPixel);
+        group.quaternion.copy(camera.quaternion);
+        group.scale.setScalar(unitsPerPixel);
+      }
+      group.position.copy(anchor).addScaledVector(label.across, label.dx).addScaledVector(label.rise, label.dy);
     }
 
     // The list is centred on its cell. Where that would take it under the rail, out of
@@ -664,25 +853,33 @@ export function addLabels(
     }
   }
 
-  /** What each label on screen covers, in pixels of the picture, with the label it belongs to. */
-  function covers(): { label: Label; rect: LabelRect }[] {
+  /**
+   * What each label on screen covers, in pixels of the picture, with the label it belongs to: its
+   * four corners, and the rectangle around them.
+   */
+  const boxCorner = new Vector3();
+  function covers(): { label: Label; rect: Required<LabelRect> }[] {
     return shown().map((label) => {
-      const at = stage.toPicture(label.group.position);
+      const corners = BOX_CORNERS.map(([side, level]) =>
+        stage.toPicture(
+          boxCorner
+            .copy(label.group.position)
+            .addScaledVector(label.across, label.box[side])
+            .addScaledVector(label.rise, label.box[level]),
+        ),
+      );
+      const xs = corners.map((corner) => corner.x);
+      const ys = corners.map((corner) => corner.y);
       return {
         label,
-        rect: {
-          left: at.x + label.box.left,
-          right: at.x + label.box.right,
-          top: at.y - label.box.top,
-          bottom: at.y - label.box.bottom,
-        },
+        rect: { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys), corners },
       };
     });
   }
 
   stage.addPickable((x, y) => {
     for (const { label, rect } of covers()) {
-      if (label.action && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) return label.action;
+      if (label.action && holds(rect.corners, x, y)) return label.action;
     }
     return null;
   });
@@ -721,6 +918,7 @@ export function addLabels(
         right: rect.right + stage.origin.x,
         top: rect.top + stage.origin.y,
         bottom: rect.bottom + stage.origin.y,
+        corners: rect.corners.map((corner) => ({ x: corner.x + stage.origin.x, y: corner.y + stage.origin.y })),
       })),
   };
 }

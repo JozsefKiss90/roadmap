@@ -9,6 +9,7 @@ declare module 'troika-three-text' {
     fontSize: number;
     lineHeight: number | 'normal';
     maxWidth: number;
+    textAlign: 'left' | 'right' | 'center' | 'justify';
     anchorX: number | 'left' | 'center' | 'right';
     anchorY: number | 'top' | 'top-baseline' | 'middle' | 'bottom-baseline' | 'bottom';
     color: string | number;

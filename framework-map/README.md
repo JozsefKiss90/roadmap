@@ -44,7 +44,7 @@ Run these from this folder, after `npm install`.
 | `src/press.ts` | What a press on the canvas is: a tap, a drag, a finger held in place, or a pinch |
 | `src/hover-label.ts` | The label beside the pointer, or over a finger held in place, that names the mark under it |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
-| `src/label-layout.ts` | The arithmetic for where cluster and tool names stand |
+| `src/label-layout.ts` | The arithmetic for where tier labels, cluster names and tool names stand |
 | `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
 | `src/page-layout.ts` | Which page layout a window gets, the room its panels leave the picture, and whether the names of clusters and tools have room in it |
 | `src/panels.ts` | Mounts the rail, the breadcrumb, the detail card, the line that says what to choose and the list of keys, and takes the keys that work anywhere |
@@ -70,6 +70,8 @@ Run these from this folder, after `npm install`.
 
 **The camera** orbits the stack's vertical axis. Its tilt and zoom limits, its field of view and the margins around the stack are in `src/constants.ts`, and the dev server's tuning panel changes them live.
 
+**The stack at rest is seen at a turn.** The camera stands 20 degrees round the stack, `restTurnDegrees`. Face on, the plates read as flat strips. At a turn each plate runs back from its near end, and the stack reads as a solid. `placeToFitPoints` in `src/camera.ts` then brings the camera as near as holds every corner of every plate, and every tier label, inside the window's insets. A wider turn makes the stack taller in the picture, so it is drawn smaller to fit.
+
 ## The three distances
 
 The map has three distances: stack, tier and cluster. `src/state.ts` holds the distance and the focused tier or cluster. The scene, the labels and the panels read the store and write to it. They never call each other.
@@ -85,8 +87,11 @@ The map has three distances: stack, tier and cluster. `src/state.ts` holds the d
 - **Escape steps out one distance.** The breadcrumb at the top centre shows the stack, the tier and the cluster, and each part is a button.
 - **The URL fragment names the focus and the selection.** `#tier=T3` opens at the tier distance and `#cluster=1A` at the cluster distance. `select=` adds the selection, as in `#cluster=4A&select=tool:serena`. An id the graph lacks opens the stack at rest.
 - **Close in, the camera stays near the front.** At the tier and cluster distances it turns 30 degrees to either side at most, because the names stand above the plate.
-- **Labels keep their size on screen.** Each is anchored to a point of the stack and offset from it in pixels. `src/label-layout.ts` works out the offsets, and `src/scene.ts` leaves room for them when it places the camera.
-- **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen, and `window.frameworkMap.selection()` the rectangle of the selected mark or cell. The screenshot script reads both.
+- **Labels keep their size as the camera comes closer or stands back.** Each is anchored to a point of the stack and offset from it in pixels. `src/label-layout.ts` works out the offsets, and `src/scene.ts` leaves room for them when it places the camera.
+- **A tier's label stands in the scene, along its plate.** It is a tier's count over its name, upright, at the left end of the plate, and it ends 32 pixels short of the plate. It turns and tilts with the stack as its plate does. It is stretched so that at rest it is drawn at its own size, 20px for the name. The names of clusters and tools face the camera instead.
+- **Seen from behind the stack, the tier labels change ends.** The plates' right ends are then at the left of the picture. The labels stand there, turned round, so they stay in the same part of the window and still read from left to right. The change comes as the labels are seen edge on.
+- **A tier name stands on one line.** The longest is 336 pixels, and `labelColumnPx` keeps that room beside the rail. Where the plates stand too close for the names, the names are left out, and the stack takes their room down to `labelCountPx`.
+- **The page reports its labels.** `window.frameworkMap.labels()` returns one rectangle for each label on screen, with the label's four corners, and `window.frameworkMap.selection()` the rectangle of the selected mark or cell. The screenshot script reads both. A tier's label stands at an angle, so two labels overlap only where the shapes inside their corners do.
 
 ## Selection and the detail card
 
@@ -99,7 +104,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 | A need | Choose it in the need list, click its row in a tool's detail card, or choose it in the search |
 
 - **Selecting a tool or a cluster goes to that cluster.** Selecting a need starts its need trace, at the stack distance. A traced tool that is selected at the stack distance leaves the map there.
-- **A need's detail card opens at the stack distance.** The whole stack then stands left of the card. In a narrow window the plates come too close for the tier names, which are left out; each tier keeps its count, which begins with its code.
+- **A need's detail card opens at the stack distance.** The whole stack then stands left of the card. In a narrow window the plates come too close for the tier names, which are left out; each tier keeps its count, which begins with its code. The stack is then drawn larger, in the room the names would have had.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
 - **Escape closes the detail card first.** The next Escape steps out one distance.
 - **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. At the cluster distance the label gives the name alone, because the breadcrumb names the cluster. From the stack, a click still goes to the tier. By touch, a finger held in place shows the same; see "Touch".
@@ -331,7 +336,7 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **The breadcrumb** stands in the bar's row in the narrow layout and in a row under it in the upright one, from the left. The crumb between the stack's and the last gives way first.
 - **The detail card in the upright layout** is as wide as the window and takes 45% of its height, `cardHeightShare`. The picture is fitted to the room above it. In the narrow layout the card is 360 pixels wide, or half the window where that is less.
 - **The phase strip** stands at the foot of the picture's room: over the card in the upright layout, left of it in the narrow one. A step's two counts stand side by side where the strip is at least 624 pixels wide, `phaseStripSideBySidePx`, and one over the other where it is not: on a phone, and beside a detail card in a window too narrow for both. `phaseStripStackedAt` in `src/page-layout.ts` decides, for the strip and for the picture's room alike.
-- **At the stack distance each tier's count stands over its plate**, and the tier names are left out: there is no room for the column of names. The camera stands a little more level, `smallRestTiltDegrees`, which opens the room for the counts. Beside a detail card and the phase strip on a phone the plates stand closer than a count is tall, and the counts are left out too.
+- **At the stack distance each tier's code and name stand on the far edge of its plate**, from the plate's left end, as one tag: "T3 PIPELINES AND APPLICATIONS". There is no room beside the stack for the name at its own size. The tag gives no count, under a lens or without one; the outline counts each tier. It has the colour of a name, and the colour of a tag where a lens leaves none of the tier's tools in reach. The tag stands in the scene as the tier labels do, so it runs along its plate. The camera stands a little more level, `underBarRestTiltDegrees`, which opens the room for the tags. The code has no dot after it: with one, the longest name would run out of a window 360 pixels wide. A name that would still run out of the window is cut short, with an ellipsis: above a detail card on a phone 360 pixels wide, where the stack stands back, and in a window under 360 pixels. Where the room would leave fewer than four letters of the name, the tag gives the code alone. The room is measured with the stack at rest, so turning the stack changes no tag. Beside a detail card and the phase strip on a phone the plates stand closer than a tag is tall, and the tags are left out too.
 - **Names that have no room are left out, never drawn smaller.** The names of a tier's clusters stand above its plate, and the names of a cluster's tools above its cell, where `namesFitFor` in `src/page-layout.ts` finds room for them. The scene, the labels and the line under the breadcrumb all ask it. On a phone held upright the tools' names have room for a cluster of up to nineteen tools with no card open, and the clusters' names have none. On a tablet nearly every list has room.
 - **A line under the breadcrumb says what to choose** where names are left out and nothing is selected: "Choose a cell to read its cluster." or "Choose a mark to read its tool." The detail card and the outline give every name.
 - **The search box and its results keep to what is in sight.** The open part is as tall as the browser's visual viewport, which shrinks while a phone's on-screen keyboard is up. The results stand under the field and scroll in what is left.

@@ -18,6 +18,7 @@ export function mountTuning(constants: Constants, onChange: () => void): void {
   const camera = pane.addFolder({ title: 'Camera' });
   camera.addBinding(constants, 'fieldOfViewDegrees', { label: 'field of view', min: 2, max: 40, step: 1 });
   camera.addBinding(constants, 'restTiltDegrees', { label: 'tilt at rest', min: 10, max: 85, step: 1 });
+  camera.addBinding(constants, 'restTurnDegrees', { label: 'turn at rest', min: -60, max: 60, step: 1 });
   camera.addBinding(constants, 'minTiltDegrees', { label: 'least tilt', min: 0, max: 85, step: 1 });
   camera.addBinding(constants, 'maxTiltDegrees', { label: 'most tilt', min: 10, max: 89, step: 1 });
   camera.addBinding(constants, 'nearestZoom', { label: 'nearest', min: 0.1, max: 1, step: 0.05 });
