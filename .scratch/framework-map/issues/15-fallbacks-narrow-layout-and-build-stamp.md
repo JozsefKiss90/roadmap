@@ -91,3 +91,7 @@ Left:
 - **`src/build-stamp.ts` holds what the build reads and what the page draws.**
 - **The page layout is read from the `<html>` element, not from the store.** It is the window's, not the map's, and is in no shared link.
 - **`vite.config.ts` reads the graph once for each of its two modules.**
+
+### 2026-11-18: a build from this ticket's commit
+
+The work is commit `cc18bd0`. A build from that commit, with nothing changed, prints "Build identifier: cc18bd0", and the built file holds that identifier with no "+". The builds before the commit showed `67c51f1+`. So two builds from different commits show different build identifiers.
