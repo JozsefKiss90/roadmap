@@ -34,8 +34,12 @@ export function mountFold(part: HTMLElement, heading: HTMLElement, store: Store)
 
   const setFolded = (folded: boolean): void => {
     const opens = !folded && part.hasAttribute('data-folded');
+    // What a folded part holds under its heading leaves the page, and the focus must not go with it: as when the
+    // key `3` brings a need trace back while the focus is on a row of the outline.
+    const heldFocus = folded && part.contains(document.activeElement) && !heading.contains(document.activeElement);
     part.toggleAttribute('data-folded', folded);
     toggle.setAttribute('aria-expanded', String(!folded));
+    if (heldFocus) toggle.focus();
     // What the part holds under its heading fades in as a panel does. A part that folds leaves at once,
     // because the rest of the rail takes its room.
     if (!opens) return;

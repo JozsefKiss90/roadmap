@@ -81,6 +81,7 @@ start()
     console.error(error);
     const message = document.createElement('p');
     message.className = 'fault';
+    message.setAttribute('role', 'alert');
     message.textContent =
       error instanceof GraphRejected
         ? 'This file holds framework data that failed its checks, so the map cannot be drawn. Ask the Architect for a new build.'

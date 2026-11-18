@@ -10,11 +10,12 @@
  */
 import { ChevronRight, createElement } from 'lucide';
 import type { GraphIndex } from './data';
+import { reasonsAtFullStrength } from './announcer';
 import { COMMITTED_ONLY } from './display';
 import { element, swatch } from './dom';
 import { mountFold } from './rail-fold';
-import { FILTER_NAMES, isFiltered, scrubbedPhaseOf, tracedNeedOf } from './state';
-import type { FilterName, Filters, Lens, MapState, Store } from './state';
+import { FILTER_NAMES, isFiltered } from './state';
+import type { FilterName, Filters, MapState, Store } from './state';
 
 /** The name the rail gives each filter. */
 const FILTER_TITLES: Readonly<Record<FilterName, string>> = {
@@ -34,15 +35,6 @@ function valueName(index: GraphIndex, name: FilterName, value: string): string {
   return value;
 }
 
-/** Why a lens leaves tools in reach, as assistive technology hears it after the count. Null for a lens that leaves none out. */
-function reasonInReach(index: GraphIndex, lens: Lens | null): string | null {
-  if (lens?.type === 'role') return `are in reach of the ${index.roleName(lens.role)}`;
-  const phase = scrubbedPhaseOf(lens);
-  if (phase !== null) return `serve a need scheduled in ${phase}`;
-  const need = index.need(tracedNeedOf(lens) ?? '');
-  return need ? `serve the need ${need.id}, ${need.label}` : null;
-}
-
 /** Whether the decision classes chosen are exactly those of "committed only". */
 const isCommittedOnly = (filters: Filters): boolean =>
   filters.decision.length === COMMITTED_ONLY.length && COMMITTED_ONLY.every((each) => filters.decision.includes(each));
@@ -58,9 +50,9 @@ export interface FilterPanel {
 export function mountFilterPanel(parent: HTMLElement, before: Node, index: GraphIndex, store: Store): FilterPanel {
   const total = index.tools.length;
 
-  // The count is a live region, so a change of filter or of lens is said as well as shown.
+  // The count is shown here. src/announcer.ts says a change of it, in every page layout: this panel is
+  // not on the page while the rail stands as icons, and a live region that is not on the page says nothing.
   const count = element('p', 'filters-count');
-  count.setAttribute('role', 'status');
 
   const committed = element('input', null);
   committed.type = 'checkbox';
@@ -156,8 +148,8 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
   function render({ lens, filters }: MapState): void {
     // The filters apply on top of the lens, so the count is of the tools at full strength under both.
     const atFullStrength = index.emphasised({ lens, filters }).size;
-    // What assistive technology hears after the numbers: why these tools are the ones at full strength.
-    const reasons = [reasonInReach(index, lens), isFiltered(filters) && 'pass the filters'].filter(Boolean);
+    // What assistive technology reads after the numbers: why these tools are the ones at full strength.
+    const reasons = reasonsAtFullStrength({ lens, filters }, index);
     const explanation = `${reasons.length > 0 ? ` ${reasons.join(' and ')}` : ''}${isFiltered(filters) ? '' : ', no filter chosen'}`;
     count.replaceChildren(`${atFullStrength} of ${total} tools`, element('span', 'visually-hidden', explanation));
     committed.checked = isCommittedOnly(filters);

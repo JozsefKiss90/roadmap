@@ -31,6 +31,27 @@ export function iconButton(className: string, icon: IconNode, label: string): HT
   return button;
 }
 
+/**
+ * Marks a control as one a single key leads to (src/single-keys.ts), with the name it has without the
+ * key. `offerSingleKeys` writes the key into the text shown on hover, or leaves it out.
+ */
+export function hintSingleKey(control: HTMLElement, name: string, key: string): void {
+  control.dataset.singleKey = key;
+  control.dataset.keyName = name;
+}
+
+/** Offers the single keys on every control marked for one, or takes the offer away while they are switched off. */
+export function offerSingleKeys(within: ParentNode, on: boolean): void {
+  for (const control of within.querySelectorAll<HTMLElement>('[data-single-key]')) {
+    const { singleKey = '', keyName = '' } = control.dataset;
+    control.title = on ? `${keyName} (key ${singleKey})` : keyName;
+    // The key is said of what takes it: the radio button inside a segment, or the control itself.
+    const taker = control.querySelector('input') ?? control;
+    if (on) taker.setAttribute('aria-keyshortcuts', singleKey);
+    else taker.removeAttribute('aria-keyshortcuts');
+  }
+}
+
 /** Gives a square the form of a decision-class step, in the faded state or not. */
 export function dressSwatch(square: HTMLElement, step: DecisionStep, faded: boolean): void {
   // The same token and the same faded colours the scene draws the mark from, so the two cannot drift apart.
@@ -52,14 +73,21 @@ export function stepSwatch(step: DecisionStep): HTMLElement {
 /** The square of a decision class: the form of its step. */
 export const swatch = (decisionClass: string): HTMLElement => stepSwatch(decisionStep(decisionClass));
 
-/** The link to the tool matrix, which opens beside the map. `href` is `toolMatrixHref` in src/constants.ts. */
-export function toolMatrixLink(href: string): HTMLAnchorElement {
+/**
+ * A link that opens in a tab of its own, beside the map. The arrow shows it, and assistive technology
+ * is told it in words.
+ * @param rel What the link tells the page it opens, as the `rel` attribute.
+ */
+export function outsideLink(href: string, text: string, rel: string): HTMLAnchorElement {
   const arrow = createElement(ArrowUpRight);
   arrow.setAttribute('aria-hidden', 'true');
   arrow.classList.add('card-icon');
-  const link = element('a', 'card-link', 'Open the tool matrix', arrow);
+  const link = element('a', 'card-link', text, arrow, element('span', 'visually-hidden', ' (opens in a new tab)'));
   link.href = href;
   link.target = '_blank';
-  link.rel = 'noopener';
+  link.rel = rel;
   return link;
 }
+
+/** The link to the tool matrix. `href` is `toolMatrixHref` in src/constants.ts. */
+export const toolMatrixLink = (href: string): HTMLAnchorElement => outsideLink(href, 'Open the tool matrix', 'noopener');

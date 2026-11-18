@@ -14,6 +14,7 @@ Run these from this folder, after `npm install`.
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
 | `npm run screenshots` | Opens the built file in each named state at ten sizes, from a 360×640 phone to 1920×1080, with reduced motion off and on, and saves a screenshot to `../screenshots/`. It takes about twenty-five minutes |
 | `npm run touch` | Drives the built file as a phone would, with an emulated touch screen, and says what it found; see "Touch" |
+| `npm run accessibility` | Drives the built file with the keyboard alone, reads what it tells assistive technology, and measures its text and its controls; see "Accessibility" |
 | `npm test` | Runs the unit tests, then the generator's tests in `../tool-discovery/` |
 | `npm run typecheck` | Type-checks without building |
 | `npm run dev` | Starts the dev server with the tuning panel |
@@ -58,8 +59,9 @@ Run these from this folder, after `npm install`.
 | `src/legend.ts` | The legend of the four decision-class steps, with the faded, traced and best-fit states while they are on show |
 | `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
 | `src/search-box.ts` | The search field and the list of what it finds |
-| `src/key-list.ts` | The list of keys that `?` opens |
-| `src/announcer.ts` | Tells assistive technology what is now selected, or where the map has gone |
+| `src/key-list.ts` | The list of keys that `?` opens, with the switch for the single keys |
+| `src/single-keys.ts` | The switch for the keys that act anywhere on their own, which the browser keeps |
+| `src/announcer.ts` | Tells assistive technology what is now selected, which lens is on and how many tools the lens and the filters leave, or where the map has gone |
 | `src/dom.ts` | The helpers the panels build their elements with |
 
 **The layout runs in the build, not in the page** (ADR 0002). A plugin in `vite.config.ts` runs `layoutStack` on the graph and serves the result as the module `virtual:stack-layout`. The page imports positions and never computes them, and nothing is written into the graph JSON. The layout's spacings are `STACK_METRICS` in `src/layout.ts`; after changing one, rebuild or reload the dev server.
@@ -152,10 +154,38 @@ The rail is the 240-pixel column down the left. It holds the title, the search b
 | Search box | Escape | Clears the search |
 
 - **Focus is always shown.** One rule in `src/styles.css` gives whatever holds the keyboard focus the guide's `map-focus-outline`.
-- **Focus is never lost.** When Escape closes a detail card that holds the focus, the focus goes to the outline, at the row for where the map is.
-- **Changes are announced.** A live region says what is now selected, or where the map has gone when nothing is selected. The search says how many results it found.
+- **Focus is never lost.** When Escape closes a detail card that holds the focus, the focus goes to the outline, at the row for where the map is. When the filters or the outline fold under the focus, it goes to their heading.
+- **Changes are announced.** A live region says what is now selected, or where the map has gone when nothing is selected. It says a change of lens or of filters too, with the count; see "Accessibility". The search says how many results it found.
+- **The single keys can be switched off.** `/`, `?` and `1` to `4` act anywhere on the page with no other key held. The list of keys has a checkbox for them, and the browser keeps what it is set to. Escape, Tab and the arrow keys work whatever it says.
 - **The camera keeps clear of the rail**, as it does of the detail card. `railPx` in `src/constants.ts` is the rail's width, and `pictureRoomAt` in `src/page-layout.ts` gives the room the panels leave the picture in each page layout.
 - **A long tool name is cut short with an ellipsis** in the list above a cell, where the list would not fit between the rail and the open detail card. The outline, the hover label and the detail card give the name in full.
+
+## Accessibility
+
+The canvas cannot be read by a screen reader. The outline is its equivalent, and the canvas says so: its description names the outline, and its `aria-details` points to it. While the rail stands as icons it points to the icon that opens the outline. Everything the canvas does can be done from the outline, the search and the panels, with the keyboard alone. The panels are held to WCAG 2.1 AA.
+
+- **One live region says every change**, in `src/announcer.ts`. It is on the page in every page layout. The counts in the rail are not: while the rail stands as icons they are not drawn, and a live region that is not drawn says nothing.
+
+  | Change | What is said |
+  | --- | --- |
+  | A tool or a cluster is selected | "Selected the tool Serena, in cluster 4A, Engineering graph and code intelligence. Its detail card is open." |
+  | A need is chosen | "Tracing need N15, … 15 tools serve it, 7 as a best fit. Its detail card is open." |
+  | A lens comes on | "Role lens on. 269 of 752 tools in reach of the Designer." |
+  | A step within a lens, to another role or phase | "92 of 752 tools serving a need scheduled in P2." |
+  | The need trace waits for a need | "Need trace on. Choose a need to trace." |
+  | The lens goes off | "Lens off. All 752 tools are in reach, with no filter chosen." |
+  | A filter is set or cleared | "166 of 752 tools in reach of the Designer and passing the filters." |
+  | The selection is cleared, or the map goes elsewhere | "Nothing selected.", "Tier T3, Pipelines and applications." |
+
+- **Every control is at least 24 by 24 pixels** where a mouse is the main pointer, and 44 where a touch screen is; see "Touch". The chevron of an outline row is a control of its own, which opens and closes the row, and has those sizes too.
+- **A part of the rail that folds under the keyboard focus hands the focus to its heading.** The filters and the outline fold when a need trace comes on, as with the key `3`.
+- **While the single keys are off, no control offers one**: not in the text shown on hover, not to assistive technology, and not beside the search field or "Keys".
+- **Text keeps to the contrast contract and the text floor**, and no name is cut where a partner sets wider letter, word and line spacing. A segment of the lens switch or a step of the phase strip then takes a second line.
+- **A link that opens in a new tab says so** to assistive technology. The arrow beside it shows it.
+- **On the fallback page** each tier's count and name is text that a screen reader reads. The drawings of the plates are hidden from it.
+- **`npm run accessibility`** runs `scripts/accessibility-check.mjs`. It does every task with the keyboard alone and reads the live region and the keyboard focus after each step. It walks the Tab order. In each state it checks that every control has a name, that the text meets the contrast contract and the text floor, and that every control is 24 pixels each way. It does the same where the rail stands as icons, at 1280×720, 683×384 and 390×844. 683×384 is a 1366×768 window with the page zoomed to 200%. It checks a part that folds under the focus, the size of the controls on a touch screen with the outline on show, reduced motion, wider text spacing, the switch for the single keys and the fallback page. It is a browser driven by a script, and no screen reader. `scripts/check-page.mjs` holds what it shares with the touch check and the screenshot script.
+
+What the review left as it is, and why, is in ticket 16.
 
 ## The role lens
 
@@ -164,7 +194,7 @@ The lens switch stands in the rail under the search box. It offers no lens, the 
 - **The role lens brings forward the tools one role uses.** A partner chooses the Architect, the Designer or the Analyst. The tools that role uses keep their form at full strength, in all eight tiers. Every other tool fades in place, as a filtered-out tool does.
 - **It means "used by" only.** A tool the role operates but does not use is faded. "Operated by" is a filter.
 - **A shared tool looks like the role's other tools.** The detail card's "Used by" line lists every role that uses it.
-- **The number of tools in reach** stands beside "Lens", as "269 tools in reach" for the Designer. The count at the head of the filters is the live region that announces a change of lens or role.
+- **The number of tools in reach** stands beside "Lens", as "269 tools in reach" for the Designer. A change of lens or role is announced with the count; see "Accessibility".
 - **Each tier's count is of its tools in reach** while the lens is on, as "T3 · 87 of 154 in reach" on the canvas. A tier with no tool in reach has its name in the colour of a tag. The counts in the outline's tier and cluster rows follow.
 - **The filters apply on top of the lens.** A tool is at full strength when it is in reach and passes the filters. The count at the head of the filters gives those tools. The number in reach and the tiers' counts do not change with the filters.
 - **The one filled segment is the lens that is on.** "None" and the chosen role are shown by a ring.
@@ -222,7 +252,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **Values of one filter combine as "or", and filters combine as "and".** Designer and Analyst under "Used by", with Hub under "Hosting", leaves the Hub tools that either role uses.
 - **A tool the filters leave out fades and stays in place.** Its mark keeps its form and takes the guide's `map-faded`. Its row in the outline is dimmed, and so is its name in the list above a focused cell. It can still be hovered, clicked and selected. A selected mark keeps the selected fill.
 - **A cluster or tier row of the outline is dimmed** when the filters leave none of its tools in.
-- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. It is a live region, so a change is announced.
+- **The count** at the head of the filters gives the tools that pass, as "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. A change is announced; see "Accessibility".
 - **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 327 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
 - **"Clear"** clears every filter. It is there only while a filter is on.
 - **The numbers beside the values do not change.** Each is the number of all tools with that value, whatever else is chosen.
@@ -326,6 +356,7 @@ Every change on the map takes one of four durations. They are the style guide's 
 
 **The fallback page.** `src/fallback.ts` asks the browser for WebGL before any scene is made. Without it the page shows the title, a short explanation, a link to the tool matrix, the static picture of the stack, the four decision-class steps and the build stamp. There is no console error, and a URL fragment changes nothing.
 
+- **A screen reader reads the picture's names.** Each tier's count and name is text of the page. The drawings of the plates are hidden from assistive technology, and the picture as a whole is a named group.
 - **The static picture is drawn by the build.** `src/stack-picture.ts` is a pure function of the layout. `vite.config.ts` runs it and inlines its markup as the module `virtual:stack-picture`, as it does the layout itself (ADR 0002). The picture adds about 0.07 MB to the built file.
 - **It shows the stack at rest**: a row for each tier, with its count and name and a drawing of its plate, cells and marks. Each mark is in the form of its decision-class step. A mark's outline has the width its mark token gives, and is drawn inside the mark. It takes its colours from the map's tokens in `src/styles.css`.
 - **It fits a window of any width.** The names are text of the page and keep their size. In a window of 1,233 pixels or more they stand beside the plates, which are drawn at their own size. In a narrower one each tier's count and name stand over its plate, and the plates are drawn as wide as the window allows. The page never scrolls sideways; it scrolls down where it must.

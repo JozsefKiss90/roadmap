@@ -26,7 +26,7 @@
  */
 import { PanelLeftClose, PanelLeftOpen } from 'lucide';
 import type { IconNode } from 'lucide';
-import { iconButton } from './dom';
+import { hintSingleKey, iconButton } from './dom';
 import { fadeIn } from './motion';
 import { hasBar } from './page-layout';
 import type { PageLayout } from './page-layout';
@@ -36,8 +36,10 @@ import type { MapState, Store } from './state';
 export interface RailPart {
   id: string;
   icon: IconNode;
-  /** What the icon does, as its name and the text shown on hover: "Search (key /)". */
+  /** What the icon does, as its name and the text shown on hover: "Search". */
   label: string;
+  /** The single key that goes to the part, if it has one. The text shown on hover names it while the single keys are on. */
+  key?: string;
   /** The part's own element in the rail. */
   element: HTMLElement;
   /** Goes to the part. The rail is open when this is called. */
@@ -62,6 +64,9 @@ export interface RailCollapse {
   setLayout(layout: PageLayout): void;
 }
 
+/** The id of the icon of a part of the rail, for what points to the icon from elsewhere on the page. */
+export const railIconId = (partId: string): string => `rail-icon-${partId}`;
+
 /**
  * @param rail The rail. The icons become its first child, and the button that closes it its second.
  * @param parts The parts with an icon, from the first icon on.
@@ -85,6 +90,8 @@ export function mountRailCollapse(
   const buttons = new Map<string, HTMLButtonElement>();
   for (const part of parts) {
     const button = iconButton('rail-icon', part.icon, part.label);
+    button.id = railIconId(part.id);
+    if (part.key) hintSingleKey(button, part.label, part.key);
     button.addEventListener('click', () => open(part));
     buttons.set(part.id, button);
   }

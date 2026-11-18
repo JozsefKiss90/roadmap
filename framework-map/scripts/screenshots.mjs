@@ -27,10 +27,12 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MOST_LABELS, states, viewports } from './screenshot-states.mjs';
+import { withoutWebGL } from './check-page.mjs';
 import { controlFaults } from './control-faults.mjs';
 import { labelFaults } from './label-faults.mjs';
 import { launchBrowser } from './launch-browser.mjs';
 import { panelFaults } from './panel-faults.mjs';
+import { readControls } from './read-controls.mjs';
 
 const READY_SELECTOR = 'html[data-ready="true"]';
 const READY_TIMEOUT_MS = 15_000;
@@ -75,15 +77,6 @@ const fail = (/** @type {string} */ message) => {
   console.error(`  ! ${message}`);
 };
 let taken = 0;
-
-/** Run in the page before its own code: the browser then gives no WebGL context, as one with WebGL switched off. */
-function withoutWebGL() {
-  const getContext = HTMLCanvasElement.prototype.getContext;
-  // @ts-expect-error The stand-in takes any context name, as the page may ask for any.
-  HTMLCanvasElement.prototype.getContext = function (name, ...rest) {
-    return /webgl/i.test(String(name)) ? null : Reflect.apply(getContext, this, [name, ...rest]);
-  };
-}
 
 /**
  * Run in the page: the panels that are on it, as rectangles, and the part of the window they leave clear.
@@ -141,28 +134,6 @@ function readPanels() {
     height: strip?.top ?? (card && atBottom ? card.top : root.clientHeight),
   };
   return { panels, clear, pageWidth: Math.max(root.scrollWidth, document.body.scrollWidth), fallback: root.hasAttribute('data-fallback') };
-}
-
-/**
- * Run in the page: every control a finger can press that is on show, as a rectangle with a name for its kind.
- * A field or a checkbox is pressed by the label or the box around it, so that is what is measured.
- */
-function readControls() {
-  /** @type {import('./control-faults.mjs').ControlRect[]} */
-  const controls = [];
-  const seen = new Set();
-  for (const found of document.querySelectorAll('button, a[href], input, [role="option"], .outline-row')) {
-    const pressed = found.matches('input') ? (found.closest('label, .search-field') ?? found) : found;
-    if (seen.has(pressed)) continue;
-    seen.add(pressed);
-    // What is not drawn, or takes no press, is no control: a part that is folded, a panel that is closing.
-    if (!pressed.checkVisibility({ visibilityProperty: true }) || pressed.closest('[inert]')) continue;
-    const rect = pressed.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) continue;
-    const name = `${pressed.tagName.toLowerCase()}.${[...pressed.classList].join('.') || pressed.getAttribute('role') || '?'}`;
-    controls.push({ name, left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
-  }
-  return controls;
 }
 
 try {

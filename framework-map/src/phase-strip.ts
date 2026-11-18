@@ -55,7 +55,8 @@ export function mountPhaseStrip(
       'phase-step',
       input,
       element('span', 'phase-step-name', phase),
-      element('span', 'phase-step-counts', `${needs} · ${tools}`),
+      // Each count is a part of its own, so that a line breaks between the two and never inside one.
+      element('span', 'phase-step-counts', element('span', null, `${needs} ·`), ' ', element('span', null, tools)),
       // The same two counts, one over the other, for a strip with no room for them side by side. src/styles.css shows the one form or the other.
       element('span', 'phase-step-counts phase-step-counts-stacked', element('span', null, needs), element('span', null, tools)),
     );

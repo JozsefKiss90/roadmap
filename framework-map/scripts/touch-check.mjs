@@ -16,13 +16,10 @@
  *
  * Usage: node scripts/touch-check.mjs [path to the built file]
  */
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { atRest, builtFileUrlFrom, createChecks } from './check-page.mjs';
 import { launchBrowser } from './launch-browser.mjs';
 
-const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url));
-const builtFile = path.resolve(process.argv[2] ?? path.join(repositoryRoot, 'framework-map.html'));
-const builtFileUrl = pathToFileURL(builtFile).href;
+const builtFileUrl = builtFileUrlFrom(process.argv[2]);
 
 const PHONE = { width: 390, height: 844 };
 const PHONE_ON_ITS_SIDE = { width: 844, height: 390 };
@@ -40,12 +37,7 @@ const LINK = 'cluster=4A&select=tool:serena&hosting=Hub&lens=role&role=A';
 /** Longer than the hold of src/press.ts. */
 const HOLD_MS = 700;
 
-let failed = 0;
-/** Says one finding. */
-function check(/** @type {string} */ name, /** @type {boolean} */ ok, /** @type {unknown} */ detail = '') {
-  if (!ok) failed += 1;
-  console.log(`${ok ? '  ok    ' : '  FAILED'}  ${name}${detail === '' ? '' : `  (${typeof detail === 'string' ? detail : JSON.stringify(detail)})`}`);
-}
+const { check, failed } = createChecks();
 
 const browser = await launchBrowser();
 /** @type {string[]} */
@@ -81,10 +73,6 @@ async function open(size, { fragment = '', reducedMotion = 'no-preference', mobi
 /** Waits until the page has taken a page layout, as after the window is turned. */
 const inLayout = (/** @type {import('playwright').Page} */ page, /** @type {string} */ layout) =>
   page.waitForFunction((name) => document.documentElement.dataset.layout === name, layout, { timeout: 5000 }).catch(() => {});
-
-/** Waits until no flight, fade or panel is under way. */
-const atRest = (/** @type {import('playwright').Page} */ page) =>
-  page.waitForFunction(() => window.frameworkMap?.isMoving() === false);
 
 /** What the page says of itself. */
 const read = (/** @type {import('playwright').Page} */ page) =>
@@ -456,8 +444,8 @@ try {
   await browser.close();
 }
 
-if (failed > 0) {
-  console.error(`\n${failed} check(s) failed.`);
+if (failed() > 0) {
+  console.error(`\n${failed()} check(s) failed.`);
   process.exit(1);
 }
 console.log('\nEvery check passed.');

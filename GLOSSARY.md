@@ -145,6 +145,10 @@ _Avoid_: Version number, release, hash
 The tree of tiers, clusters and tools in the rail; it reaches everything the canvas does, by keyboard.
 _Avoid_: Tree view, list, index
 
+**Single keys**:
+The keys that act anywhere on the page with no other key held: `/`, `?` and `1` to `4`. A partner can switch them off in the list of keys. Escape, Tab and the arrow keys are not single keys.
+_Avoid_: Shortcuts, hotkeys
+
 **Hover label**:
 The small label that names a tool and its cluster: beside the pointer for the mark under it, and over a finger for the mark it holds.
 _Avoid_: Tooltip, popup

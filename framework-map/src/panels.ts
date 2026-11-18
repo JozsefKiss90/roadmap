@@ -15,7 +15,7 @@ import type { GraphIndex } from './data';
 import { mountAnnouncer } from './announcer';
 import { buildStamp } from './build-stamp';
 import { mountDetailCard } from './detail-card';
-import { element, iconButton } from './dom';
+import { element, hintSingleKey, iconButton, offerSingleKeys } from './dom';
 import { mountFilterPanel } from './filter-panel';
 import { mountKeyList } from './key-list';
 import { mountLegend } from './legend';
@@ -24,9 +24,10 @@ import { mountNeedList } from './need-list';
 import { mountOutline } from './outline';
 import { followWindow, namesFitFor, underBarAt, windowNow } from './page-layout';
 import { mountPhaseStrip } from './phase-strip';
-import { mountRailCollapse } from './rail-collapse';
+import { mountRailCollapse, railIconId } from './rail-collapse';
 import { createSearch } from './search';
 import { mountSearchBox } from './search-box';
+import { browserStorage, createSingleKeys, isSingleKey } from './single-keys';
 import { isFiltered, listsNeeds, tracedNeedOf } from './state';
 import type { MapState, Store } from './state';
 
@@ -126,7 +127,8 @@ export function mountPanels(
   if (title) rail.append(title);
   app.append(rail);
 
-  const keyList = mountKeyList(app);
+  const singleKeys = createSingleKeys(browserStorage());
+  const keyList = mountKeyList(app, singleKeys);
   const keys = element('button', 'rail-keys', 'Keys', element('kbd', null, '?'));
   keys.type = 'button';
   keys.setAttribute('aria-label', 'Show the list of keys');
@@ -159,12 +161,13 @@ export function mountPanels(
   const legend = mountLegend(app, store);
   // In every page layout but the full one the rail stands as icons, one for each of these parts: a
   // column of them in the compact layout, and a bar across the top in the narrow and the upright one.
-  const keysIcon = iconButton('rail-icon rail-icon-foot', Keyboard, 'Keys (key ?)');
+  const keysIcon = iconButton('rail-icon rail-icon-foot', Keyboard, 'Keys');
+  hintSingleKey(keysIcon, 'Keys', '?');
   keysIcon.addEventListener('click', () => keyList.open());
   const railCollapse = mountRailCollapse(
     rail,
     [
-      { id: 'search', icon: Search, label: 'Search (key /)', element: searchBox.element, focus: () => searchBox.focus() },
+      { id: 'search', icon: Search, label: 'Search', key: '/', element: searchBox.element, focus: () => searchBox.focus() },
       {
         id: 'lens',
         icon: Eye,
@@ -213,6 +216,24 @@ export function mountPanels(
   window.addEventListener('resize', showHint);
   mountAnnouncer(app, index, store);
 
+  // The canvas points to the outline as its equivalent: to the tree while it is on show, and to the icon that
+  // opens it while the rail stands as icons. The rail says which, in the attributes src/rail-collapse.ts sets.
+  const stage = app.querySelector('#stage');
+  const pointToOutline = (): void =>
+    stage?.setAttribute('aria-details', outline.element.getClientRects().length > 0 ? outline.element.id : railIconId('outline'));
+  new MutationObserver(pointToOutline).observe(rail, { attributes: true, attributeFilter: ['data-collapsed', 'data-part'] });
+  pointToOutline();
+
+  // While the single keys are off the page does not offer them: `data-single-keys="off"` on the `<html>` element
+  // takes their hints off the page, in src/styles.css, and no control names its key.
+  const offerKeys = (on: boolean): void => {
+    if (on) delete document.documentElement.dataset.singleKeys;
+    else document.documentElement.dataset.singleKeys = 'off';
+    offerSingleKeys(app, on);
+  };
+  singleKeys.subscribe(offerKeys);
+  offerKeys(singleKeys.isOn());
+
   document.addEventListener('keydown', (event) => {
     // A held key acts once. The open list of keys takes its own Escape, and no other key.
     if (event.defaultPrevented || event.repeat || keyList.isOpen()) return;
@@ -222,6 +243,8 @@ export function mountPanels(
       return;
     }
     if (isTyping(event.target) || event.altKey || event.ctrlKey || event.metaKey) return;
+    // A partner may have switched the single keys off, in the list of keys.
+    if (isSingleKey(event.key) && !singleKeys.isOn()) return;
     if (event.key === '/') {
       event.preventDefault();
       railCollapse.open('search');

@@ -13,7 +13,7 @@
  * knows nothing of the scene.
  */
 import type { GraphIndex } from './data';
-import { element } from './dom';
+import { element, hintSingleKey } from './dom';
 import { showRailPart } from './motion';
 import { narrows } from './state';
 import type { MapState, Store } from './state';
@@ -52,13 +52,12 @@ function segments(
       input.type = 'radio';
       input.name = group;
       input.value = value;
-      if (key) input.setAttribute('aria-keyshortcuts', key);
       input.addEventListener('change', () => {
         if (input.checked) onChoose(value);
       });
       inputs.set(value, input);
       const segment = element('label', 'segment', input, element('span', null, name));
-      if (key) segment.title = `${name} (key ${key})`;
+      if (key) hintSingleKey(segment, name, key);
       return segment;
     }),
   );
@@ -86,7 +85,7 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
   const heading = element('h2', 'rail-heading', 'Lens');
   heading.id = 'lens-heading';
 
-  // The count at the head of the filters is the live region that says a change of lens or role.
+  // src/announcer.ts says a change of lens or role, with the count.
   const count = element('p', 'lens-count');
 
   const lenses = segments('lens', LENSES, (value) => {

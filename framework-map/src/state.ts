@@ -118,11 +118,16 @@ export interface Places {
 
 export const AT_STACK: MapState = { distance: 'stack', tier: null, cluster: null, selection: null, filters: NO_FILTERS, lens: null };
 
-const sameLens = (a: Lens | null, b: Lens | null): boolean =>
+/** Whether two lenses are the same lens, showing the same role, need or phase. */
+export const sameLens = (a: Lens | null, b: Lens | null): boolean =>
   a === b ||
   (a?.type === 'role' && b?.type === 'role' && a.role === b.role) ||
   (a?.type === 'need' && b?.type === 'need' && a.need === b.need) ||
   (a?.type === 'phase' && b?.type === 'phase' && a.phase === b.phase);
+
+/** Whether two sets of filters hold the same values for the same filters. A link read anew makes a new set that holds what the old one did. */
+export const sameFilters = (a: Filters, b: Filters): boolean =>
+  a === b || FILTER_NAMES.every((name) => a[name].join('\n') === b[name].join('\n'));
 
 const same = (a: MapState, b: MapState): boolean =>
   a.distance === b.distance &&
@@ -131,7 +136,7 @@ const same = (a: MapState, b: MapState): boolean =>
   a.selection?.type === b.selection?.type &&
   a.selection?.id === b.selection?.id &&
   sameLens(a.lens, b.lens) &&
-  (a.filters === b.filters || FILTER_NAMES.every((name) => a.filters[name].join('\n') === b.filters[name].join('\n')));
+  sameFilters(a.filters, b.filters);
 
 /** Goes to the tier distance for a tier, with nothing selected. An id the graph lacks changes nothing. */
 export function focusTier(state: MapState, places: Places, tierId: string): MapState {

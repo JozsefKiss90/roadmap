@@ -6,12 +6,12 @@
  * The card is absent while nothing is selected. A field with no value is left
  * out, with its label.
  */
-import { ArrowUpRight, X, createElement } from 'lucide';
+import { X, createElement } from 'lucide';
 import type { IconNode } from 'lucide';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
 import { decisionStep, kindIcon } from './display';
-import { element, swatch, toolMatrixLink } from './dom';
+import { element, outsideLink, swatch, toolMatrixLink } from './dom';
 import type { Child } from './dom';
 import type { ClusterNode, NeedNode, RoleCode, ToolNode } from './graph';
 import { kindIconNode } from './icons';
@@ -163,14 +163,7 @@ export function mountDetailCard(
       ),
     );
 
-    const repository = hasValue(tool.url)
-      ? element('a', 'card-link', tool.repo ?? tool.url, icon(ArrowUpRight))
-      : null;
-    if (repository) {
-      repository.href = tool.url ?? '';
-      repository.target = '_blank';
-      repository.rel = 'noopener noreferrer';
-    }
+    const repository = hasValue(tool.url) ? outsideLink(tool.url, tool.repo ?? tool.url, 'noopener noreferrer') : null;
     const overlap = index.overlapOf(tool.id);
     const cluster = index.cluster(tool.cluster);
     const tier = index.tier(tool.tier);

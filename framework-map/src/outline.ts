@@ -349,6 +349,8 @@ export function mountOutline(parent: HTMLElement, before: Node, index: GraphInde
   const heading = element('h2', 'rail-heading', 'Outline');
   const nav = element('nav', 'outline', heading, tree);
   nav.setAttribute('aria-label', 'Outline');
+  // The canvas names this element as its equivalent, with `aria-details` in framework-map.html.
+  nav.id = 'outline';
   parent.insertBefore(nav, before);
   // While the need list is on show the outline folds to its heading, to give the list the rail's height.
   const fold = mountFold(nav, heading, store);

@@ -343,6 +343,8 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 | `map-rail-row` | Geist (sans) | 13px | 600 for a tier, 500 for a cluster, 400 for a tool; 600 when selected | Rows of the outline. A search result's name and the "Keys" button are 13px at 500, the search field and its "nothing matches" line 13px at 400, and the line under a result is `map-card-note`. A filter's name, "Committed only" and "Clear" are 13px at 500, and a filter's values 13px at 400. A row of the need list is 13px at 400, and 600 when its need is traced. A segment of the lens switch is 13px at 500, and 600 when chosen. The lens that is on is filled with `ink`; "None" and a chosen role take `paper-2` and a 2px `ink` ring. A step of the phase strip has its phase at 13px and 600 over its counts in `map-card-note`; the phase that is shown takes `paper-2` and the 2px `ink` ring, as a chosen role does |
 | `map-key` | Geist Mono | 11px | 500 | A key of the keyboard, in a 1px `rule-solid` box |
 
+The switch for the single keys, in the list of keys, is a checkbox as the filters have them, with its name at 13px and 500 and a line in `map-card-note`, `muted`, under it.
+
 **Text floor.** No name is drawn below 12 pixels on screen, and no count or tag below 11. The floor holds at every distance and at the smallest supported window, 360×640. Nothing is made to fit by drawing it smaller: a name that has no room is left out, and a panel says it in its place. The 7 to 9 pixel sizes in the Typography table are for diagrams and are not used in the map. A size above may be tuned by eye, but never below the floor.
 
 **Page layouts.** There are four, by the size and shape of the window. The canvas is the main thing on screen in each.
@@ -361,6 +363,10 @@ The check cannot tell which surfaces a token sits on. Giving a token a row for e
 - **Nothing slides.** A part of the rail, the detail card and the legend open by their opacity in every layout, over the panel duration.
 
 **Touch.** Where a touch screen is the main pointer, every control is at least 44 by 44 pixels, in every page layout, and the search field is set at 16px. A laptop with a touch screen has a mouse for its main pointer and keeps the sizes above. On the canvas a tap selects, a drag orbits and a pinch changes the distance. A finger held in place for half a second shows the hover label, 28 pixels clear of the finger, with `map-hover-ring` on the mark; it stays until the next touch. A mark drawn under 10 pixels is too small for a finger, and a tap on it is a tap on its cell.
+
+**Pointer.** Where a mouse is the main pointer, every control is at least 24 by 24 pixels. A name in the detail card that selects what it names, and a link there, stand on a 20-pixel line and take the rest as padding. The chevron of an outline row is a control of its own, 24 pixels with its padding, and 44 where a touch screen is the main pointer. A crumb of the breadcrumb that gives way to the others keeps 24 pixels.
+
+**Text spacing.** No name of a control is cut where a partner sets wider letter, word and line spacing. A segment of the lens switch, a role or a step of the phase strip takes a second line: its height is a least height. The two counts of a phase step break between them and never inside one.
 
 **Static picture.** Where the browser has no WebGL, the page shows the stack at rest as a flat drawing. Its plates, cells and marks take the same map tokens as the scene, its tier names are `map-tier-name` and its counts `map-count`. The names and counts are text of the page, and are never drawn smaller. In a window too narrow for the names beside the plates, each tier's count and name stand over its plate, and the plates alone are drawn smaller to fit the width.
 

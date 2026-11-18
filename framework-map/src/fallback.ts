@@ -44,8 +44,10 @@ export function mountFallback(
   document.documentElement.dataset.fallback = 'true';
   const { tiers, clusters, tools } = index.graph.meta.counts;
 
+  // A group, not an image: an image hides what it holds, and the picture holds each tier's count and name as
+  // text. The drawings of the plates are hidden one by one, by src/stack-picture.ts.
   const figure = element('div', 'fallback-picture');
-  figure.setAttribute('role', 'img');
+  figure.setAttribute('role', 'group');
   figure.setAttribute(
     'aria-label',
     `The stack at rest: ${tiers} tiers, each a plate that holds its clusters, with one mark for each of the ${tools} tools.`,
