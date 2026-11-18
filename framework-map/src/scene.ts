@@ -8,7 +8,9 @@
  *
  * 3d-force-graph is the renderer and the camera (ADR 0002). Every mark is one
  * of its nodes, pinned where the layout put it; no simulation runs and no link
- * is drawn. Plates and cells are plain objects added to its scene.
+ * is drawn. Plates and cells are plain objects added to its scene. A plate is
+ * its face and, under it, its underside: the same rectangle, drawn a fixed
+ * number of pixels lower on screen, which gives the plate its thickness.
  *
  * The scene reads the distance, the focus and the selection from the state
  * store, and writes to the store when the partner clicks a plate, a cell or a
@@ -20,8 +22,8 @@
  * selected fill, and src/trace-drawing.ts draws the rest of a need trace,
  * with the ring that marks the selected tool while a need is traced.
  *
- * The mark under the pointer gets a ring and a hover label, and the selected
- * tool's mark takes the selected fill. src/selection-drawing.ts draws the
+ * The mark under the pointer gets a fill, a ring and a hover label, and its
+ * cell an outline. The selected tool's mark takes the selected fill. src/selection-drawing.ts draws the
  * rest of the selection: a selected cell's outline and the `implements`
  * lines. The camera frames both ends of those lines, and the plates that lie
  * between the ends fade.
@@ -30,11 +32,11 @@
  * camera transition flies the camera. A plate fades, and a mark changes form,
  * as a fade: a mark that changes form is drawn as a mix of the two forms, in
  * place. At the tier and cluster distances src/depth-blur.ts blurs the plates
- * under the focused one a little.
+ * under the focused one a little, in a skin that has the blur: the dark skin
+ * has none, and `depthBlur` in src/constants.ts is off.
  */
 import ForceGraph3D from '3d-force-graph';
 import {
-  BoxGeometry,
   BufferGeometry,
   EdgesGeometry,
   Float32BufferAttribute,
@@ -58,7 +60,9 @@ import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display';
 import type { DecisionStep } from './display';
 import { createHoverLabel } from './hover-label';
+import type { HoveredMark } from './hover-label';
 import { listShape, staircaseHeight, standingStretch, tierLabelBlock, tierNamesFit } from './label-layout';
+import { inGridOrder } from './layout';
 import type { CellLayout, MarkLayout, PlateLayout, Point, StackLayout } from './layout';
 import { MARK_LIFT, MARK_SHARE_OF_QUAD, OVER_THE_MARKS, blendMaterial, markMaterial } from './mark-material';
 import { AT_ONCE, durationsNow, fadeMsBetween, hold, run } from './motion';
@@ -94,6 +98,12 @@ const SELECTED_MARK: MarkToken = {
 /** The hover ring is drawn as a mark with an outline and no fill, on a square of its own. */
 const HOVER_RING = MAP_TOKENS['map-hover-ring'];
 const HOVER_RING_MARK: MarkToken = { fill: null, outline: HOVER_RING.line, widthPx: HOVER_RING.widthPx, dashed: false };
+/** Under the ring, the mark takes the ring token's fill: it is drawn over the mark, as a mark with that fill alone. */
+const HOVER_FILL_MARK: MarkToken = { fill: HOVER_RING.fill, outline: null, widthPx: 0, dashed: false };
+/** The underside of a plate. */
+const PLATE_SIDE = MAP_TOKENS['map-plate-side'];
+/** A plate seen from straight above would hide its underside however far under it lies. The camera never looks down that steeply, and this keeps the sum whole if it should. */
+const LEAST_SEEN_DROP = 0.2;
 
 /** Something the partner can click that is not a plate or a cell: it answers for a point of the picture. */
 export type Pickable = (x: number, y: number) => (() => void) | null;
@@ -174,7 +184,10 @@ function line(token: LineToken): Line {
 /** Everything drawn for one tier, so that the whole tier can fade together. */
 interface TierParts {
   plate: PlateLayout;
-  fill: MeshBasicMaterial;
+  /** The fills of the plate's face and of its underside. */
+  fills: MeshBasicMaterial[];
+  /** What is drawn for the underside. It is moved as the camera moves, to stay as deep on screen as its token says. */
+  side: Object3D[];
   lines: Line[];
   marks: Map<DecisionStep, ShaderMaterial>;
   /** The same forms in the faded state, for the marks the filters leave out. */
@@ -203,16 +216,19 @@ const markMaterialsOf = (parts: TierParts): ShaderMaterial[] => [
 ];
 
 function setTierOpacity(parts: TierParts, opacity: number): void {
+  const wasWhole = parts.opacity >= 1;
   parts.opacity = opacity;
   const whole = opacity >= 1;
-  if (parts.fill.transparent === whole) {
-    // A plate that is not faded hides what is under it; a faded one lets it show.
-    parts.fill.transparent = !whole;
-    parts.fill.depthWrite = whole;
-    parts.fill.needsUpdate = true;
-    for (const object of parts.objects) object.renderOrder = whole ? 0 : UNDER_THE_REST;
+  for (const fill of parts.fills) {
+    if (fill.transparent === whole) {
+      // A plate that is not faded hides what is under it; a faded one lets it show.
+      fill.transparent = !whole;
+      fill.depthWrite = whole;
+      fill.needsUpdate = true;
+    }
+    fill.opacity = opacity;
   }
-  parts.fill.opacity = opacity;
+  if (wasWhole !== whole) for (const object of parts.objects) object.renderOrder = whole ? 0 : UNDER_THE_REST;
   for (const { material, fullOpacity } of parts.lines) material.opacity = fullOpacity * opacity;
   for (const material of markMaterialsOf(parts)) material.uniforms.uOpacity!.value = opacity;
 }
@@ -247,15 +263,20 @@ export function createStage(
 
   // One set of materials per tier, so that a tier can fade without its neighbours.
   const square = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const tiers = new Map<string, TierParts>();
-  for (const plate of layout.plates) {
-    const fill = new MeshBasicMaterial({
-      color: colourOf(MAP_TOKENS['map-plate-fill'].fill).hex,
-      // Pushes the fill back a little, so the plate's own edges and the cell lines win.
+  /** The four sides of that square, for the edge of a plate and the outline of the hovered cell. */
+  const squareSides = new EdgesGeometry(square);
+  /** A fill that is pushed back a little, so the plate's own edges and the cell lines win. */
+  const plateFill = (role: (typeof MAP_TOKENS)['map-plate-fill' | 'map-plate-side']['fill']): MeshBasicMaterial =>
+    new MeshBasicMaterial({
+      color: colourOf(role).hex,
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
     });
+  const tiers = new Map<string, TierParts>();
+  for (const plate of layout.plates) {
+    const fill = plateFill(MAP_TOKENS['map-plate-fill'].fill);
+    const sideFill = plateFill(PLATE_SIDE.fill);
     const edge = line(MAP_TOKENS['map-plate-edge']);
     const cellLine = line(MAP_TOKENS['map-cell-line']);
     const marks = new Map<DecisionStep, ShaderMaterial>(
@@ -266,9 +287,11 @@ export function createStage(
     );
     const selected = markMaterial(SELECTED_MARK, renderer.getPixelRatio());
     const objects: Object3D[] = [];
+    const side: Object3D[] = [];
     tiers.set(plate.tier, {
       plate,
-      fill,
+      fills: [fill, sideFill],
+      side,
       lines: [edge, cellLine],
       marks,
       fadedMarks,
@@ -283,10 +306,13 @@ export function createStage(
       blends: new Map(),
     });
 
-    const thickness = constants.plateThickness;
-    const box = new BoxGeometry(plate.width, thickness, plate.depth);
-    for (const part of [new Mesh(box, fill), new LineSegments(new EdgesGeometry(box), edge.material)]) {
-      part.position.set(plate.x, plate.y - thickness / 2, plate.z);
+    // The face and the underside are the same rectangle with the same edge. The underside starts
+    // under the face where the face is, and placePlateSides() lowers it for where the camera stands.
+    const face = [new Mesh(square, fill), new LineSegments(squareSides, edge.material)];
+    side.push(new Mesh(square, sideFill), new LineSegments(squareSides, edge.material));
+    for (const part of [...side, ...face]) {
+      part.position.set(plate.x, plate.y, plate.z);
+      part.scale.set(plate.width, 1, plate.depth);
       objects.push(part);
       graph.scene().add(part);
     }
@@ -438,12 +464,18 @@ export function createStage(
     renderer.getPixelRatio(),
   );
 
-  // Hover: a ring on the mark under the pointer, and a label beside the pointer.
+  // Hover: a fill and a ring on the mark under the pointer, an outline on its cell, and a label beside the pointer.
   const ringMaterial = markMaterial(HOVER_RING_MARK, renderer.getPixelRatio());
   const ring = new Mesh(square, ringMaterial);
-  ring.renderOrder = OVER_THE_MARKS;
-  ring.visible = false;
-  graph.scene().add(ring);
+  const hoverFill = new Mesh(square, markMaterial(HOVER_FILL_MARK, renderer.getPixelRatio()));
+  // map-hover-cell: the cell's own line, drawn over in another colour.
+  const hoverCell = new LineSegments(squareSides, line(MAP_TOKENS['map-hover-cell']).material);
+  const hoverParts = [hoverCell, hoverFill, ring];
+  for (const part of hoverParts) {
+    part.renderOrder = OVER_THE_MARKS;
+    part.visible = false;
+    graph.scene().add(part);
+  }
   const hoverLabel = createHoverLabel(container);
   let hovered: MarkLayout | null = null;
   const fromCamera = new Vector3();
@@ -456,23 +488,55 @@ export function createStage(
     return (2 * depth * Math.tan(radians(camera.fov) / 2)) / frame.height;
   }
 
-  /** Sizes the ring so that it stands its gap clear of the mark, in pixels on screen. */
+  /**
+   * Puts the fill on the hovered mark and the outline on its cell, and sizes the ring so that it
+   * stands its gap clear of the mark, in pixels on screen.
+   */
   function placeHoverRing(): void {
     if (!hovered) return;
     ring.position.set(hovered.x, hovered.y + MARK_LIFT * 1.5, hovered.z);
     const unitsPerPixel = unitsPerPixelAt(ring.position.x, ring.position.y, ring.position.z);
     const side = hovered.size + 2 * (HOVER_RING.gapPx + HOVER_RING.widthPx) * unitsPerPixel;
     ring.scale.setScalar(side / MARK_SHARE_OF_QUAD);
+    hoverFill.position.copy(ring.position);
+    hoverFill.scale.setScalar(hovered.size / MARK_SHARE_OF_QUAD);
+    const cell = cellOf.get(hovered.cluster);
+    hoverCell.visible = cell !== undefined;
+    if (cell) {
+      hoverCell.position.set(cell.x, cell.y + MARK_LIFT, cell.z);
+      hoverCell.scale.set(cell.width, 1, cell.depth);
+    }
+  }
+
+  /** Puts each plate's underside as far under its face as map-plate-side says, in pixels on screen. */
+  function placePlateSides(): void {
+    camera.getWorldDirection(forward);
+    // A step down in the scene is drawn shorter the more steeply the camera looks down on the stack.
+    const seen = Math.max(LEAST_SEEN_DROP, Math.sqrt(1 - forward.y * forward.y));
+    for (const { plate, side } of tiers.values()) {
+      const drop = (PLATE_SIDE.depthPx * unitsPerPixelAt(plate.x, plate.y, plate.z)) / seen;
+      for (const part of side) part.position.y = plate.y - drop;
+    }
+  }
+
+  /** What the hover label says of a tool: where its mark stands, its name and its step. */
+  function hoveredMark(tool: { id: string; label: string; cluster: string; decision_class: string }, tier: string): HoveredMark {
+    const place = inGridOrder(index.toolsOf(tool.cluster)).findIndex((each) => each.id === tool.id) + 1;
+    return {
+      place: `${tier} · ${tool.cluster} · ${String(place).padStart(2, '0')}`,
+      name: tool.label,
+      step: decisionStep(tool.decision_class),
+    };
   }
 
   /**
-   * Shows the ring and the label for a tool's mark, with the pointer at a point of the picture. Null hides both.
+   * Shows the fill, the ring, the cell's outline and the label for a tool's mark, with the pointer at a point of the picture. Null hides them all.
    * @param byFinger Whether a finger held in place asked for it. The label then stands clear of the finger.
    */
   function hover(toolId: string | null, at?: PressPoint, byFinger = false): void {
     const tool = toolId === null ? undefined : index.tool(toolId);
     hovered = tool ? (markOf.get(tool.id) ?? null) : null;
-    ring.visible = hovered !== null;
+    for (const part of hoverParts) part.visible = hovered !== null;
     if (!tool || !hovered || !at) {
       hoverLabel.hide();
       return;
@@ -480,10 +544,8 @@ export function createStage(
     placeHoverRing();
     // An open detail card at the right covers that side of the window, and the bar its top: the label keeps clear of both.
     const room = pictureRoomAt(windowSize, constants, openPanelsOf(store.get()));
-    // At the cluster distance the breadcrumb already names the focused cluster.
-    const cluster = tool.cluster === store.get().cluster ? null : (index.cluster(tool.cluster)?.label ?? null);
     const offsetPx = byFinger ? constants.fingerLabelOffsetPx : constants.hoverLabelOffsetPx;
-    hoverLabel.show(at.x + origin.x, at.y + origin.y, room, tool.label, cluster, offsetPx);
+    hoverLabel.show(at.x + origin.x, at.y + origin.y, room, hoveredMark(tool, hovered.tier), offsetPx, constants.hoverLeaderPx);
   }
 
   controls.enablePan = false;
@@ -494,7 +556,7 @@ export function createStage(
   const windowSize = { width: 0, height: 0 };
   const frame: Frame = { width: 0, height: 0, inset: { top: 0, right: 0, bottom: 0, left: 0 } };
   const origin = { x: 0, y: 0 };
-  const listeners: (() => void)[] = [placeHoverRing, () => traceDrawing.place(unitsPerPixelAt)];
+  const listeners: (() => void)[] = [placePlateSides, placeHoverRing, () => traceDrawing.place(unitsPerPixelAt)];
   const notify = (): void => listeners.forEach((listener) => listener());
   const centre = new Vector3(
     (layout.bounds.min.x + layout.bounds.max.x) / 2,
@@ -832,7 +894,7 @@ export function createStage(
     for (const parts of tiers.values()) {
       for (const material of markMaterialsOf(parts)) material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
     }
-    ringMaterial.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
+    for (const material of [ringMaterial, hoverFill.material]) material.uniforms.uPixelRatio!.value = renderer.getPixelRatio();
     selectionDrawing.setPixelRatio(renderer.getPixelRatio());
     traceDrawing.setPixelRatio(renderer.getPixelRatio());
 

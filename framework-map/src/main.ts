@@ -35,7 +35,6 @@ function applyPageConstants(): void {
   root.style.setProperty('--bar-edge', `${constants.barEdgePx}px`);
   root.style.setProperty('--rail-part-width', `${constants.railPartPx}px`);
   root.style.setProperty('--phase-strip-side', `${constants.phaseStripSidePx}px`);
-  root.style.setProperty('--legend-second-row', `${constants.legendSecondRowPx}px`);
 }
 
 async function start(): Promise<void> {

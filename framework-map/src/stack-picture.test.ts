@@ -31,6 +31,17 @@ describe('the static picture of the stack', () => {
     expect(countOf(/class="picture-mark picture-mark-\w+"/g)).toBe(752);
   });
 
+  it('draws the underside of each plate first, the same size and 7 pixels under it', () => {
+    expect(countOf(/class="picture-plate-side"/g)).toBe(8);
+    for (const drawing of drawings) {
+      const [first, second] = [...drawing.matchAll(/<rect class="([^"]+)" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)];
+      expect(first?.[1]).toBe('picture-plate-side');
+      expect(second?.[1]).toBe('picture-plate');
+      const [, , x, y, width, height] = second!.map(Number);
+      expect(first!.slice(2).map(Number)).toEqual([x, y! + 7, width, height]);
+    }
+  });
+
   it('draws each mark in the form of its decision-class step', () => {
     const tools = index.graph.nodes.filter((node) => node.type === 'tool');
     for (const step of ['committed', 'planned', 'optional', 'guarded'] as const) {
@@ -67,7 +78,7 @@ describe('the static picture of the stack', () => {
     const [, , width, height] = /viewBox="([^"]+)"/.exec(picture)![1]!.split(' ').map(Number) as [number, number, number, number];
     expect(Math.min(...numbersOf('x'), ...numbersOf('y'))).toBeGreaterThanOrEqual(0);
     const rects = [...picture.matchAll(/<rect [^>]*x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)];
-    expect(rects.length).toBe(8 + 55 + 752);
+    expect(rects.length).toBe(8 + 8 + 55 + 752);
     for (const [, x, y, w, h] of rects) {
       expect(Number(x) + Number(w)).toBeLessThanOrEqual(width);
       expect(Number(y) + Number(h)).toBeLessThanOrEqual(height);

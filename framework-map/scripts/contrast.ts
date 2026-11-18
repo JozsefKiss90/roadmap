@@ -1,13 +1,17 @@
 /**
  * The contrast check for the style guide's map section.
  *
- * The guide's "Map contrast rows" table lists every map token with the colour
- * it takes, the surface it sits on and the use it has. This module measures
- * each row's WCAG 2.x contrast ratio in the light skin and reports every row
- * that falls short of the contrast contract or that the table states wrongly.
+ * The map has two skins, light and dark. For each, the guide has a table of
+ * contrast rows that lists every map token of the skin with the colour it
+ * takes, the surface it sits on and the use it has. This module measures each
+ * row's WCAG 2.x contrast ratio with the skin's own roles and reports every
+ * row that falls short of the contrast contract or that the table states
+ * wrongly.
  *
- * The rows of the "Semantic roles" table are checked by the diagram-design
- * plugin's own script. This module only reads their light values.
+ * The light skin takes its roles from the light values of the "Semantic
+ * roles" table, whose rows are checked by the diagram-design plugin's own
+ * script. The dark skin is the map's own and takes them from the "Map roles,
+ * dark skin" table.
  */
 
 type Rgb = readonly [number, number, number];
@@ -25,7 +29,11 @@ const MINIMUMS = {
 
 export type ContrastUse = keyof typeof MINIMUMS;
 
+export type SkinName = 'light' | 'dark';
+
 export interface ContrastRow {
+  skin: SkinName;
+  /** The map token the row measures, or a semantic role of the skin measured on its own. */
   token: string;
   /** The semantic role the token takes its colour from, such as `ink`. */
   colour: string;
@@ -43,11 +51,43 @@ export interface ContrastResult {
   findings: string[];
 }
 
-const ROLES_HEADING = '### Semantic roles';
 const TOKENS_HEADING = '### Map tokens';
-const ROWS_HEADING = '### Map contrast rows';
-const TOKENS_COLUMNS = ['Token', 'Value', 'Use'];
+const TOKENS_COLUMNS = ['Token', 'Light skin', 'Dark skin', 'Use'];
 const ROWS_COLUMNS = ['Token', 'Colour', 'Sits on', 'Use', 'Minimum', 'Measured'];
+
+/** Where the guide gives a skin's roles, its values of the map tokens and its contrast rows. */
+interface Skin {
+  name: SkinName;
+  rolesHeading: string;
+  /** The column of the roles table that holds the skin's values, counted from 0, and as a reader counts it. */
+  rolesColumn: number;
+  rolesColumnName: string;
+  /** The column of the Map tokens table that holds the skin's values. */
+  tokensColumn: number;
+  rowsHeading: string;
+}
+
+const SKINS: readonly Skin[] = [
+  {
+    name: 'light',
+    rolesHeading: '### Semantic roles',
+    rolesColumn: 2,
+    rolesColumnName: 'third',
+    tokensColumn: 1,
+    rowsHeading: '### Map contrast rows',
+  },
+  {
+    name: 'dark',
+    rolesHeading: '### Map roles, dark skin',
+    rolesColumn: 1,
+    rolesColumnName: 'second',
+    tokensColumn: 2,
+    rowsHeading: '### Map contrast rows, dark skin',
+  },
+];
+
+/** What the Map tokens table says of a token that a skin does not have. */
+const NOT_IN_SKIN = /^none$/i;
 
 const HEX = /#([0-9a-f]{6})\b/i;
 const RGBA = /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d*\.?\d+)\s*\)/i;
@@ -136,18 +176,20 @@ export const minimumText = (minimum: number | null): string => (minimum === null
 
 const isUse = (use: string): use is ContrastUse => Object.hasOwn(MINIMUMS, use);
 
-/** The light value of each semantic role, by role name. */
-function lightRoles(markdown: string, findings: string[]): Map<string, Rgba> {
+/** A skin's value of each of its semantic roles, by role name. */
+function rolesOf(markdown: string, skin: Skin, findings: string[]): Map<string, Rgba> {
   const roles = new Map<string, Rgba>();
-  const table = tableUnder(markdown, ROLES_HEADING);
+  const table = tableUnder(markdown, skin.rolesHeading);
   if (!table) return roles;
-  if (!table.ruled || !/light/i.test(table.header[2] ?? '')) {
-    findings.push(`the "${ROLES_HEADING}" table must have its light values in the third column`);
+  if (!table.ruled || !new RegExp(skin.name, 'i').test(table.header[skin.rolesColumn] ?? '')) {
+    findings.push(
+      `the "${skin.rolesHeading}" table must have its ${skin.name} values in the ${skin.rolesColumnName} column`,
+    );
     return roles;
   }
   for (const cells of table.body) {
-    const light = parseColour(cells[2] ?? '');
-    if (light) roles.set(quoted(cells[0] ?? ''), light);
+    const value = parseColour(cells[skin.rolesColumn] ?? '');
+    if (value) roles.set(quoted(cells[0] ?? ''), value);
   }
   return roles;
 }
@@ -164,27 +206,29 @@ function mapTable(markdown: string, heading: string, columns: string[], findings
 }
 
 /**
- * Measures every row of the guide's "Map contrast rows" table in the light
- * skin. A finding is a row below its minimum, a row the table states wrongly,
- * or a map token with no row.
+ * Measures every contrast row of one skin, with the skin's own roles.
+ * @param tokenRows The body of the Map tokens table. It is empty if the table is at fault.
  */
-export function checkMapContrast(markdown: string): ContrastResult {
-  const rows: ContrastRow[] = [];
-  const findings: string[] = [];
-
-  const roles = lightRoles(markdown, findings);
-  if (findings.length > 0) return { rows, findings };
+function checkSkin(markdown: string, skin: Skin, tokenRows: string[][], rows: ContrastRow[], findings: string[]): void {
+  const faultsBefore = findings.length;
+  const roles = rolesOf(markdown, skin, findings);
+  if (findings.length > faultsBefore) return;
   const paper = roles.get('paper');
   if (!paper || paper.alpha < 1) {
-    return { rows, findings: [`the "${ROLES_HEADING}" table has no opaque \`paper\` to measure against`] };
+    findings.push(`the "${skin.rolesHeading}" table has no opaque \`paper\` to measure against`);
+    return;
   }
 
-  const tokenRows = mapTable(markdown, TOKENS_HEADING, TOKENS_COLUMNS, findings);
-  const contrastRows = mapTable(markdown, ROWS_HEADING, ROWS_COLUMNS, findings);
-  if (findings.length > 0) return { rows, findings };
+  const contrastRows = mapTable(markdown, skin.rowsHeading, ROWS_COLUMNS, findings);
+  if (tokenRows.length === 0 || contrastRows.length === 0) return;
+  const fault = (finding: string): void => void findings.push(`${skin.name} skin: ${finding}`);
 
-  /** The colours each map token is defined to take, by token name. */
-  const defined = new Map(tokenRows.map((cells) => [quoted(cells[0] ?? ''), namesIn(cells[1] ?? '')]));
+  /** The colours each map token of the skin is defined to take, by token name. */
+  const defined = new Map(
+    tokenRows
+      .filter((cells) => !NOT_IN_SKIN.test(cells[skin.tokensColumn] ?? ''))
+      .map((cells) => [quoted(cells[0] ?? ''), namesIn(cells[skin.tokensColumn] ?? '')]),
+  );
   const covered = new Set<string>();
 
   for (const cells of contrastRows) {
@@ -198,46 +242,62 @@ export function checkMapContrast(markdown: string): ContrastResult {
     const rowName = `\`${token}\` on \`${surfaceName}\``;
 
     covered.add(token);
+    // A row may measure a role on its own, such as the text on a filled control.
+    const measuresRole = !defined.has(token) && roles.has(token);
     const definedColours = defined.get(token);
-    if (!definedColours) findings.push(`\`${token}\` has a contrast row but is not in the Map tokens table`);
+    if (!definedColours && !measuresRole) fault(`\`${token}\` has a contrast row but is not in the Map tokens table`);
 
     const colour = roles.get(colourName);
     const surface = roles.get(surfaceName);
     const opacityIsValid = opacityText === null || OPACITY.test(opacityText);
-    if (!colour) findings.push(`\`${token}\` takes its colour from \`${colourName}\`, which is not a semantic role`);
-    else if (definedColours && !definedColours.includes(colourName)) {
-      findings.push(
+    if (!colour) fault(`\`${token}\` takes its colour from \`${colourName}\`, which is not a semantic role`);
+    else if (measuresRole && colourName !== token) {
+      fault(`\`${token}\` is a semantic role, so its contrast row measures \`${token}\` and not \`${colourName}\``);
+    } else if (definedColours && !definedColours.includes(colourName)) {
+      fault(
         `\`${token}\` has a contrast row for \`${colourName}\`, but its value in the Map tokens table does not name \`${colourName}\``,
       );
     }
-    if (!surface) findings.push(`\`${token}\` sits on \`${surfaceName}\`, which is not a semantic role`);
+    if (!surface) fault(`\`${token}\` sits on \`${surfaceName}\`, which is not a semantic role`);
     if (!opacityIsValid) {
-      findings.push(`\`${token}\` has the opacity "${opacityText}", which is not a number from 0 to 1`);
+      fault(`\`${token}\` has the opacity "${opacityText}", which is not a number from 0 to 1`);
     }
-    if (!isUse(use)) findings.push(`${rowName} has the unknown use "${use}"`);
+    if (!isUse(use)) fault(`${rowName} has the unknown use "${use}"`);
     if (!colour || !surface || !opacityIsValid || !isUse(use)) continue;
 
     const opacity = opacityText === null ? 1 : Number(opacityText);
     const minimum = MINIMUMS[use];
     const background = composite(surface.rgb, surface.alpha, paper.rgb);
     const ratio = contrast(composite(colour.rgb, colour.alpha * opacity, background), background);
-    rows.push({ token, colour: colourName, opacity, surface: surfaceName, use, ratio, minimum });
+    rows.push({ skin: skin.name, token, colour: colourName, opacity, surface: surfaceName, use, ratio, minimum });
 
     const statedMinimum = cells[4] ?? '';
     if (statedMinimum !== minimumText(minimum)) {
-      findings.push(`${rowName} states a minimum of ${statedMinimum}, but ${use} needs ${minimumText(minimum)}`);
+      fault(`${rowName} states a minimum of ${statedMinimum}, but ${use} needs ${minimumText(minimum)}`);
     }
     const statedRatio = cells[5] ?? '';
     if (statedRatio !== ratioText(ratio)) {
-      findings.push(`${rowName} is written as ${statedRatio}, but measures ${ratioText(ratio)}`);
+      fault(`${rowName} is written as ${statedRatio}, but measures ${ratioText(ratio)}`);
     }
     if (minimum !== null && ratio < minimum) {
-      findings.push(`\`${token}\` as ${use} is ${ratioText(ratio)} on \`${surfaceName}\`, below ${minimumText(minimum)}`);
+      fault(`\`${token}\` as ${use} is ${ratioText(ratio)} on \`${surfaceName}\`, below ${minimumText(minimum)}`);
     }
   }
 
   for (const token of defined.keys()) {
-    if (!covered.has(token)) findings.push(`\`${token}\` is a map token with no contrast row`);
+    if (!covered.has(token)) fault(`\`${token}\` is a map token with no contrast row`);
   }
+}
+
+/**
+ * Measures every row of the guide's contrast tables, one for each skin of the
+ * map. A finding is a row below its minimum, a row the table states wrongly,
+ * or a map token of a skin with no row in that skin's table.
+ */
+export function checkMapContrast(markdown: string): ContrastResult {
+  const rows: ContrastRow[] = [];
+  const findings: string[] = [];
+  const tokenRows = mapTable(markdown, TOKENS_HEADING, TOKENS_COLUMNS, findings);
+  for (const skin of SKINS) checkSkin(markdown, skin, tokenRows, rows, findings);
   return { rows, findings };
 }

@@ -10,7 +10,7 @@ Run these from this folder, after `npm install`.
 | --- | --- |
 | `npm run build` | Type-checks, validates the graph, checks the map's contrast rows, builds, checks the built file and copies it to `../framework-map.html` |
 | `npm run validate` | Checks the graph JSON against the vocabulary file; add `-- path/to/graph.json` to check another file |
-| `npm run contrast` | Measures the map's contrast rows in the style guide; add `-- path/to/style-guide.md` to check another file |
+| `npm run contrast` | Measures the map's contrast rows in the style guide, for the light and the dark skin; add `-- path/to/style-guide.md` to check another file |
 | `npm run generate` | Regenerates the graph JSON from the tool matrix CSV, then validates it; see `../tool-discovery/README.md` |
 | `npm run screenshots` | Opens the built file in each named state at ten sizes, from a 360×640 phone to 1920×1080, with reduced motion off and on, and saves a screenshot to `../screenshots/`. It takes about twenty-five minutes |
 | `npm run touch` | Drives the built file as a phone would, with an emulated touch screen, and says what it found; see "Touch" |
@@ -33,16 +33,16 @@ Run these from this folder, after `npm install`.
 | `src/inlined-graph.ts` | Hands `data.ts` the graph and the vocabulary file that are inlined in the page |
 | `src/display.ts` | The display table: groups the ten decision classes into the four steps a mark shows, names the steps and the classes of "committed only", and gives each kind family its icon and each gate family its badge |
 | `src/layout.ts` | The pure layout function. It returns a position and size for every plate, cell and mark |
-| `src/tokens.ts` | The map tokens the scene draws with, copied from the style guide. A test fails if they disagree with the guide |
+| `src/tokens.ts` | The roles and the map tokens of the two skins, copied from the style guide, and `SKIN`, the skin the map is drawn in: the dark one. A test fails if they disagree with the guide, or if `src/styles.css` gives a role another colour |
 | `src/camera.ts` | The arithmetic for where the camera stands at each distance |
 | `src/state.ts` | The state store: the distance, the focused tier or cluster, the selection, the filters and the lens, in step with the URL fragment. It also says which tools a lens leaves in reach, and which a need trace traces |
-| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws the hover ring, the selected and traced marks and the faded marks |
+| `src/scene.ts` | Draws plates, cells and marks with 3d-force-graph. Flies the camera between distances, fades the plates above the focused one, and takes clicks. Draws each plate over its underside, the hover fill and ring with the outline of the hovered cell, the selected and traced marks and the faded marks |
 | `src/mark-material.ts` | How a mark is drawn: a square with a fill, an outline or both, from a mark token, in the faded state or not |
 | `src/selection-drawing.ts` | The outline of a selected cluster's cell, and the `implements` lines with their far ends |
 | `src/trace-drawing.ts` | What a need trace adds to its marks: the home cell's outline, the lines to the traced tools, the best-fit rings and the selected tool's ring |
 | `src/pick.ts` | Which plate, cell and mark lie under the pointer, or within reach of a finger |
 | `src/press.ts` | What a press on the canvas is: a tap, a drag, a finger held in place, or a pinch |
-| `src/hover-label.ts` | The label beside the pointer, or over a finger held in place, that names the mark under it |
+| `src/hover-label.ts` | The label beside the pointer, or over a finger held in place, for the mark under it: where the mark stands, the tool's name and its decision-class step, with a leader toward the mark |
 | `src/labels.ts` | The names in the scene, by distance: tiers and counts, then clusters, then tools |
 | `src/label-layout.ts` | The arithmetic for where tier labels, cluster names and tool names stand |
 | `src/icons.ts` | Draws a kind family's Lucide icon for the scene |
@@ -56,7 +56,7 @@ Run these from this folder, after `npm install`.
 | `src/phase-strip.ts` | The phase strip at the bottom of the map: the five steps of the phase scrub, each with its counts |
 | `src/rail-fold.ts` | Folds the filters and the outline to their headings while the need list is on show, and lets a heading open or fold its part |
 | `src/filter-panel.ts` | The seven filters in the rail, with the count, "committed only" and "clear" |
-| `src/legend.ts` | The legend of the four decision-class steps, with the faded, traced and best-fit states while they are on show |
+| `src/legend.ts` | The legend of the four decision-class steps, with the faded, traced and best-fit states while they are on show, and the mark under the pointer |
 | `src/search.ts` | The search index over tool names and capabilities, cluster names and need names |
 | `src/search-box.ts` | The search field and the list of what it finds |
 | `src/key-list.ts` | The list of keys that `?` opens, with the switch for the single keys |
@@ -107,7 +107,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 - **A need's detail card opens at the stack distance.** The whole stack then stands left of the card. In a narrow window the plates come too close for the tier names, which are left out; each tier keeps its count, which begins with its code. The stack is then drawn larger, in the room the names would have had.
 - **Going somewhere else drops the selection.** The breadcrumb, a click on another plate and a step out all close the detail card.
 - **Escape closes the detail card first.** The next Escape steps out one distance.
-- **Hover works at every distance.** The mark under the pointer gets a ring, and a label gives the tool's name and cluster. At the cluster distance the label gives the name alone, because the breadcrumb names the cluster. From the stack, a click still goes to the tier. By touch, a finger held in place shows the same; see "Touch".
+- **Hover works at every distance.** The mark under the pointer fills with `accent` and gets a ring, and its cell takes an `accent` outline. A label gives where the mark stands, as "T6 · 6A · 06" for the sixth tool of cluster 6A in tier T6, then the tool's name and its decision-class step. From the stack, a click still goes to the tier. By touch, a finger held in place shows the same; see "Touch".
 - **The selected mark takes the accent fill.** It no longer shows its decision class, so the detail card states it, with a square in the mark's own form. The square is drawn from the same mark token as the mark.
 - **The selection shows in three places in the scene.** The selected tool's mark is filled, its name in the list above the cell is in the accent colour, and a selected cluster's cell is outlined.
 - **`implements` lines.** A selected tool has a line to each cluster it implements. A selected cluster has a line to each tool that implements it. The detail card lists the same clusters and tools.
@@ -202,7 +202,7 @@ The lens switch stands in the rail under the search box. It offers no lens, the 
 - **The number of tools in reach** stands beside "Lens", as "269 tools in reach" for the Designer. A change of lens or role is announced with the count; see "Accessibility".
 - **Each tier's count is of its tools in reach** while the lens is on, as "T3 · 87 of 154 in reach" on the canvas. A tier with no tool in reach has its name in the colour of a tag. The counts in the outline's tier and cluster rows follow.
 - **The filters apply on top of the lens.** A tool is at full strength when it is in reach and passes the filters. The count at the head of the filters gives those tools. The number in reach and the tiers' counts do not change with the filters.
-- **The one filled segment is the lens that is on.** "None" and the chosen role are shown by a ring.
+- **The one filled segment is the chosen one of the lens switch**, "None" as much as a lens. The chosen role is shown by a ring. The count beside the heading is of the tools in reach, which is all of them with no lens.
 - **`1` switches the lens off and `2` switches the role lens on.** If `1` closes the row of roles while it holds the focus, the focus goes to the lens switch. The role lens comes back with the role it last showed, and starts with the Architect.
 - **The URL fragment holds the lens and its role**, as `#lens=role&role=D`. The roles' codes are A, D and M. `lens=role` alone gives the first role. A role the graph lacks gives no lens.
 - **The lens holds** wherever the map goes and whatever is selected.
@@ -266,7 +266,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **The filters hold** wherever the map goes and whatever is selected.
 - **The change is a fade.** The marks change form in place over the fade duration. See "Motion and depth blur".
 
-**The legend** at the bottom left of the canvas shows the four decision-class steps with their names. Its squares are drawn from the same mark tokens as the marks. While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. While a need is traced, it shows "Traced" and "Best fit" as well. Beside an open detail card the legend keeps left of it, on two rows if it must. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
+**The legend** at the bottom left of the canvas shows the four decision-class steps with their names, after a tag that names it. Its squares are drawn from the same mark tokens as the marks. Its last item is the mark under the pointer, "Hover / selected": the two take the same fill. While tools are traced that fill means "traced", and the item says "Hover". While a lens or a filter is on, it also shows a faded square. It is named "Out of reach" for a lens, "Filtered out" for the filters, and "Out of reach or filtered out" for both. While a need is traced, it shows "Traced" and "Best fit" as well. Beside an open detail card the legend keeps left of it, on two rows if it must. The stack at rest keeps clear of it: `insetBottomPx` in `src/constants.ts` is its room.
 
 ## Motion and depth blur
 
@@ -289,7 +289,7 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **Nothing moves while the partner does nothing.** No timer and no loop starts a change. The one timer on the page is the half second of a hold, which a finger starts and which moves nothing.
 - **The page says whether it is moving.** `window.frameworkMap.isMoving()` is true while a flight, a fade or a panel is under way. The screenshot script waits for it to be false.
 
-**Depth blur.** At the tier and cluster distances the plates under the focused one are blurred a little: the more, the further under it they lie. `src/depth-blur.ts` draws it.
+**Depth blur.** The dark skin has no blur, and the map is drawn in it, so `depthBlur` in `src/constants.ts` is `false` and none of what follows is on show. With it switched on, at the tier and cluster distances the plates under the focused one are blurred a little: the more, the further under it they lie. `src/depth-blur.ts` draws it.
 
 - **The focused plate is never blurred.** The blur follows the plates, not the depth buffer. Each plate under the focused one is blurred as a whole, and only where it is in the picture. Every name stands on or above the focused plate, so every name stays sharp.
 - **A plate that holds the far end of an `implements` line is not blurred**, so the outlined end stays sharp.
@@ -297,7 +297,7 @@ Every change on the map takes one of four durations. They are the style guide's 
 - **There is no blur while a need is traced.** The trace's lines cross the plates under the focused one, and a blurred line is too pale to follow.
 - **`depthBlur` in `src/constants.ts` is the one switch.** Set to `false`, no plate is blurred and the picture is drawn as the renderer draws it. It is the first thing to switch off where frames run slow.
 - **`depthBlurPx` is the widest spread**, in pixels on screen, and `depthBlurFullAt` is how far under the focused plate the blur reaches it, in layout units.
-- **There is no glow and no vignette.** The blur is the map's only postprocessing. Antialiasing is the renderer's own and is always on.
+- **There is no glow and no vignette.** The blur is the map's only postprocessing, where it is on. Antialiasing is the renderer's own and is always on.
 - **The tuning panel has a "Motion" and a "Depth blur" folder.** A value settled there is copied into `src/constants.ts` by hand.
 
 ## Page layouts, the fallback page and the build stamp
@@ -396,18 +396,22 @@ The vocabulary file is `../tool-discovery/vocabulary.json`. Kind and gate values
 
 ## The contrast check
 
-`npm run contrast` reads `../references/style-guide.md` and exits with 1 if it has a finding. It measures every row of the guide's "Map contrast rows" table in the light skin. The build runs it, and `npm test` runs the same check on the real guide.
+`npm run contrast` reads `../references/style-guide.md` and exits with 1 if it has a finding. The map has two skins, and the guide has a table of contrast rows for each: "Map contrast rows" for the light skin and "Map contrast rows, dark skin" for the dark one. The check measures every row of both, each with its own skin's roles: the light values of "Semantic roles", and "Map roles, dark skin". A finding says which skin it is of. The build runs the check, and `npm test` runs the same check on the real guide.
 
 A finding is one of these:
 
 - a row below the minimum for its use;
 - a Minimum or Measured cell that disagrees with the measurement;
 - a colour or surface that is not a semantic role, or a use the contract does not know;
-- a colour that the token's row in "Map tokens" does not name;
+- a colour that the token's value for that skin in "Map tokens" does not name;
 - a table whose columns are not the ones the check reads;
-- a token in the "Map tokens" table with no contrast row, or a row for a token that table lacks.
+- a token of a skin with no row in that skin's table, or a row for a token the skin lacks. "None" in a skin's column of "Map tokens" says the skin does not have the token.
 
-To add a map token, add it to "Map tokens", give it a row for each surface it sits on, and run the command. The command prints the measured ratio to write in the row.
+A row may name a role of its skin in place of a token. It then measures that role on its own, as the dark skin's rows for `ink-strong` on a filled control do.
+
+To add a map token, add it to "Map tokens" with a value for each skin, give it a row for each surface it sits on in each skin's table, and run the command. The command prints the measured ratio to write in the row.
+
+**To change the skin the map is drawn in**, set `SKIN` in `src/tokens.ts` and give `:root` in `src/styles.css` that skin's roles. `src/tokens.test.ts` fails until the two agree. The light skin has no `map-plate-side`, `map-hover-cell` or `map-text-count`, so the code that reads those tokens has to be given what to do without them, and the type check says where.
 
 The rows of the guide's "Semantic roles" table are not checked here. The diagram-design plugin's `verify-contrast.py` checks those.
 

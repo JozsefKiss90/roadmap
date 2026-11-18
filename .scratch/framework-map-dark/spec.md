@@ -1,6 +1,6 @@
 # Framework map, dark skin: design properties
 
-Status: ready-for-agent
+Status: ready-for-human
 
 The accepted concept is the Design artifact "Framework Map Dark Concept",
 version 7 (https://claude.ai/artifact/YMiV6MhQc5Z75HLVhhvr9U). This file turns
@@ -231,3 +231,35 @@ in `framework-map/` should gain a dark column and these rows.
 - A decision record under `docs/adr/` should state that the map's dark skin
   departs from the guide's inversion rule for `rule`, `rule-solid` and the
   plate edge, and why (edges carry white by the accepted brief).
+
+## Comments
+
+### 2026-11-18, implemented
+
+The map is drawn in the dark skin. `framework-map/src/tokens.ts` holds both skins and names the dark one as the map's; the guide's Map section has the dark roles, a dark column in Map tokens and a second table of contrast rows; `docs/adr/0004` records the departure from the guide.
+
+Where the build differs from this spec, and why:
+
+1. **The dark roles are a table of the map's own in the guide** ("Map roles, dark skin"), not the dark column of Semantic roles. That column is the diagrams' dark skin, and ADR 0001 keeps it as it is.
+2. **Two measured ratios differ in the second decimal.** Committed on the plate is 8.49:1 (8.46 here) and planned on `paper` is 8.47:1 (8.48 here). Section 8 blended each see-through colour to a whole hex value first; `npm run contrast` does not round. The guide states what the check measures.
+3. **Rows added to section 8**, because the check wants a row for every token: `map-hover-cell`, `map-label-leader` in `accent` and in `muted`, and `map-text-count` on `paper-2` (a tier's code in a selected outline row).
+4. **`map-label-leader` names two roles.** `muted` for the cluster-name leaders, as section 2 says they keep, and `accent` for the hover label's leader.
+5. **The legend does not print each colour's value.** With the values the legend is about 1,400 pixels wide, and the full layout begins at 1,366 with a 240-pixel rail. The surface swatches, which section 7 calls optional, are not built either.
+6. **Outline names take a second line; they are not cut with an ellipsis.** The guide's text-spacing rule says no name of a control is cut, and `npm run accessibility` checks it.
+7. **Outline row separators use `rule`**, as the note in section 1 allows.
+8. **The outline keeps its chevrons**, and tiers start open, as before: the interactions stay.
+9. **The filters' count shows "752 of 752"** and reads out "752 of 752 tools", so that it stands on one line beside the heading at the wider tracking.
+10. **Tier names at 26px take a wider column**: `labelColumnPx` 448 and `insetLeftPx` 744 in `src/constants.ts`. The stack is drawn a little smaller for it in the full and the compact layout.
+11. **The legend at 32 pixels off the foot is taller than before**, so `insetBottomPx` is 88, and the phase strip stands 16 pixels over the legend whatever its height.
+12. **What lies behind an open panel is dimmed with `paper` at 72%**, not `ink` at 24%: a light veil turned the dark canvas grey.
+13. **The hover label's first line is tier, cluster and place**, as "T6 · 6A · 06". The cluster's name is no longer on the label; the outline and the detail card give it.
+14. **Canvas counts are not tracked.** They are drawn by a library with no letter spacing, as before. The counts of the page are at 0.10em.
+15. **A checkbox keeps a `soft` border**, not `rule-solid`: the border is all there is of an empty checkbox, and `rule-solid` measures 1.80:1.
+
+Checked: `npm test` (493 unit tests, 23 generator tests), `npm run build`, `npm run accessibility`, `npm run touch`. The fault checks of `npm run screenshots` were run on all 29 states at every viewport with reduced motion off, without saving pictures: no label, panel, selection or control fault.
+
+Left for a person:
+
+- Run `npm run screenshots` with memory free. It was stopped for low memory in an earlier session, so the whole gate, with reduced motion on and the saved pictures, has not run on this build.
+- Look at the map against the concept, above all the tier names at 1,366 by 768, where a name comes within the 4-pixel least gap of the next tier's count.
+- Risk 1 of section 9: judge by eye whether a trace of many tools reads as a field of committed marks.

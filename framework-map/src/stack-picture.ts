@@ -5,8 +5,9 @@
  * it once and inlines the result (see vite.config.ts), so the picture is in
  * the built file and cannot fall behind the data. It draws the stack at rest,
  * seen from the front and a little from above, as the camera sees it at rest:
- * every plate with its cells and marks, each mark in the form of its
- * decision-class step, and each tier's count and name beside its plate.
+ * every plate over its underside, with its cells and marks, each mark in the
+ * form of its decision-class step, and each tier's count and name beside its
+ * plate.
  *
  * The picture is one block with a row for each tier. A row holds the tier's
  * count and name, as text of the page, and a drawing of its plate. So a window
@@ -24,7 +25,7 @@
 import type { GraphIndex } from './data';
 import { decisionStep, tierCountText } from './display.ts';
 import type { StackLayout } from './layout';
-import { MARK_TOKEN_OF_STEP } from './tokens.ts';
+import { MAP_TOKENS, MARK_TOKEN_OF_STEP } from './tokens.ts';
 
 /** The sizes the static picture is drawn with, in pixels. */
 export interface PictureMetrics {
@@ -48,8 +49,8 @@ export interface PictureMetrics {
 export const PICTURE_METRICS: PictureMetrics = {
   pixelsPerUnit: 13,
   depthPixelsPerUnit: 8,
-  rowPx: 58,
-  nameColumnPx: 400,
+  rowPx: 65,
+  nameColumnPx: 464,
   nameGapPx: 24,
   marginPx: 2,
 };
@@ -73,17 +74,25 @@ export function stackPicture(layout: StackLayout, index: GraphIndex, metrics: Pi
   const plateDepthPx = Math.max(0, ...plates.map((plate) => plate.depth)) * depthPixelsPerUnit;
   // Every drawing is as wide as the widest plate, with the clear space at its sides.
   const width = Math.ceil((layout.bounds.max.x - layout.bounds.min.x) * pixelsPerUnit) + 2 * marginPx;
-  const height = Math.ceil(plateDepthPx) + 2 * marginPx;
+  // A plate's underside is drawn as far under the plate as map-plate-side says, and the frame holds it.
+  const sidePx = MAP_TOKENS['map-plate-side'].depthPx;
+  const height = Math.ceil(plateDepthPx) + sidePx + 2 * marginPx;
 
   /**
    * A rectangle lying on a plate, as it stands in its tier's drawing.
    * @param outlinePx The width of an outline to draw inside the rectangle. Without it, the stylesheet's own line lies on the edge.
+   * @param underPx How far under its place the rectangle is drawn, as a plate's underside is.
    */
-  const rect = (className: string, at: { x: number; z: number; width: number; depth: number }, outlinePx = 0): string => {
+  const rect = (
+    className: string,
+    at: { x: number; z: number; width: number; depth: number },
+    outlinePx = 0,
+    underPx = 0,
+  ): string => {
     const middle = marginPx + plateDepthPx / 2;
     // Each edge is put on its own whole pixel, so a row of marks keeps an even step.
     const left = Math.round(marginPx + (at.x - at.width / 2 - layout.bounds.min.x) * pixelsPerUnit);
-    const top = Math.round(middle + (at.z - at.depth / 2) * depthPixelsPerUnit);
+    const top = Math.round(middle + (at.z - at.depth / 2) * depthPixelsPerUnit) + underPx;
     const wide = Math.max(1, Math.round(at.width * pixelsPerUnit));
     const deep = Math.max(1, Math.round(at.depth * depthPixelsPerUnit));
     if (outlinePx <= 0) return `<rect class="${className}" x="${left}" y="${top}" width="${wide}" height="${deep}"/>`;
@@ -94,7 +103,7 @@ export function stackPicture(layout: StackLayout, index: GraphIndex, metrics: Pi
 
   const rows = plates.map((plate) => {
     const tier = index.tier(plate.tier);
-    const parts = [rect('picture-plate', plate)];
+    const parts = [rect('picture-plate-side', plate, 0, sidePx), rect('picture-plate', plate)];
     for (const cell of layout.cells) if (cell.tier === plate.tier) parts.push(rect('picture-cell', cell));
     for (const mark of layout.marks) {
       if (mark.tier !== plate.tier) continue;

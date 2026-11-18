@@ -120,7 +120,9 @@ export function mountLensPanel(parent: HTMLElement, before: Node, index: GraphIn
       const inReach = index.inReach(lens).size;
       count.textContent = `${inReach} ${inReach === 1 ? 'tool' : 'tools'} in reach`;
     } else {
-      count.textContent = '';
+      // With no lens, or one that waits for a choice, every tool is in reach.
+      const tools = index.tools.length;
+      count.textContent = `${tools} ${tools === 1 ? 'tool' : 'tools'}`;
     }
   }
 

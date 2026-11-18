@@ -151,7 +151,8 @@ export function mountFilterPanel(parent: HTMLElement, before: Node, index: Graph
     // What assistive technology reads after the numbers: why these tools are the ones at full strength.
     const reasons = reasonsAtFullStrength({ lens, filters }, index);
     const explanation = `${reasons.length > 0 ? ` ${reasons.join(' and ')}` : ''}${isFiltered(filters) ? '' : ', no filter chosen'}`;
-    count.replaceChildren(`${atFullStrength} of ${total} tools`, element('span', 'visually-hidden', explanation));
+    // The numbers alone are on show, so that they stand on one line beside the heading. The rest is read out after them.
+    count.replaceChildren(`${atFullStrength} of ${total}`, element('span', 'visually-hidden', ` tools${explanation}`));
     committed.checked = isCommittedOnly(filters);
     clear.hidden = !isFiltered(filters);
     for (const update of updates) update(filters);

@@ -1,7 +1,10 @@
 /**
  * depth-blur: quiets the plates under the focused one with a slight blur.
  *
- * It is the map's only postprocessing. There is no glow and no vignette.
+ * It is the map's only postprocessing. There is no glow and no vignette. The
+ * dark skin, which the map is drawn in, has no blur either: `depthBlur` in
+ * src/constants.ts is off, the scene gives every plate an amount of 0, and
+ * the pass does its first step alone.
  *
  * The pass draws the scene to the screen as the renderer would, so the
  * picture keeps its antialiasing and its colours whether the blur is on or

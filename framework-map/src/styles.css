@@ -1,27 +1,43 @@
 @import './fonts.css';
 
 /*
- * Colour and type tokens, by the semantic names in references/style-guide.md
- * (light skin). The map section of the style guide adds the tokens specific
- * to the map.
+ * Colour and type tokens, by the semantic names in references/style-guide.md.
+ * The colours are the map's dark skin: the "Map roles, dark skin" table of the
+ * guide's map section, which src/tokens.ts holds as ROLES.dark. src/tokens.test.ts
+ * fails if a value here is not the one the tokens have.
  */
 :root {
-  --paper: #f6f1e7;
-  --paper-2: #ece6d8;
-  --ink: #14213d;
-  --muted: #46557a;
-  --soft: #55638a;
-  --rule: rgba(20, 33, 61, 0.12);
-  --rule-solid: #c4bfb1;
-  --accent: #1f4fd8;
+  --paper: #0B0B0C;
+  --paper-2: #202024;
+  --paper-3: #0E0E10;
+  --ink: #E6E2DA;
+  --ink-strong: #0B0B0C;
+  --muted: #9C9890;
+  --soft: #9C9890;
+  --rule: #26262A;
+  --rule-solid: #3C3C44;
+  --edge: #FFFFFF;
+  --accent: #4DF0B4;
+  --count: #F5C842;
+  --class-committed: rgba(0, 238, 27, 0.9);
+  --class-planned: rgba(51, 202, 255, 0.9);
+  --class-optional: #A49BC4;
+  --class-guarded: rgba(255, 83, 124, 1);
+
+  /* What lies behind an open panel is dimmed with the page's own colour, so it steps back and does not turn grey. */
+  --scrim: color-mix(in srgb, var(--paper) 72%, transparent);
+  /* The browser's own parts, such as a scroll bar, are drawn for a dark page. */
+  color-scheme: dark;
 
   --font-serif: 'Instrument Serif', serif;
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 }
 
+/* No corner is rounded: not a control's, a panel's, a key's or a label's. */
 * {
   box-sizing: border-box;
+  border-radius: 0;
 }
 
 /*
@@ -46,11 +62,10 @@
 kbd {
   display: inline-block;
   min-width: 20px;
-  padding: 0 4px;
+  padding: 1px 6px;
   border: 1px solid var(--rule-solid);
-  border-radius: 4px;
   color: var(--muted);
-  font: 500 11px/18px var(--font-mono);
+  font: 400 11px/16px var(--font-mono);
   text-align: center;
 }
 
@@ -105,17 +120,18 @@ body {
 
 .title {
   margin: 0;
-  padding: 20px 16px 0;
+  padding: 28px var(--rail-side) 0;
   font-family: var(--font-serif);
   font-size: var(--title-size);
   font-weight: 400;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 /* The breadcrumb: stack, then the focused tier, then the focused cluster. */
 .breadcrumb {
   position: absolute;
-  top: 22px;
+  /* The crumb's text stands 34 pixels from the top, under its button's own padding. */
+  top: 28px;
   /* Centred on the canvas: the room right of the rail. */
   right: 16px;
   left: calc(var(--rail-width) + 16px);
@@ -126,7 +142,7 @@ body {
 /* Under the breadcrumb, while the need trace waits for a need: the one sign of the trace on the canvas. */
 .canvas-hint {
   position: absolute;
-  top: 52px;
+  top: 58px;
   right: 16px;
   left: calc(var(--rail-width) + 16px);
   margin: 0;
@@ -189,7 +205,6 @@ body {
   min-width: 0;
   padding: 6px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--muted);
   font: 500 13px/16px var(--font-sans);
@@ -210,17 +225,20 @@ body {
 }
 
 
-/* The hover label: the name and cluster of the mark under the pointer. */
+/*
+ * The hover label: where the mark under the pointer stands, the name of its tool and its decision
+ * class. A leader runs from the label toward the mark, in map-label-leader's colour for the label.
+ */
 .hover-label {
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
+  gap: 3px;
   max-width: 280px;
-  padding: 4px 8px;
-  border: 1px solid var(--rule-solid);
-  border-radius: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
   background: var(--paper);
   pointer-events: none;
 }
@@ -229,15 +247,35 @@ body {
   display: none;
 }
 
-.hover-label-name {
-  font: 500 12px/16px var(--font-sans);
+.hover-label-place {
+  color: var(--accent);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.hover-label-cluster {
+.hover-label-name {
+  font: 400 13px/18px var(--font-sans);
+}
+
+.hover-label-class {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
-  font: 500 11px/16px var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 12px/16px var(--font-sans);
+}
+
+.hover-label-class .swatch {
+  width: 8px;
+  height: 8px;
+}
+
+/* src/hover-label.ts places it: over the point the label is shown for, and as long as the label stands off it. */
+.hover-label-leader {
+  position: absolute;
+  width: 1px;
+  background: var(--accent);
 }
 
 /* The detail card: docked on the right, present only while something is selected. */
@@ -306,7 +344,6 @@ body {
   height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -423,13 +460,12 @@ body {
   flex: none;
   padding: 0 8px;
   line-height: 20px;
-  border-radius: 4px;
 }
 
 .pill-decided {
   border: 1px solid var(--ink);
   background: var(--ink);
-  color: var(--paper);
+  color: var(--ink-strong);
 }
 
 .pill-proposed {
@@ -451,7 +487,6 @@ body {
   width: 100%;
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--ink);
   font: inherit;
@@ -487,7 +522,6 @@ body {
   margin: -2px 0;
   padding: 2px 0;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--ink);
   font: inherit;
@@ -506,7 +540,6 @@ body {
   gap: 8px;
   margin: 0;
   padding: 8px 12px;
-  border-radius: 4px;
   background: var(--paper-2);
   box-shadow: inset 2px 0 var(--accent);
 }
@@ -550,8 +583,11 @@ body {
   display: flex;
   flex-direction: column;
   width: var(--rail-open-width);
-  border-right: 1px solid var(--rule-solid);
+  border-right: 1px solid var(--rule);
   background: var(--paper);
+  /* The clear space at each side of the rail's parts, and from one part down to the next. */
+  --rail-side: 20px;
+  --rail-gap: 22px;
 }
 
 /*
@@ -578,7 +614,7 @@ body {
   left: calc(100% + 1px);
   /* To the window's right edge and no further, so the page is never wider than the window. */
   width: calc(100vw - 100% - 1px);
-  background: color-mix(in srgb, var(--ink) 24%, transparent);
+  background: var(--scrim);
   content: '';
 }
 
@@ -620,7 +656,6 @@ body {
   height: 40px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -701,15 +736,14 @@ body {
 .filter-chosen,
 .filter-value-count,
 .search-tag {
-  font: 500 11px/16px var(--font-mono);
-  letter-spacing: 0.08em;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .rail-heading {
   margin: 0;
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--muted);
 }
 
 /*
@@ -723,7 +757,6 @@ body {
   margin: -4px -8px;
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: inherit;
   font: inherit;
@@ -753,10 +786,6 @@ body {
 }
 
 /* A folded part is as tall as its heading, and the need list takes the height it leaves. */
-.filters[data-folded] .filters-head {
-  padding-bottom: 8px;
-}
-
 .outline[data-folded],
 .needs:not([hidden]) ~ .outline[data-folded] {
   flex: none;
@@ -767,17 +796,16 @@ body {
 .search {
   position: relative;
   z-index: 1;
-  padding: 16px 16px 0;
+  padding: var(--rail-gap) var(--rail-side) 0;
 }
 
 .search-field {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid var(--soft);
-  border-radius: 4px;
+  gap: 10px;
+  height: 40px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--rule-solid);
 }
 
 /* The field shows the focus of the input inside it. */
@@ -788,8 +816,8 @@ body {
 
 .search-icon {
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   color: var(--muted);
 }
 
@@ -802,7 +830,7 @@ body {
   border: 0;
   background: none;
   color: var(--ink);
-  font: 400 13px/20px var(--font-sans);
+  font: 400 14px/20px var(--font-sans);
   appearance: none;
 }
 
@@ -828,20 +856,24 @@ body {
 .search-results {
   position: absolute;
   top: calc(100% + 4px);
-  left: 16px;
+  left: var(--rail-side);
   display: flex;
   flex-direction: column;
   width: 400px;
   /* The list ends above the foot of the rail, so the "Keys" button and the build stamp stay in sight. */
-  max-height: calc(100vh - 204px);
-  border: 1px solid var(--soft);
-  border-radius: 4px;
+  max-height: calc(100vh - 250px);
+  border: 1px solid var(--rule-solid);
   background: var(--paper);
+}
+
+/* The open rail of the compact layout has the button that closes it beside the title, which then takes a third line. */
+:root[data-layout='compact'] .search-results {
+  max-height: calc(100vh - 284px);
 }
 
 /* With nothing found, the message keeps to the rail. */
 .search-results:has(.search-list[hidden]) {
-  width: calc(var(--rail-open-width) - 32px);
+  width: calc(var(--rail-open-width) - 2 * var(--rail-side));
 }
 
 .search-results[hidden],
@@ -928,30 +960,29 @@ body {
  */
 .lens {
   flex: none;
-  padding: 20px 16px 0;
+  padding: var(--rail-gap) var(--rail-side) 0;
 }
 
 .lens-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding-bottom: 8px;
+  gap: 8px;
+  padding-bottom: 10px;
 }
 
+/* The count of the tools, all of them or those in reach: map-text-count. */
 .lens-count {
   margin: 0;
-  color: var(--ink);
+  color: var(--count);
 }
 
 .segments {
   display: flex;
   box-sizing: border-box;
-  /* The least height: a partner who sets wider letter spacing gets a second line, and no name is cut. */
-  min-height: 28px;
-  /* Cuts the segments' fills to the control's corners. */
-  overflow: hidden;
-  border: 1px solid var(--soft);
-  border-radius: 4px;
+  /* A segment is 32 pixels high inside the control's line. It is the least height: a partner who sets wider letter spacing gets a second line, and no name is cut. */
+  min-height: 34px;
+  border: 1px solid var(--rule-solid);
 }
 
 .segments[hidden] {
@@ -973,12 +1004,12 @@ body {
   overflow-wrap: anywhere;
   text-align: center;
   color: var(--ink);
-  font: 500 13px/20px var(--font-sans);
+  font: 400 13px/20px var(--font-sans);
   cursor: pointer;
 }
 
 .segment + .segment {
-  border-left: 1px solid var(--soft);
+  border-left: 1px solid var(--rule-solid);
 }
 
 /* The radio button lies over its segment, unseen: it takes the click and holds the focus. */
@@ -996,18 +1027,14 @@ body {
   background: var(--paper-2);
 }
 
-/* The chosen segment is filled, as a chosen checkbox is, and its name is heavier. */
+/* The chosen segment is filled, as a chosen checkbox is, and its name is heavier and in `ink-strong`. */
 .segment:has(:checked) {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--ink-strong);
   font-weight: 600;
 }
 
-/*
- * "None", and a choice within a lens, are chosen more quietly: a ring in place of the fill.
- * So the one filled segment is the lens that is on.
- */
-.segment:has([value='none']:checked),
+/* A choice within a lens is chosen more quietly: a ring in place of the fill. So the one filled segment is in the lens switch. */
 .segments-within .segment:has(:checked) {
   background: var(--paper-2);
   box-shadow: inset 0 0 0 2px var(--ink);
@@ -1064,7 +1091,7 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  padding: 20px 16px 8px;
+  padding: var(--rail-gap) var(--rail-side) 8px;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -1099,7 +1126,7 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 4px 8px 8px;
+  padding: 4px 12px 8px;
   scrollbar-color: var(--soft) transparent;
   scrollbar-width: thin;
 }
@@ -1125,7 +1152,6 @@ body {
   width: 100%;
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--ink);
   font: 400 13px/20px var(--font-sans);
@@ -1146,7 +1172,6 @@ body {
 
 /* The traced need: lit, with a bar at its left and its name in map-text-selected, as the outline's selected row is. */
 .need-row[aria-current] {
-  border-radius: 0 4px 4px 0;
   background: var(--paper-2);
   box-shadow: inset 2px 0 var(--accent);
   font-weight: 600;
@@ -1178,11 +1203,16 @@ body {
   max-height: 40%;
 }
 
+/* The head is a row of its own, with a rule over it and under it, whether the filters are folded or open. */
 .filters-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 20px 16px 4px;
+  gap: 8px;
+  margin: var(--rail-gap) var(--rail-side) 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
 
 .filters-count {
@@ -1195,7 +1225,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px 8px;
+  padding: 4px 12px;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -1204,7 +1234,6 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  border-radius: 4px;
   font: 400 13px/20px var(--font-sans);
   cursor: pointer;
 }
@@ -1227,7 +1256,6 @@ body {
   height: 16px;
   margin: 2px 0;
   border: 1px solid var(--soft);
-  border-radius: 4px;
   background: var(--paper);
   cursor: pointer;
   appearance: none;
@@ -1243,7 +1271,7 @@ body {
   width: 8px;
   height: 8px;
   margin: 3px;
-  background: var(--paper);
+  background: var(--ink-strong);
   clip-path: polygon(12% 50%, 0 64%, 38% 100%, 100% 20%, 86% 8%, 36% 72%);
   content: '';
 }
@@ -1251,7 +1279,6 @@ body {
 .filters-clear {
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--ink);
   font: 500 13px/20px var(--font-sans);
@@ -1278,7 +1305,7 @@ body {
 .filters-list {
   overflow-y: auto;
   min-height: 0;
-  padding: 4px 8px;
+  padding: 4px 12px;
   border-bottom: 1px solid var(--rule);
   scrollbar-color: var(--soft) transparent;
   scrollbar-width: thin;
@@ -1291,7 +1318,6 @@ body {
   width: 100%;
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
   color: var(--ink);
   font: 500 13px/20px var(--font-sans);
@@ -1379,25 +1405,29 @@ body {
 }
 
 /*
- * The legend: the four decision-class steps, at the bottom left of the canvas.
- * It stands on paper of its own, because close in a plate runs under it.
+ * The legend: the four decision-class steps, at the bottom left of the canvas, 32 pixels in from
+ * the rail and from the foot. It stands on paper of its own, because close in a plate runs under
+ * it. It is one framed row: a tag that names it, then one item for each step and each state.
  */
 .legend {
   position: absolute;
-  /* On the line of the "Keys" button at the foot of the rail. */
-  bottom: 12px;
-  left: calc(var(--rail-width) + 16px);
+  bottom: 32px;
+  left: calc(var(--rail-width) + 32px);
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 4px 12px;
-  border: 1px solid var(--rule-solid);
-  border-radius: 4px;
+  border: 1px solid var(--rule);
   background: var(--paper);
 }
 
-.legend .rail-heading {
+/* The tag at the head of the legend: `ink-strong` on `ink`, as the lens that is on. */
+:is(.legend, .fallback-legend) .rail-heading {
+  display: flex;
   flex: none;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--ink);
+  color: var(--ink-strong);
+  font-weight: 500;
+  letter-spacing: 0.12em;
   white-space: nowrap;
 }
 
@@ -1408,7 +1438,11 @@ body {
 .phase-strip {
   position: absolute;
   right: var(--phase-strip-side);
-  bottom: 56px;
+  /*
+   * 16 pixels over the legend, which stands 32 pixels off the foot. src/legend.ts says how high the
+   * legend is: one row of items, or more beside an open detail card.
+   */
+  bottom: calc(48px + var(--legend-height, 36px));
   left: calc(var(--rail-width) + var(--phase-strip-side));
   display: flex;
   justify-content: center;
@@ -1419,18 +1453,14 @@ body {
   display: none;
 }
 
-/* Beside an open detail card the legend may take a second row, and the strip stands clear of it. */
+/* Beside an open detail card the strip is centred in the room that is left. */
 #app:has(.detail-card:not([hidden])) .phase-strip {
   right: calc(var(--detail-card-width) + var(--phase-strip-side));
-  bottom: calc(56px + var(--legend-second-row));
 }
 
 .phase-steps {
   display: flex;
-  /* Cuts the steps' fills to the strip's corners. */
-  overflow: hidden;
-  border: 1px solid var(--soft);
-  border-radius: 4px;
+  border: 1px solid var(--rule-solid);
   background: var(--paper);
   pointer-events: auto;
 }
@@ -1446,7 +1476,7 @@ body {
 }
 
 .phase-step + .phase-step {
-  border-left: 1px solid var(--soft);
+  border-left: 1px solid var(--rule-solid);
 }
 
 /* The radio button lies over its step, unseen: it takes the click and holds the focus. */
@@ -1543,16 +1573,15 @@ body {
   }
 }
 
-/* Beside an open detail card the legend keeps left of it, and its steps go to a second row if they must. */
+/* Beside an open detail card the legend keeps left of it, and its items go to a second row if they must. */
 #app:has(.detail-card:not([hidden])) .legend {
   box-sizing: border-box;
-  max-width: calc(100% - var(--rail-width) - var(--detail-card-width) - 32px);
+  max-width: calc(100% - var(--rail-width) - var(--detail-card-width) - 64px);
 }
 
 .legend-steps {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1562,17 +1591,25 @@ body {
   display: none;
 }
 
+/*
+ * An item is 34 pixels high, with a rule at its left. The line over it is a shadow, so that it
+ * shows between two rows of items and lies on the frame's own line over the first row.
+ */
 .legend-steps li {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: 8px;
-  font: 400 12px/16px var(--font-sans);
+  gap: 10px;
+  height: 34px;
+  padding: 0 16px;
+  border-left: 1px solid var(--rule);
+  box-shadow: 0 -1px var(--rule);
+  font: 400 13px/16px var(--font-sans);
 }
 
-/* The states of a lens or a filter are not decision classes, so a rule sets them apart from the four steps. */
+/* The states of a lens, a filter or the pointer are not decision classes, so a stronger rule sets them apart from the four steps. */
 .legend-steps .legend-apart {
-  padding-left: 16px;
-  border-left: 1px solid var(--rule-solid);
+  border-left-color: var(--rule-solid);
 }
 
 /* A traced mark takes map-selected-fill, and a best-fit one map-bestfit-ring: a 2px ring, 2px clear of the mark. */
@@ -1601,10 +1638,23 @@ body {
   min-height: 136px;
 }
 
-/* The rule under the heading is the edge the rows scroll under. */
-.outline .rail-heading {
-  padding: 20px 16px 8px;
+/* The head: the heading that folds the outline, and the count of its tiers. The rule under it is the edge the rows scroll under. */
+.outline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 var(--rail-side);
+  padding: var(--rail-gap) 0 10px;
   border-bottom: 1px solid var(--rule);
+}
+
+.outline-size {
+  margin: 0;
+  color: var(--muted);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .outline-tree,
@@ -1618,37 +1668,51 @@ body {
 .outline-tree {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 8px 16px;
+  padding: 0 var(--rail-side) 16px;
 }
 
 .outline-group[hidden] {
   display: none;
 }
 
+/* A tier and all it holds stand over a rule. */
+.outline-tree > .outline-item {
+  border-bottom: 1px solid var(--rule);
+}
+
+/* A row reaches 8 pixels past its text at each side, so its lit ground and its bar stand clear of the text. */
 .outline-row {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  margin: 0 -8px;
+  padding: 6px 8px;
   font: 400 13px/20px var(--font-sans);
   cursor: pointer;
   /* A row the tree scrolls to keeps clear of the tree's edge. */
   scroll-margin: 8px 0;
 }
 
-/* A cluster stands in from its tier, and a tool from its cluster. */
+/* What an opened row holds stands in from it, behind a line: a tier's clusters, and a cluster's tools. */
+.outline-group {
+  margin: 0 0 6px 9px;
+  padding-left: 18px;
+  border-left: 1px solid var(--rule-solid);
+}
+
+.outline-group .outline-group {
+  margin-left: 7px;
+  padding-left: 12px;
+}
+
+/* A row in a group is 26 pixels high, so two names stand 6 pixels apart. */
 .outline-group .outline-row {
-  padding-left: 24px;
-  font-weight: 500;
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
-.outline-group .outline-group .outline-row {
-  padding-left: 48px;
-  font-weight: 400;
-}
-
-.outline-tree > .outline-item > .outline-row {
+/* An opened row is heavier, as the row for where the map is. */
+.outline-item[aria-expanded='true'] > .outline-row {
   font-weight: 600;
 }
 
@@ -1681,6 +1745,13 @@ body {
   line-height: 20px;
 }
 
+/* A tier's code stands in a column of its own, in map-text-count. */
+.outline-tree > .outline-item > .outline-row .outline-tag {
+  width: 20px;
+  color: var(--count);
+  letter-spacing: 0;
+}
+
 .outline-name {
   flex: 1;
   min-width: 0;
@@ -1705,8 +1776,6 @@ body {
 
 /* The selected row: a lit row with a bar at its left, and its name in map-text-selected. */
 .outline-item[aria-selected='true'] > .outline-row {
-  /* Square at the left, so the bar is straight. */
-  border-radius: 0 4px 4px 0;
   background: var(--paper-2);
   box-shadow: inset 2px 0 var(--accent);
   font-weight: 600;
@@ -1728,10 +1797,11 @@ body {
 
 .rail-foot {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 16px 12px 8px;
+  margin: 0 var(--rail-side);
+  padding: 14px 0 16px;
   border-top: 1px solid var(--rule);
 }
 
@@ -1742,8 +1812,8 @@ body {
 .build-stamp {
   margin: 0;
   color: var(--muted);
-  font: 500 11px/14px var(--font-mono);
-  letter-spacing: 0.08em;
+  font: 400 11px/1.5 var(--font-mono);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -1755,7 +1825,6 @@ body {
 
 .build-stamp dd {
   margin: 0;
-  color: var(--ink);
 }
 
 /* A commit is written in small letters, and is shown as it is written. */
@@ -1763,22 +1832,22 @@ body {
   text-transform: none;
 }
 
+/* The margin takes the button's own padding back, so "Keys" stands on the rail's side line. */
 .rail-keys {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0 0 -4px -8px;
   padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
   background: none;
-  color: var(--muted);
-  font: 500 13px/20px var(--font-sans);
+  color: var(--ink);
+  font: 400 13px/20px var(--font-sans);
   cursor: pointer;
 }
 
 .rail-keys:hover {
   background: var(--paper-2);
-  color: var(--ink);
 }
 
 /* The list of keys. */
@@ -1787,15 +1856,14 @@ body {
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   padding: 0 0 8px;
-  border: 1px solid var(--soft);
-  border-radius: 4px;
+  border: 1px solid var(--rule-solid);
   background: var(--paper);
   color: var(--ink);
   font: 400 13px/20px var(--font-sans);
 }
 
 .key-list::backdrop {
-  background: color-mix(in srgb, var(--ink) 24%, transparent);
+  background: var(--scrim);
 }
 
 .key-list-head {
@@ -1826,9 +1894,10 @@ body {
   margin: 0;
 }
 
+/* The first column holds two key caps side by side, the widest of them "Enter" and "Space". */
 .key-list-rows > div {
   display: grid;
-  grid-template-columns: 80px 1fr;
+  grid-template-columns: 104px 1fr;
   gap: 8px;
 }
 
@@ -1849,7 +1918,6 @@ body {
   gap: 8px;
   margin: 12px -8px 0;
   padding: 4px 8px;
-  border-radius: 4px;
   font: 500 13px/20px var(--font-sans);
   cursor: pointer;
 }
@@ -1890,7 +1958,7 @@ body {
   width: auto;
   height: var(--bar-row);
   border-right: 0;
-  border-bottom: 1px solid var(--rule-solid);
+  border-bottom: 1px solid var(--rule);
 }
 
 :root[data-bar] .rail[data-collapsed] > .rail-icons {
@@ -1936,7 +2004,7 @@ body {
 /* The title is on one line, at the size of a tier's name, beside the button that closes the part. */
 :root[data-bar] .rail:not([data-collapsed]) .title {
   overflow: hidden;
-  padding: 12px 60px 4px 16px;
+  padding: 12px 60px 4px var(--rail-side);
   font-size: 20px;
   line-height: 28px;
   text-overflow: ellipsis;
@@ -1958,6 +2026,11 @@ body {
   max-height: none;
 }
 
+:root[data-bar] .rail:not([data-collapsed]) :is(.filters-head, .outline-head, .needs-head) {
+  margin-top: 8px;
+  padding-top: 10px;
+}
+
 /* The search results stand under the field and fill the part, so they end above an on-screen keyboard. */
 :root[data-bar] .rail:not([data-collapsed]) .search:not([data-aside]) {
   display: flex;
@@ -1973,10 +2046,9 @@ body {
   width: auto;
   min-height: 0;
   max-height: none;
-  margin: 8px -16px 0;
+  margin: 8px calc(-1 * var(--rail-side)) 0;
   border: 0;
   border-top: 1px solid var(--rule);
-  border-radius: 0;
 }
 
 /* The keyboard takes the foot's room, and the results need it more than the build stamp does. */
@@ -2081,21 +2153,22 @@ body {
   overflow-y: auto;
   max-width: calc(100% - 16px);
   max-height: calc(100% - var(--bar-height) - var(--detail-card-height) - 16px);
-  padding: 12px 16px;
 }
 
+/* One item to a row, each under a rule in place of the one at its left. */
 :root[data-bar] .legend-steps {
   flex-direction: column;
   flex-wrap: nowrap;
-  gap: 8px;
-  margin-top: 8px;
+}
+
+:root[data-bar] .legend-steps li {
+  border-top: 1px solid var(--rule);
+  border-left: 0;
+  box-shadow: none;
 }
 
 :root[data-bar] .legend-steps .legend-apart {
-  padding-top: 8px;
-  padding-left: 0;
-  border-top: 1px solid var(--rule-solid);
-  border-left: 0;
+  border-top-color: var(--rule-solid);
 }
 
 /*
@@ -2154,12 +2227,13 @@ body {
     margin: -14px -8px;
   }
 
-  .filters-head {
+  .filters-head,
+  .outline-head {
     padding-bottom: 14px;
   }
 
-  .outline .rail-heading {
-    padding-bottom: 14px;
+  .filters-head {
+    padding-top: 14px;
   }
 
   .filters-committed,
@@ -2167,6 +2241,7 @@ body {
   .filter-toggle,
   .filter-value,
   .outline-row,
+  .outline-group .outline-row,
   .need-row,
   .card-row,
   .rail-keys,
@@ -2282,14 +2357,14 @@ body {
 }
 
 .picture-count {
-  color: var(--muted);
-  font: 500 11px/18px var(--font-mono);
-  letter-spacing: 0.08em;
+  color: var(--count);
+  font: 400 11px/18px var(--font-mono);
+  letter-spacing: 0.12em;
 }
 
 .picture-name {
   color: var(--ink);
-  font: 400 20px/24px var(--font-serif);
+  font: 400 26px/28px var(--font-serif);
 }
 
 .picture-drawing {
@@ -2342,32 +2417,38 @@ body {
 /* The picture's parts take the tokens the scene draws the same parts with. */
 .picture-plate {
   fill: var(--paper-2);
-  stroke: var(--rule-solid);
+  stroke: var(--edge);
+}
+
+/* The underside of a plate, drawn before the plate and seen under its near edge. */
+.picture-plate-side {
+  fill: var(--paper-3);
+  stroke: var(--edge);
 }
 
 .picture-cell {
   fill: none;
-  stroke: var(--rule);
+  stroke: var(--edge);
 }
 
 .picture-mark-committed {
-  fill: var(--ink);
+  fill: var(--class-committed);
 }
 
-/* An outlined mark carries its line's width, from its mark token, and the line lies inside the mark. */
+/* An outlined mark carries its line's width, from its mark token, and the line lies inside the mark. The plate shows through it. */
 .picture-mark-planned {
-  fill: var(--paper);
-  stroke: var(--ink);
+  fill: none;
+  stroke: var(--class-planned);
 }
 
 .picture-mark-optional {
-  fill: var(--paper);
-  stroke: var(--soft);
+  fill: none;
+  stroke: var(--class-optional);
 }
 
 .picture-mark-guarded {
   fill: none;
-  stroke: var(--muted);
+  stroke: var(--class-guarded);
   stroke-dasharray: 2 2;
 }
 
@@ -2383,6 +2464,5 @@ body {
 
 .fallback-legend {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  border: 1px solid var(--rule);
 }

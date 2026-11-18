@@ -70,7 +70,7 @@ import { MAP_TOKENS, colourOf } from './tokens';
 
 /** The face the counts and badges are drawn in. main.ts loads it before any label is made. */
 const TAG_FAMILY = 'Geist Mono';
-const TAG_WEIGHT = '500';
+const TAG_WEIGHT = '400';
 export const TAG_FONT = `${TAG_WEIGHT} 1em "${TAG_FAMILY}"`;
 
 /** How many canvas pixels a count, badge or icon is drawn with for each pixel it takes on screen. */
@@ -179,14 +179,15 @@ export function addLabels(
 ): Labels {
   const nameColour = colourOf(MAP_TOKENS['map-text-name'].text).hex;
   const tagColour = colourOf(MAP_TOKENS['map-text-tag'].text).hex;
+  const countColour = colourOf(MAP_TOKENS['map-text-count'].text).hex;
   const selectedColour = colourOf(MAP_TOKENS['map-text-selected'].text).hex;
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   const tagResolution = (sizePx: number): number => Math.round(sizePx * pixelRatio * OVERSAMPLING);
 
   const typeset = (text: Text): Promise<void> => new Promise((resolve) => text.sync(() => resolve()));
 
-  function tag(text: string, sizePx = constants.tagPx): SpriteText {
-    const sprite = new SpriteText(text.toUpperCase(), sizePx, tagColour);
+  function tag(text: string, sizePx = constants.tagPx, colour = tagColour): SpriteText {
+    const sprite = new SpriteText(text.toUpperCase(), sizePx, colour);
     sprite.fontFace = TAG_FAMILY;
     sprite.fontWeight = TAG_WEIGHT;
     sprite.fontSize = tagResolution(sizePx);
@@ -207,8 +208,8 @@ export function addLabels(
    * is drawn on a rectangle instead: the sprite is never in the scene, and only draws the text and
    * measures it.
    */
-  function standingTag(text: string): StandingTag {
-    const drawn = tag(text);
+  function standingTag(text: string, colour = tagColour): StandingTag {
+    const drawn = tag(text, constants.tagPx, colour);
     const material = new MeshBasicMaterial({ map: drawn.material.map, transparent: true });
     const face = new Mesh(TAG_FACE, material);
     const fit = (): void => {
@@ -286,7 +287,8 @@ export function addLabels(
     name.color = tierNameColour(tier.id, store.get().lens);
     group.add(name);
 
-    const count = standingTag(tierCountText(tier.id, store.get().lens));
+    // A tier's count line has a colour of its own, map-text-count.
+    const count = standingTag(tierCountText(tier.id, store.get().lens), countColour);
     count.face.position.set(0, constants.countGapPx, 0);
     group.add(count.face);
 
@@ -462,7 +464,7 @@ export function addLabels(
     for (const { tier, name, count, shownTitle } of tierCounts) {
       name.color = tierNameColour(tier, lens);
       if (countsOverPlates) count.write(shownTitle, tierNameColour(tier, lens), constants.tierTitlePx);
-      else count.write(tierCountText(tier, lens));
+      else count.write(tierCountText(tier, lens), countColour);
     }
     boxTierLabels();
   }
@@ -562,7 +564,6 @@ export function addLabels(
           badge = tag(word);
           badge.borderWidth = 1;
           badge.borderColor = tagColour;
-          badge.borderRadius = 3;
           badge.padding = [4, 1.5];
           badge.center.set(0, 0.5);
           badge.material.depthTest = false;

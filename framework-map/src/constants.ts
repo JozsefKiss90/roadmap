@@ -8,7 +8,7 @@
  * because the build computes the layout before the page runs.
  */
 export const constants = {
-  titleSizePx: 28,
+  titleSizePx: 32,
 
   /** The camera's vertical field of view: a narrow lens, for a near-axonometric look. */
   fieldOfViewDegrees: 3,
@@ -62,12 +62,13 @@ export const constants = {
   /**
    * The part of the window kept clear around the stack at rest, in pixels. The
    * left one holds the rail and, beside it, the tier labels: 24 pixels clear of the
-   * rail, then `labelColumnPx` and `labelGapPx`. The bottom one holds the legend.
+   * rail, then `labelColumnPx` and `labelGapPx`. The bottom one holds the legend, which stands 32
+   * pixels off the foot and is 36 high, and 20 pixels clear over it.
    */
   insetTopPx: 76,
   insetRightPx: 40,
-  insetBottomPx: 64,
-  insetLeftPx: 640,
+  insetBottomPx: 88,
+  insetLeftPx: 744,
   /**
    * The same in the two layouts with the bar, where no tier label stands beside the
    * stack and the legend opens on request: the margin at the sides and the bottom, and the room
@@ -90,8 +91,8 @@ export const constants = {
   phaseStripStackedPx: 16,
   /** The strip's room in the two layouts with the bar, with its counts one over the other. */
   phaseStripUnderBarPx: 80,
-  /** What a second row of the legend adds to that room, beside an open detail card. The strip is lifted by as much. */
-  legendSecondRowPx: 24,
+  /** What a second row of the legend adds to that room, beside an open detail card: the height of an item. The strip itself stands over the legend as high as the legend is. */
+  legendSecondRowPx: 34,
 
   /**
    * The camera at the tier and cluster distances. It tilts toward top-down,
@@ -130,30 +131,35 @@ export const constants = {
 
   /**
    * Depth blur, at the tier and cluster distances: the plates under the
-   * focused one are blurred a little. `depthBlur` is the one switch that turns
-   * it off, for a machine whose frames run slow.
+   * focused one are blurred a little. `depthBlur` is the one switch for it.
+   * It is off in the dark skin, which has no blur (style guide, "Map
+   * postprocessing").
    */
-  depthBlur: true,
+  depthBlur: false,
   /** The widest the blur spreads, in pixels on screen. */
   depthBlurPx: 1,
   /** How far under the focused plate the blur is at its widest, in layout units. Plates stand 6.5 apart. */
   depthBlurFullAt: 13,
 
-  /** How thick a plate is, in layout units. */
+  /**
+   * How thick a plate is taken to be where the camera is fitted to the stack and where the depth
+   * blur masks it, in layout units. The underside itself is drawn as far under the plate's face as
+   * `map-plate-side` says, in pixels on screen.
+   */
   plateThickness: 0.16,
 
   /**
    * The tier labels: each stands in the scene at the left end of its plate, and runs along it.
-   * `labelColumnPx` is the room kept for a tier name: the longest is 336 pixels and stands on one
+   * `labelColumnPx` is the room kept for a tier name: the longest is 437 pixels and stands on one
    * line, and a longer one would be broken into two. `labelGapPx` is from the end of a label to the
    * end of its plate. Where the names are left out, the stack takes the room they would have had,
    * down to `labelCountPx`: the room of the longest count, which is a tier's tools in reach.
    */
-  labelColumnPx: 344,
+  labelColumnPx: 448,
   labelCountPx: 164,
   labelGapPx: 32,
   /** How far the top of a tier name sits above the top face of its plate. */
-  labelRisePx: 10,
+  labelRisePx: 13,
   /** From the top of a tier name up to the bottom of its count. */
   countGapPx: 7,
   /** The least clear space between one tier's label and the next. With less, the names are left out and the counts stay. */
@@ -161,7 +167,7 @@ export const constants = {
   /** Under the bar, where each tier's tag stands on the far edge of its plate: from that edge up to the tag. */
   countOverPlatePx: 2,
   /** Sizes on screen, from the style guide's "Map type" table. */
-  tierNamePx: 20,
+  tierNamePx: 26,
   clusterNamePx: 13,
   toolNamePx: 12,
   tagPx: 11,
@@ -207,6 +213,8 @@ export const constants = {
   hoverLabelOffsetPx: 12,
   /** The same for a finger held in place, which covers more of the picture than a pointer does. */
   fingerLabelOffsetPx: 28,
+  /** The leader that runs from the hover label toward the mark: its length. It ends half the label's offset short of the pointer. */
+  hoverLeaderPx: 20,
 
   /**
    * A press on the canvas (see src/press.ts). A press that moves further than the slop is a drag,

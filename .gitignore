@@ -39,4 +39,4 @@ __pycache__/
 
 # Framework map build output (rebuild with: npm run build, in framework-map/)
 framework-map/dist/
-/framework-map.html
+

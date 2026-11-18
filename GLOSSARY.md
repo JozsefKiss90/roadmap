@@ -150,7 +150,7 @@ The keys that act anywhere on the page with no other key held: `/`, `?` and `1` 
 _Avoid_: Shortcuts, hotkeys
 
 **Hover label**:
-The small label that names a tool and its cluster: beside the pointer for the mark under it, and over a finger for the mark it holds.
+The small label that says where a mark stands and names its tool and its decision-class step: beside the pointer for the mark under it, and over a finger for the mark it holds.
 _Avoid_: Tooltip, popup
 
 **Hold**:
@@ -170,8 +170,12 @@ One of the seven ways to narrow the map to the tools that have a chosen value; t
 _Avoid_: Lens (when it means a filter)
 
 **Legend**:
-The panel at the bottom left of the map that names the four decision-class steps, and the states a lens or a filter adds to them. Under the bar it opens on request, from its icon.
+The panel at the bottom left of the map that names the four decision-class steps, the states a lens or a filter adds to them, and the mark under the pointer. Under the bar it opens on request, from its icon.
 _Avoid_: Key (a key is on the keyboard)
+
+**Skin**:
+One of the two sets of colours and line treatments the map can be drawn in, light or dark. The map is drawn in the dark one.
+_Avoid_: Theme, mode, colour scheme
 
 **View**:
 A distinct spatial arrangement of the map.

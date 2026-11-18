@@ -1,6 +1,7 @@
 /**
- * Build step: measures the map's contrast rows in the style guide and exits
- * with 1 if any row falls short of the contrast contract or is stated wrongly.
+ * Build step: measures the map's contrast rows in the style guide, for the
+ * light and the dark skin, and exits with 1 if any row falls short of the
+ * contrast contract or is stated wrongly.
  *
  * Usage: npm run contrast [-- path/to/style-guide.md]
  * With no path it checks ../references/style-guide.md.
@@ -27,7 +28,7 @@ const { rows, findings } = checkMapContrast(markdown);
 for (const row of rows) {
   const colour = row.opacity === 1 ? row.colour : `${row.colour} @ ${row.opacity}`;
   console.log(
-    `${row.token.padEnd(20)} ${colour.padEnd(11)} on ${row.surface.padEnd(8)} ${row.use.padEnd(10)} ${ratioText(row.ratio).padStart(7)} (minimum ${minimumText(row.minimum)})`,
+    `${row.skin.padEnd(5)} ${row.token.padEnd(20)} ${colour.padEnd(15)} on ${row.surface.padEnd(8)} ${row.use.padEnd(10)} ${ratioText(row.ratio).padStart(7)} (minimum ${minimumText(row.minimum)})`,
   );
 }
 
