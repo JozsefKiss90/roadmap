@@ -220,10 +220,10 @@ describe('layoutStack on the real graph', () => {
   const index = realIndex();
   const layout = layoutStack(index);
 
-  it('places 8 plates, 55 cells and 752 marks', () => {
+  it('places 8 plates, 55 cells and 766 marks', () => {
     expect(layout.plates).toHaveLength(8);
     expect(layout.cells).toHaveLength(55);
-    expect(layout.marks).toHaveLength(752);
+    expect(layout.marks).toHaveLength(766);
   });
 
   it('is sound: marks inside cells, cells inside plates, no overlap', () => {

@@ -42,13 +42,13 @@ describe('"committed only"', () => {
     for (const decisionClass of COMMITTED_ONLY) expect(vocabulary.decision_class).toContain(decisionClass);
   });
 
-  // The ticket gives the number: 327 of the 752 tools.
+  // The ticket gives the number: 327 of the 766 tools.
   it('chooses 327 tools of the framework', () => {
     const graph = JSON.parse(
       readFileSync(new URL('../../tool-discovery/tool-framework.graph.json', import.meta.url), 'utf8'),
     ) as { nodes: { type: string; decision_class?: string }[] };
     const tools = graph.nodes.filter((node) => node.type === 'tool');
-    expect(tools).toHaveLength(752);
+    expect(tools).toHaveLength(766);
     expect(tools.filter((tool) => COMMITTED_ONLY.includes(tool.decision_class ?? ''))).toHaveLength(327);
   });
 });

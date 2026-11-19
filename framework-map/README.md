@@ -122,7 +122,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters, the outline and the build stamp, and the need list while the need trace or the phase scrub is on. Below 1366 pixels it stands as a column of icons, and below 1024 pixels as a bar across the top; see "Page layouts, the fallback page and the build stamp". The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
-**The outline** is a tree of the 8 tiers, 55 clusters and 752 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
+**The outline** is a tree of the 8 tiers, 55 clusters and 766 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
 - **Choosing a row goes there.** A tier row goes to the tier. A cluster or tool row selects it, which flies to it and opens its detail card.
 - **The outline follows the map.** Selecting on the canvas, in the detail card or by a link opens the rows above the selected row, marks it and scrolls to it. With nothing selected, the outline scrolls to the focused tier or cluster and marks its row as the place. A focused cluster's row is opened.

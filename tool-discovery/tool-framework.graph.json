@@ -1,14 +1,14 @@
 {
  "meta": {
   "title": "Hermes OS tool discovery: meta framework",
-  "generated": "2026-11-17",
+  "generated": "2026-11-19",
   "note": "Repository facts (existence, stars, last commit, licence file) were read on 2026-11-17. Decisions marked \"Proposed here\" are recommendations, not accepted ADRs.",
   "counts": {
-   "tools": 752,
+   "tools": 766,
    "clusters": 55,
    "tiers": 8,
    "needs": 33,
-   "edges": 1537
+   "edges": 1557
   },
   "edge_types": [
    "contains",
@@ -270,7 +270,7 @@
    "hosting": "Cloud",
    "stream": "OS",
    "gate": "None",
-   "tools": 20,
+   "tools": 22,
    "layout": {
     "z": 0,
     "sector": 0,
@@ -293,7 +293,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 9,
+   "tools": 10,
    "layout": {
     "z": 0,
     "sector": 1,
@@ -358,7 +358,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 11,
+   "tools": 13,
    "layout": {
     "z": 0,
     "sector": 4,
@@ -490,7 +490,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 9,
+   "tools": 10,
    "layout": {
     "z": 1,
     "sector": 3,
@@ -534,7 +534,7 @@
    "hosting": "n/a",
    "stream": "Enable",
    "gate": "Reference only",
-   "tools": 8,
+   "tools": 9,
    "layout": {
     "z": 1,
     "sector": 5,
@@ -620,7 +620,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 7,
+   "tools": 8,
    "layout": {
     "z": 2,
     "sector": 3,
@@ -641,7 +641,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 17,
+   "tools": 18,
    "layout": {
     "z": 2,
     "sector": 4,
@@ -664,7 +664,7 @@
    "hosting": "Cloud",
    "stream": "OS",
    "gate": "Guarded: account access",
-   "tools": 10,
+   "tools": 11,
    "layout": {
     "z": 2,
     "sector": 5,
@@ -817,7 +817,7 @@
    "hosting": "Hub",
    "stream": "GTM",
    "gate": "None",
-   "tools": 27,
+   "tools": 28,
    "layout": {
     "z": 3,
     "sector": 6,
@@ -1204,7 +1204,7 @@
    "hosting": "Hub",
    "stream": "Build",
    "gate": "None",
-   "tools": 13,
+   "tools": 14,
    "layout": {
     "z": 5,
     "sector": 5,
@@ -1246,7 +1246,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "ADR first: v1 excludes multi-agent orchestration",
-   "tools": 8,
+   "tools": 10,
    "layout": {
     "z": 6,
     "sector": 1,
@@ -3857,6 +3857,68 @@
    "verification": "Verified 2026-11-17",
    "note": null,
    "size": 5.75
+  },
+  {
+   "id": "tool:loopforge",
+   "type": "tool",
+   "label": "LoopForge",
+   "tier": "T6",
+   "cluster": "6B",
+   "kind": "App (self-hosted)",
+   "capability": "Self-hosted workflows that run Claude Code, Codex and CodeBuddy with scripts and human approval gates",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "ADR first: v1 excludes multi-agent orchestration",
+   "origin": "Discovery",
+   "repo": "Tencent/LoopForge",
+   "url": "https://github.com/Tencent/LoopForge",
+   "stars": 4047,
+   "last_commit": "2026-11-19",
+   "licence": "MIT, third-party parts excepted",
+   "verification": "Verified 2026-11-19",
+   "note": "GitHub does not recognise the licence file; it reads as MIT with listed third-party exceptions.",
+   "size": 4.61
+  },
+  {
+   "id": "tool:sandcastle",
+   "type": "tool",
+   "label": "Sandcastle",
+   "tier": "T6",
+   "cluster": "6B",
+   "kind": "Library",
+   "capability": "TypeScript library that runs coding agents in isolated sandboxes, one branch each, and merges their commits back; local, Docker or cloud sandboxes",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "ADR first: v1 excludes multi-agent orchestration",
+   "origin": "Discovery",
+   "repo": "mattpocock/sandcastle",
+   "url": "https://github.com/mattpocock/sandcastle",
+   "stars": 9184,
+   "last_commit": "2026-11-18",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-19",
+   "note": "Same author as mattpocock/skills.",
+   "size": 4.96
   },
   {
    "id": "tool:langchain-ai-langgraph",
@@ -8917,6 +8979,37 @@
    "verification": "Listed in claude-plugins-official",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:improve",
+   "type": "tool",
+   "label": "improve",
+   "tier": "T5",
+   "cluster": "5F",
+   "kind": "Skill",
+   "capability": "The strongest model audits the codebase and writes plans for cheaper models to carry out",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Build",
+   "gate": "Admission review",
+   "origin": "Discovery",
+   "repo": "shadcn/improve",
+   "url": "https://github.com/shadcn/improve",
+   "stars": 12060,
+   "last_commit": "2026-09-12",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 5.08
   },
   {
    "id": "tool:dev-graph",
@@ -15021,6 +15114,38 @@
    "size": 1
   },
   {
+   "id": "tool:arcreel",
+   "type": "tool",
+   "label": "ArcReel",
+   "tier": "T3",
+   "cluster": "3G",
+   "kind": "App (self-hosted)",
+   "capability": "Self-hosted AI video workspace: stories and scripts into characters, scenes, storyboards, video and CapCut drafts, with cost tracking",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "D",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "GTM",
+   "gate": "Licence check",
+   "origin": "Discovery",
+   "repo": "ArcReel/ArcReel",
+   "url": "https://github.com/ArcReel/ArcReel",
+   "stars": 6660,
+   "last_commit": "2026-11-19",
+   "licence": "AGPL-3.0",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 4.82
+  },
+  {
    "id": "tool:marketing-knowledge-work-plugin",
    "type": "tool",
    "label": "marketing (knowledge-work plugin)",
@@ -17900,6 +18025,37 @@
    "size": 1
   },
   {
+   "id": "tool:opensandbox",
+   "type": "tool",
+   "label": "OpenSandbox",
+   "tier": "T2",
+   "cluster": "2D",
+   "kind": "Runtime",
+   "capability": "Self-hosted sandbox runtime for AI agents",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "opensandbox-group/OpenSandbox",
+   "url": "https://github.com/opensandbox-group/OpenSandbox",
+   "stars": 17661,
+   "last_commit": "2026-11-19",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 5.25
+  },
+  {
    "id": "tool:allowedtools",
    "type": "tool",
    "label": "allowedTools",
@@ -18427,6 +18583,37 @@
    "size": 2.73
   },
   {
+   "id": "tool:rea",
+   "type": "tool",
+   "label": "rea",
+   "tier": "T2",
+   "cluster": "2E",
+   "kind": "CLI",
+   "capability": "Agents reverse-engineer software, from app behaviour down to native binaries",
+   "decision_class": "Delay / guarded",
+   "decision": "Delay / guarded",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "Guarded: authorised targets only",
+   "origin": "Discovery",
+   "repo": "morluto/rea",
+   "url": "https://github.com/morluto/rea",
+   "stars": 469896,
+   "last_commit": "2026-11-19",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-19",
+   "note": "Star count as read is far above its peers; check it before relying on it.",
+   "size": 6.67
+  },
+  {
    "id": "tool:telegram",
    "type": "tool",
    "label": "Telegram",
@@ -18755,6 +18942,37 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:phonebox",
+   "type": "tool",
+   "label": "PhoneBox",
+   "tier": "T2",
+   "cluster": "2G",
+   "kind": "App",
+   "capability": "An old Android phone as a desk panel and touch deck over USB or Wi-Fi: system stats, AI-coding and automation widgets, no cloud",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "ersinkoc/phonebox",
+   "url": "https://github.com/ersinkoc/phonebox",
+   "stars": 3814,
+   "last_commit": "2026-11-19",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 4.58
   },
   {
    "id": "tool:anthropics-skills",
@@ -21811,6 +22029,37 @@
    "size": 1
   },
   {
+   "id": "tool:ruler",
+   "type": "tool",
+   "label": "Ruler",
+   "tier": "T1",
+   "cluster": "1D",
+   "kind": "CLI",
+   "capability": "One rules source written out to each coding agent's own instruction file",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "intellectronica/ruler",
+   "url": "https://github.com/intellectronica/ruler",
+   "stars": 2993,
+   "last_commit": "2026-11-18",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 4.48
+  },
+  {
    "id": "tool:github-mcp-github-github-mcp-server",
    "type": "tool",
    "label": "GitHub MCP / github/github-mcp-server",
@@ -22620,6 +22869,39 @@
    "size": 2.26
   },
   {
+   "id": "tool:awesome-selfhosted",
+   "type": "tool",
+   "label": "awesome-selfhosted",
+   "tier": "T1",
+   "cluster": "1F",
+   "kind": "Catalogue",
+   "capability": "List of free-software network services and web apps to host yourself",
+   "decision_class": "Reference / concept",
+   "decision": "Reference / concept",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A",
+    "D",
+    "M"
+   ],
+   "hosting": "n/a",
+   "stream": "Enable",
+   "gate": "Reference only",
+   "origin": "Discovery",
+   "repo": "awesome-selfhosted/awesome-selfhosted",
+   "url": "https://github.com/awesome-selfhosted/awesome-selfhosted",
+   "stars": 338662,
+   "last_commit": "2026-11-17",
+   "licence": "CC-BY-SA-3.0",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 6.53
+  },
+  {
    "id": "tool:anthropic",
    "type": "tool",
    "label": "Anthropic",
@@ -23280,6 +23562,70 @@
    "size": 1
   },
   {
+   "id": "tool:jev",
+   "type": "tool",
+   "label": "Jev",
+   "tier": "T0",
+   "cluster": "0A",
+   "kind": "Model",
+   "capability": "TypeSafe AI's System One model for typed decisions: yes/no, choices and scores with probabilities",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A",
+    "D",
+    "M"
+   ],
+   "hosting": "Cloud",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": null,
+   "url": null,
+   "stars": null,
+   "last_commit": null,
+   "licence": null,
+   "verification": "Catalogued, not re-checked",
+   "note": "No public repository; Flide serves the same /v1/systemone API locally.",
+   "size": 1
+  },
+  {
+   "id": "tool:deepseek-sdk",
+   "type": "tool",
+   "label": "DeepSeek SDK",
+   "tier": "T0",
+   "cluster": "0A",
+   "kind": "Library",
+   "capability": "Client access to the DeepSeek API from code; the API takes the OpenAI and Anthropic SDKs",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Cloud",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": null,
+   "url": null,
+   "stars": null,
+   "last_commit": null,
+   "licence": null,
+   "verification": "Catalogued, not re-checked",
+   "note": "No official SDK repository found. Community SDKs: pig-mesh/deepseek4j (Java), cohesion-org/deepseek-go (Go).",
+   "size": 1
+  },
+  {
    "id": "tool:ollama",
    "type": "tool",
    "label": "Ollama",
@@ -23575,6 +23921,37 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:flide",
+   "type": "tool",
+   "label": "Flide",
+   "tier": "T0",
+   "cluster": "0B",
+   "kind": "Local model runtime",
+   "capability": "Fast local inference for Jev-style decision models; serves the Jev /v1/systemone API on one GPU",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "OmniJev/Flide",
+   "url": "https://github.com/OmniJev/Flide",
+   "stars": 545,
+   "last_commit": "2026-11-16",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 3.74
   },
   {
    "id": "tool:litellm-berriai-litellm",
@@ -24424,6 +24801,68 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:arcane",
+   "type": "tool",
+   "label": "Arcane",
+   "tier": "T0",
+   "cluster": "0E",
+   "kind": "App (self-hosted)",
+   "capability": "Web UI for managing Docker containers, images, volumes and Compose stacks",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "getarcaneapp/arcane",
+   "url": "https://github.com/getarcaneapp/arcane",
+   "stars": 10118,
+   "last_commit": "2026-11-19",
+   "licence": "BSD-3-Clause",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 5.01
+  },
+  {
+   "id": "tool:kiri",
+   "type": "tool",
+   "label": "kiri",
+   "tier": "T0",
+   "cluster": "0E",
+   "kind": "Container runtime",
+   "capability": "Small, fast container runtime for macOS, Windows and Linux, with a built-in tunnel in place of ngrok",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "libracoder/kiri",
+   "url": "https://github.com/libracoder/kiri",
+   "stars": 11219,
+   "last_commit": "2026-11-19",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-19",
+   "note": null,
+   "size": 5.05
   },
   {
    "id": "tool:vaultwarden",
@@ -28017,6 +28456,39 @@
    "best_fit": true
   },
   {
+   "source": "6B",
+   "target": "tool:loopforge",
+   "type": "contains"
+  },
+  {
+   "source": "tool:loopforge",
+   "target": "N09",
+   "type": "serves",
+   "best_fit": false
+  },
+  {
+   "source": "6B",
+   "target": "tool:sandcastle",
+   "type": "contains"
+  },
+  {
+   "source": "tool:sandcastle",
+   "target": "N09",
+   "type": "serves",
+   "best_fit": false
+  },
+  {
+   "source": "tool:sandcastle",
+   "target": "N25",
+   "type": "serves",
+   "best_fit": false
+  },
+  {
+   "source": "tool:sandcastle",
+   "target": "2D",
+   "type": "implements"
+  },
+  {
    "source": "6C",
    "target": "tool:langchain-ai-langgraph",
    "type": "contains"
@@ -29325,6 +29797,11 @@
    "target": "N01",
    "type": "serves",
    "best_fit": false
+  },
+  {
+   "source": "5F",
+   "target": "tool:improve",
+   "type": "contains"
   },
   {
    "source": "4A",
@@ -30706,6 +31183,17 @@
    "type": "contains"
   },
   {
+   "source": "3G",
+   "target": "tool:arcreel",
+   "type": "contains"
+  },
+  {
+   "source": "tool:arcreel",
+   "target": "N23",
+   "type": "serves",
+   "best_fit": false
+  },
+  {
    "source": "3H",
    "target": "tool:marketing-knowledge-work-plugin",
    "type": "contains"
@@ -31617,6 +32105,17 @@
    "best_fit": false
   },
   {
+   "source": "2D",
+   "target": "tool:opensandbox",
+   "type": "contains"
+  },
+  {
+   "source": "tool:opensandbox",
+   "target": "N25",
+   "type": "serves",
+   "best_fit": false
+  },
+  {
    "source": "2E",
    "target": "tool:allowedtools",
    "type": "contains"
@@ -31780,6 +32279,11 @@
    "type": "contains"
   },
   {
+   "source": "2E",
+   "target": "tool:rea",
+   "type": "contains"
+  },
+  {
    "source": "2G",
    "target": "tool:telegram",
    "type": "contains"
@@ -31839,6 +32343,11 @@
   {
    "source": "2G",
    "target": "tool:whatsapp",
+   "type": "contains"
+  },
+  {
+   "source": "2G",
+   "target": "tool:phonebox",
    "type": "contains"
   },
   {
@@ -32663,6 +33172,11 @@
    "type": "contains"
   },
   {
+   "source": "1D",
+   "target": "tool:ruler",
+   "type": "contains"
+  },
+  {
    "source": "1E",
    "target": "tool:github-mcp-github-github-mcp-server",
    "type": "contains"
@@ -32800,6 +33314,11 @@
    "type": "contains"
   },
   {
+   "source": "1F",
+   "target": "tool:awesome-selfhosted",
+   "type": "contains"
+  },
+  {
    "source": "0A",
    "target": "tool:anthropic",
    "type": "contains"
@@ -32900,6 +33419,16 @@
    "type": "contains"
   },
   {
+   "source": "0A",
+   "target": "tool:jev",
+   "type": "contains"
+  },
+  {
+   "source": "0A",
+   "target": "tool:deepseek-sdk",
+   "type": "contains"
+  },
+  {
    "source": "0B",
    "target": "tool:ollama",
    "type": "contains"
@@ -32984,6 +33513,11 @@
   {
    "source": "0B",
    "target": "tool:qwen",
+   "type": "contains"
+  },
+  {
+   "source": "0B",
+   "target": "tool:flide",
    "type": "contains"
   },
   {
@@ -33143,6 +33677,16 @@
   {
    "source": "0E",
    "target": "tool:kvm-1-2-4-8",
+   "type": "contains"
+  },
+  {
+   "source": "0E",
+   "target": "tool:arcane",
+   "type": "contains"
+  },
+  {
+   "source": "0E",
+   "target": "tool:kiri",
    "type": "contains"
   },
   {
