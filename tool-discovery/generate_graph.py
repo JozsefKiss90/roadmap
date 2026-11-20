@@ -23,7 +23,7 @@ NOTE = (
     "Repository facts (existence, stars, last commit, licence file) were read on 2026-11-17. "
     'Decisions marked "Proposed here" are recommendations, not accepted ADRs.'
 )
-ROOT = {"id": "root", "type": "root", "label": "Hermes OS tool framework"}
+ROOT = {"id": "root", "type": "root", "label": "Agentic OS tool framework"}
 
 # Code and the name the CSV uses, in the order the nodes are written.
 ROLES = [("A", "Architect"), ("D", "Designer"), ("M", "Analyst")]
