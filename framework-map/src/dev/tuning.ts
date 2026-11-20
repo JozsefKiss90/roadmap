@@ -19,6 +19,9 @@ export function mountTuning(constants: Constants, onChange: () => void): void {
   camera.addBinding(constants, 'fieldOfViewDegrees', { label: 'field of view', min: 2, max: 40, step: 1 });
   camera.addBinding(constants, 'restTiltDegrees', { label: 'tilt at rest', min: 10, max: 85, step: 1 });
   camera.addBinding(constants, 'restTurnDegrees', { label: 'turn at rest', min: -60, max: 60, step: 1 });
+  camera.addBinding(constants, 'underBarMostTiltDegrees', { label: 'most tilt under the bar', min: 46, max: 72, step: 1 });
+  camera.addBinding(constants, 'underBarMostTurnDegrees', { label: 'most turn under the bar', min: 0, max: 75, step: 1 });
+  camera.addBinding(constants, 'underBarTagRoomPx', { label: 'tag room under the bar', min: 8, max: 40, step: 1 });
   camera.addBinding(constants, 'minTiltDegrees', { label: 'least tilt', min: 0, max: 85, step: 1 });
   camera.addBinding(constants, 'maxTiltDegrees', { label: 'most tilt', min: 10, max: 89, step: 1 });
   camera.addBinding(constants, 'nearestZoom', { label: 'nearest', min: 0.1, max: 1, step: 0.05 });

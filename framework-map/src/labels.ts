@@ -753,7 +753,7 @@ export function addLabels(
     // A tier's label stands in the scene, upright, and runs along its plate. It is stretched so
     // that at rest it is drawn at its own size; `tall` is how many pixels of the picture one of
     // its pixels then takes from top to bottom, which is 1 at rest and follows the camera's tilt.
-    const angle = restAngleAt(stage.window, constants);
+    const angle = restAngleAt(stage.window, constants, layout.plates);
     const stretch = standingStretch(angle.tiltDegrees, angle.turnDegrees);
     const tall = stretch.up * up.y;
     // From behind the stack the plates' right ends are at the left of the picture. The labels
@@ -804,7 +804,11 @@ export function addLabels(
       const countPx = ((tierCounts[0]?.count.height ?? 0) + constants.countOverPlatePx) * tall;
       tierCountsOut = tierCounts.some(({ plate, label }, at) => {
         if (at === 0) return false;
-        const deepPx = (plate.depth * Math.abs(forward.y)) / unitsPerPixelAt(label.anchor);
+        // The tag of the lower of the two plates stands under the near edge of the upper one, which is
+        // as far down the picture from its own far edge as that plate is deep.
+        const before = tierCounts[at - 1]!.plate;
+        const upper = plate.y > before.y ? plate : before;
+        const deepPx = (upper.depth * Math.abs(forward.y)) / unitsPerPixelAt(label.anchor);
         return apart(at) - deepPx < countPx;
       });
     }

@@ -1,5 +1,7 @@
 import './styles.css';
-import layout from 'virtual:stack-layout';
+import wholeLayout from 'virtual:stack-layout';
+import wrappedLayout from 'virtual:stack-layout-wrapped';
+import { stackWrapsAt, windowNow } from './page-layout';
 import picture from 'virtual:stack-picture';
 import { constants } from './constants';
 import { GraphRejected } from './data';
@@ -37,6 +39,40 @@ function applyPageConstants(): void {
   root.style.setProperty('--phase-strip-side', `${constants.phaseStripSidePx}px`);
 }
 
+/** Where the page keeps the place of the keyboard focus while it loads again for the other layout of the stack. */
+const FOCUS_KEY = 'framework-map:focus';
+
+/**
+ * Notes which element has the keyboard focus, as the way to it from the body: at each step, which
+ * child. The page is built the same from the same fragment, so the way leads to the same element.
+ * A browser that keeps no session storage loses the focus, and nothing else.
+ */
+function rememberFocus(): void {
+  const way: number[] = [];
+  for (let at = document.activeElement; at && at !== document.body; at = at.parentElement) {
+    way.unshift(at.parentElement ? [...at.parentElement.children].indexOf(at) : -1);
+  }
+  try {
+    if (way.length > 0 && !way.includes(-1)) sessionStorage.setItem(FOCUS_KEY, JSON.stringify(way));
+  } catch {
+    // The focus starts at the top of the page, as on any first visit.
+  }
+}
+
+/** Gives the keyboard focus back to the element `rememberFocus` noted, if the page was loaded again for it. */
+function restoreFocus(): void {
+  try {
+    const noted = sessionStorage.getItem(FOCUS_KEY);
+    sessionStorage.removeItem(FOCUS_KEY);
+    if (noted === null) return;
+    let at: Element | undefined = document.body;
+    for (const child of JSON.parse(noted) as number[]) at = at?.children[child];
+    if (at instanceof HTMLElement) at.focus({ preventScroll: true });
+  } catch {
+    // As above.
+  }
+}
+
 async function start(): Promise<void> {
   applyPageConstants();
   const app = document.getElementById('app');
@@ -58,9 +94,21 @@ async function start(): Promise<void> {
   const store = createStore(index);
   syncWithFragment(store, index);
 
+  // A phone held upright gets the wrapped layout. The scene is made from one layout, so a window
+  // that comes to need the other, as a phone turned on its side does, loads the page again. The
+  // fragment holds the state, so the page opens where it was.
+  const wraps = stackWrapsAt(windowNow(), constants);
+  const layout = wraps ? wrappedLayout : wholeLayout;
+  window.addEventListener('resize', () => {
+    if (stackWrapsAt(windowNow(), constants) === wraps) return;
+    rememberFocus();
+    location.reload();
+  });
+
   const stage = createStage(container, index, layout, constants, store);
   const labels = addLabels(stage, index, layout, constants, store);
   const panels = mountPanels(app, index, store, constants, __BUILD_ID__);
+  restoreFocus();
   window.frameworkMap = { labels: () => labels.rects(), selection: () => stage.selectionRect(), isMoving };
   await labels.settled();
 

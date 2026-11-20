@@ -369,11 +369,11 @@ try {
   await page.tap('.filters-committed');
   await atRest(page);
   const filtered = await read(page);
-  check('set a filter', /decision=/.test(filtered.fragment) && /^327 of 752/.test(filtered.passing ?? ''), filtered.passing);
+  check('set a filter', /decision=/.test(filtered.fragment) && /^327 of 766/.test(filtered.passing ?? ''), filtered.passing);
   await page.tap('.filters-clear');
   await atRest(page);
   const cleared = await read(page);
-  check('clear the filters', !/decision=/.test(cleared.fragment) && /^752 of 752/.test(cleared.passing ?? ''), cleared.passing);
+  check('clear the filters', !/decision=/.test(cleared.fragment) && /^766 of 766/.test(cleared.passing ?? ''), cleared.passing);
   await page.tap('.rail-close');
 
   await page.tap(icon('Outline'));
@@ -437,6 +437,8 @@ try {
   await still.page.tap('.rail-close');
   await still.page.tap(icon('Legend'));
   check('the legend opens at once', (await moving()) === false);
+  // The open legend lies over the left end of the top plates, so it is closed before the tap on one.
+  await still.page.tap(icon('Legend'));
   const stillAt = await read(still.page);
   const stillPlate = plateUnderCount(labelAt(stillAt.labels, 0));
   await still.page.touchscreen.tap(stillPlate.x, stillPlate.y);

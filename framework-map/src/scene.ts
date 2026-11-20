@@ -645,7 +645,7 @@ export function createStage(
   function restFit(state: MapState): { place: CameraPlace; names: boolean } {
     const room = pictureRoomAt(windowSize, constants, openPanelsOf(state));
     const inset = restInsetsAt(windowSize, constants);
-    const angle = restAngleAt(windowSize, constants);
+    const angle = restAngleAt(windowSize, constants, layout.plates);
     const field = constants.fieldOfViewDegrees;
     const pixelsPerTan = pixelsPerTangent(frame.height, field);
     const fit = (left: number, names: boolean | null): CameraPlace => {

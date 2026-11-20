@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FLAT_CORNERS, radians, spanFromAfar } from './camera';
 import { constants as tuned } from './constants';
 import type { Constants } from './constants';
 import {
@@ -14,6 +15,7 @@ import {
   railPxAt,
   restAngleAt,
   restInsetsAt,
+  stackWrapsAt,
   toolNamesFitAt,
 } from './page-layout';
 
@@ -209,17 +211,98 @@ describe('the margins the picture keeps inside its room', () => {
     expect(restInsetsAt(at(1280, 720), constants)).toEqual({ top: 76, right: 40, bottom: 64, left: 328 });
   });
 
+  it('come with the wrapped layout of the stack for a phone held upright, and for no other window', () => {
+    expect(stackWrapsAt(at(360, 640), constants)).toBe(true);
+    expect(stackWrapsAt(at(390, 844), constants)).toBe(true);
+    expect(stackWrapsAt(at(844, 390), constants)).toBe(false);
+    expect(stackWrapsAt(at(768, 1024), constants)).toBe(false);
+    expect(stackWrapsAt(at(1366, 768), constants)).toBe(false);
+  });
+
   it('are small in the two layouts with the bar, where no column of tier names stands beside the stack', () => {
     expect(restInsetsAt(at(360, 640), constants)).toEqual({ top: 140, right: 16, bottom: 16, left: 16 });
     expect(restInsetsAt(at(844, 390), constants)).toEqual({ top: 96, right: 16, bottom: 16, left: 16 });
   });
 
+  const angles = {
+    ...constants,
+    restTiltDegrees: 55,
+    underBarRestTiltDegrees: 64,
+    restTurnDegrees: 20,
+    underBarMostTiltDegrees: 70,
+    underBarMostTurnDegrees: 60,
+    underBarTagRoomPx: 22,
+  };
+  /** Eight plates like the map's: 6.5 apart, 5.7 deep, of several lengths, with their left ends in line. */
+  const plates = [30, 45, 22, 52, 34, 40, 36, 12].map((width, at) => ({
+    tier: `T${at}`,
+    x: width / 2 - 26,
+    y: at * 6.5,
+    z: 0,
+    width,
+    depth: 5.7,
+  }));
+  const corners = plates.flatMap((plate) =>
+    FLAT_CORNERS.map(([alongX, alongZ]) => ({
+      x: plate.x + (alongX * plate.width) / 2,
+      y: plate.y,
+      z: plate.z + (alongZ * plate.depth) / 2,
+    })),
+  );
+  type Angle = { tiltDegrees: number; turnDegrees: number };
+  const first: Angle = { tiltDegrees: 64, turnDegrees: 20 };
+  /** How many pixels a layout unit of the stack is drawn at, in the room a window gives it under the bar. */
+  const drawnAt = (size: { width: number; height: number }, angle: Angle): number => {
+    const inset = restInsetsAt(size, angles);
+    const span = spanFromAfar(corners, angle.tiltDegrees, angle.turnDegrees);
+    return Math.min((size.width - inset.left - inset.right) / span.across, (size.height - inset.top - inset.bottom) / span.up);
+  };
+  /** How many pixels of the picture a mark of one unit covers. */
+  const markArea = (size: { width: number; height: number }, angle: Angle): number =>
+    drawnAt(size, angle) ** 2 * Math.cos(radians(angle.tiltDegrees));
+  /** The room between the far edge of one plate and the near edge of the next, in pixels. */
+  const tagRoom = (size: { width: number; height: number }, angle: Angle): number =>
+    (6.5 * Math.sin(radians(angle.tiltDegrees)) - (5.7 * Math.cos(radians(angle.tiltDegrees))) / Math.cos(radians(angle.turnDegrees))) *
+    drawnAt(size, angle);
+
   it('come with a camera at rest that is turned, and that stands more level under the bar', () => {
-    const angles = { ...constants, restTiltDegrees: 55, underBarRestTiltDegrees: 64, restTurnDegrees: 20 };
-    expect(restAngleAt(at(1366, 768), angles)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
-    expect(restAngleAt(at(1280, 720), angles)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
-    expect(restAngleAt(at(360, 640), angles)).toEqual({ tiltDegrees: 64, turnDegrees: 20 });
-    expect(restAngleAt(at(844, 390), angles)).toEqual({ tiltDegrees: 64, turnDegrees: 20 });
+    expect(restAngleAt(at(1366, 768), angles, plates)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
+    expect(restAngleAt(at(1280, 720), angles, plates)).toEqual({ tiltDegrees: 55, turnDegrees: 20 });
+    expect(restAngleAt(at(360, 640), angles, plates).tiltDegrees).toBeGreaterThanOrEqual(64);
+  });
+
+  it('keep the first angle in a window wider than it is tall, where the stack is as tall as its room', () => {
+    expect(restAngleAt(at(844, 390), angles, plates)).toEqual(first);
+  });
+
+  it('turn the stack further in an upright window, so that it is drawn larger', () => {
+    for (const size of [at(360, 640), at(390, 844), at(768, 1024)]) {
+      const angle = restAngleAt(size, angles, plates);
+      expect(angle.turnDegrees).toBeGreaterThan(20);
+      expect(angle.turnDegrees).toBeLessThanOrEqual(60);
+      expect(angle.tiltDegrees).toBeLessThanOrEqual(70);
+      expect(drawnAt(size, angle)).toBeGreaterThan(drawnAt(size, first));
+    }
+    for (const phone of [at(360, 640), at(390, 844)]) {
+      expect(drawnAt(phone, restAngleAt(phone, angles, plates))).toBeGreaterThan(1.25 * drawnAt(phone, first));
+    }
+  });
+
+  it('take the angle that draws a mark largest, of those that leave a tag its room between two plates', () => {
+    for (const size of [at(360, 640), at(390, 844), at(768, 1024), at(320, 900)]) {
+      const angle = restAngleAt(size, angles, plates);
+      expect(tagRoom(size, angle)).toBeGreaterThanOrEqual(22);
+      for (let tiltDegrees = 64; tiltDegrees <= 70; tiltDegrees += 1) {
+        for (let turnDegrees = 20; turnDegrees <= 60; turnDegrees += 1) {
+          const other = { tiltDegrees, turnDegrees };
+          if (tagRoom(size, other) >= 22) expect(markArea(size, other)).toBeLessThanOrEqual(markArea(size, angle));
+        }
+      }
+    }
+  });
+
+  it('keep the first angle for a stack of no plates', () => {
+    expect(restAngleAt(at(360, 640), angles, [])).toEqual(first);
   });
 
   it('are the settled ones close in, and small in the two layouts with the bar', () => {

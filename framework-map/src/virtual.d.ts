@@ -12,3 +12,9 @@ declare module 'virtual:stack-layout' {
   const layout: import('./layout').StackLayout;
   export default layout;
 }
+
+/** The wrapped stack layout, for a phone's window, computed by the build (see vite.config.ts). */
+declare module 'virtual:stack-layout-wrapped' {
+  const layout: import('./layout').StackLayout;
+  export default layout;
+}

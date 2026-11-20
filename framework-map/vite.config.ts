@@ -7,7 +7,7 @@ import type { Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { DEV_BUILD, NO_COMMIT, buildIdOf } from './src/build-stamp.ts';
 import { readGraph } from './src/data.ts';
-import { layoutStack } from './src/layout.ts';
+import { layoutStack, STACK_METRICS, WRAPPED_STACK } from './src/layout.ts';
 import { stackPicture } from './src/stack-picture.ts';
 import type { Vocabulary } from './src/validate.ts';
 
@@ -18,27 +18,30 @@ const inToolDiscovery = (name: string): string =>
  * Runs the layout function when the map is built and serves its result as the
  * module `virtual:stack-layout` (ADR 0002). The page imports positions; it
  * never computes them, and they are never written into the graph JSON.
+ * The wrapped layout, for a phone's window, is `virtual:stack-layout-wrapped`.
  *
  * The static picture of the stack, for a browser with no WebGL, is drawn from
  * the same layout and served as `virtual:stack-picture`: markup, as text.
  */
 function stackModules(): Plugin {
   const layoutId = 'virtual:stack-layout';
+  const wrappedId = 'virtual:stack-layout-wrapped';
   const pictureId = 'virtual:stack-picture';
+  const ids = [layoutId, wrappedId, pictureId];
   // Rollup's convention for a module that is not a file: its id starts with a NUL character.
   const resolved = (id: string): string => String.fromCharCode(0) + id;
   const graphPath = inToolDiscovery('tool-framework.graph.json');
   const vocabularyPath = inToolDiscovery('vocabulary.json');
   return {
     name: 'framework-map:stack-layout',
-    resolveId: (id) => (id === layoutId || id === pictureId ? resolved(id) : undefined),
+    resolveId: (id) => (ids.includes(id) ? resolved(id) : undefined),
     load(id) {
-      if (id !== resolved(layoutId) && id !== resolved(pictureId)) return undefined;
+      if (!ids.some((known) => id === resolved(known))) return undefined;
       this.addWatchFile(graphPath);
       this.addWatchFile(vocabularyPath);
       const vocabulary = JSON.parse(readFileSync(vocabularyPath, 'utf8')) as Vocabulary;
       const index = readGraph(JSON.parse(readFileSync(graphPath, 'utf8')), vocabulary);
-      const layout = layoutStack(index);
+      const layout = id === resolved(wrappedId) ? layoutStack(index, STACK_METRICS, WRAPPED_STACK) : layoutStack(index);
       return id === resolved(pictureId)
         ? `export default ${JSON.stringify(stackPicture(layout, index))};`
         : `export default JSON.parse(${JSON.stringify(JSON.stringify(layout))});`;

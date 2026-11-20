@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { readGraph } from './data';
 import type { GraphIndex } from './data';
-import { layoutStack } from './layout';
+import { STACK_METRICS, WRAPPED_STACK, layoutStack, rowsOf } from './layout';
 import type { CellLayout, MarkLayout, StackLayout } from './layout';
 import type { Vocabulary } from './validate';
 
@@ -242,5 +242,65 @@ describe('layoutStack on the real graph', () => {
       const filled = marks.length / cell.slots;
       expect(filled, `cell ${cell.cluster} with ${marks.length} tools`).toBeGreaterThanOrEqual(0.6);
     }
+  });
+});
+
+describe('rowsOf', () => {
+  it('keeps cells that fit in one row', () => {
+    expect(rowsOf([4, 4, 4], 1, 14)).toEqual([3]);
+    expect(rowsOf([], 1, 14)).toEqual([]);
+  });
+
+  it('takes the fewest rows, and makes them near one length', () => {
+    // Filled a row at a time these would stand 4 and 1.
+    expect(rowsOf([4, 4, 4, 4, 4], 1, 20)).toEqual([3, 2]);
+    expect(rowsOf([10, 2, 2, 2, 2, 2], 1, 16)).toEqual([2, 4]);
+  });
+
+  it('gives a cell longer than a row a row to itself', () => {
+    expect(rowsOf([3, 30, 3], 1, 10)).toEqual([1, 1, 1]);
+  });
+});
+
+describe('layoutStack, wrapped, on the real graph', () => {
+  const index = realIndex();
+  const whole = layoutStack(index);
+  const wrapped = layoutStack(index, STACK_METRICS, WRAPPED_STACK);
+
+  it('places every plate, cell and mark, and is sound', () => {
+    expect(wrapped.plates).toHaveLength(whole.plates.length);
+    expect(wrapped.cells.map((cell) => cell.cluster)).toEqual(whole.cells.map((cell) => cell.cluster));
+    expect(wrapped.marks.map((mark) => mark.tool)).toEqual(whole.marks.map((mark) => mark.tool));
+    expectSoundLayout(wrapped);
+  });
+
+  it('has no plate longer than a row may be, and at least one plate of two rows', () => {
+    for (const plate of wrapped.plates) expect(plate.width).toBeLessThanOrEqual(WRAPPED_STACK.mostPlateWidth + TOLERANCE);
+    expect(Math.max(...whole.plates.map((plate) => plate.width))).toBeGreaterThan(WRAPPED_STACK.mostPlateWidth);
+    expect(new Set(wrapped.plates.map((plate) => plate.depth)).size).toBeGreaterThan(1);
+  });
+
+  it('keeps the plates left ends and their near edges in line, inside the bounds', () => {
+    for (const plate of wrapped.plates) {
+      expect(plate.x - plate.width / 2).toBeCloseTo(wrapped.bounds.min.x, 9);
+      expect(plate.z + plate.depth / 2).toBeCloseTo(wrapped.bounds.max.z, 9);
+      expect(plate.z - plate.depth / 2).toBeGreaterThanOrEqual(wrapped.bounds.min.z - TOLERANCE);
+    }
+  });
+
+  it('stands the plate above a deeper plate higher by the rise of each row after the first, and no other', () => {
+    const upward = [...wrapped.plates].sort((a, b) => a.y - b.y);
+    const shallow = Math.min(...upward.map((plate) => plate.depth));
+    const rowStep = STACK_METRICS.rows * STACK_METRICS.pitch + 2 * STACK_METRICS.cellPadding + WRAPPED_STACK.rowGap;
+    upward.slice(1).forEach((plate, at) => {
+      const under = upward[at]!;
+      const moreRows = Math.round((under.depth - shallow) / rowStep);
+      expect(plate.y - under.y).toBeCloseTo(STACK_METRICS.plateSpacing + moreRows * WRAPPED_STACK.rowRise, 9);
+    });
+  });
+
+  it('leaves the whole layout as it was', () => {
+    expect(layoutStack(index)).toEqual(whole);
+    expect(new Set(whole.plates.map((plate) => plate.depth)).size).toBe(1);
   });
 });

@@ -84,6 +84,19 @@ function cornersOf(box: Box): Point[] {
   return corners;
 }
 
+/**
+ * How far a set of points reaches across the picture and from top to bottom, in layout units,
+ * seen from so far off that the lens narrows nothing. With the map's narrow field of view it is
+ * within a few hundredths of what the camera draws.
+ */
+export function spanFromAfar(points: readonly Point[], tiltDegrees: number, turnDegrees: number): { across: number; up: number } {
+  if (points.length === 0) return { across: 0, up: 0 };
+  const { right, up } = acrossAndUp(tiltDegrees, turnDegrees);
+  const across = points.map((point) => dot(point, right));
+  const upward = points.map((point) => dot(point, up));
+  return { across: Math.max(...across) - Math.min(...across), up: Math.max(...upward) - Math.min(...upward) };
+}
+
 /** How many pixels of the picture one unit of tangent covers. */
 export const pixelsPerTangent = (pictureHeight: number, fieldOfViewDegrees: number): number =>
   pictureHeight / 2 / Math.tan(radians(fieldOfViewDegrees) / 2);

@@ -22,9 +22,11 @@
  * labels and the panels ask the functions here with the same window, so the
  * picture and the panels cannot disagree.
  */
+import { FLAT_CORNERS, radians, spanFromAfar } from './camera';
 import type { Region } from './camera';
 import type { Constants } from './constants';
 import type { GraphIndex } from './data';
+import type { PlateLayout } from './layout';
 import type { ListShape } from './label-layout';
 import { listShape, staircaseHeight } from './label-layout';
 import { scrubbedPhaseOf } from './state';
@@ -65,6 +67,13 @@ export function pageLayoutAt({ width, height }: WindowSize, constants: LayoutWid
 
 /** Whether the rail stands as the bar across the top in a page layout: in the narrow and the upright one. */
 export const hasBar = (layout: PageLayout): boolean => layout === 'narrow' || layout === 'upright';
+
+/**
+ * Whether a window gets the wrapped layout of the stack, in which a long tier stands its cells in
+ * rows (see src/layout.ts): a phone held upright. The page makes its scene from one layout, so
+ * src/main.ts loads the page again when a window comes to the other answer.
+ */
+export const stackWrapsAt = (size: WindowSize, constants: LayoutWidths): boolean => size.width < constants.uprightBelowPx;
 
 /** Whether a window's page layout has the bar. */
 export const underBarAt = (size: WindowSize, constants: LayoutWidths): boolean => hasBar(pageLayoutAt(size, constants));
@@ -152,14 +161,86 @@ export function restInsetsAt(
 }
 
 /**
- * The camera's angle at rest: its tilt and its turn. Under the bar each tier's tag stands over
- * its plate, and a more level camera opens the room for it.
+ * The camera's angle at rest under the bar: the one that draws the stack largest in the window.
+ *
+ * The plates are long and the stack is low, so in an upright window a stack turned a little is
+ * as wide as the window and leaves most of its height empty. Turned further, each plate runs
+ * back and is shorter across the picture, the stack is taller, and the camera comes nearer.
+ * In a window wider than it is tall the stack is already as tall as its room, and the angle
+ * stays the first one: `underBarRestTiltDegrees` and `restTurnDegrees`.
+ *
+ * Turned further, a plate also takes more of the height between it and the next, and the tag
+ * on its far edge needs `underBarTagRoomPx` there. A more level camera opens that room again,
+ * and draws each mark flatter. So of the angles that leave the tag its room, up to
+ * `underBarMostTiltDegrees` and `underBarMostTurnDegrees`, the one is taken that draws a mark
+ * over the most pixels. It is in whole degrees, and depends on the window alone: an open panel
+ * moves the stack, and does not turn it.
  */
-export function restAngleAt(size: WindowSize, constants: Constants): { tiltDegrees: number; turnDegrees: number } {
-  return {
-    tiltDegrees: underBarAt(size, constants) ? constants.underBarRestTiltDegrees : constants.restTiltDegrees,
-    turnDegrees: constants.restTurnDegrees,
-  };
+function underBarRestAngle(
+  size: WindowSize,
+  constants: Constants,
+  plates: readonly PlateLayout[],
+): { tiltDegrees: number; turnDegrees: number } {
+  const inset = restInsetsAt(size, constants);
+  const roomAcross = Math.max(1, size.width - inset.left - inset.right);
+  const roomDown = Math.max(1, size.height - inset.top - inset.bottom);
+  const corners = plates.flatMap((plate) =>
+    FLAT_CORNERS.map(([alongX, alongZ]) => ({
+      x: plate.x + (alongX * plate.width) / 2,
+      y: plate.y,
+      z: plate.z + (alongZ * plate.depth) / 2,
+    })),
+  );
+  const upward = [...plates].sort((a, b) => a.y - b.y);
+
+  const first = { tiltDegrees: constants.underBarRestTiltDegrees, turnDegrees: constants.restTurnDegrees };
+  let best = first;
+  let largest = 0;
+  for (let tiltDegrees = first.tiltDegrees; tiltDegrees <= constants.underBarMostTiltDegrees; tiltDegrees += 1) {
+    const tilt = radians(tiltDegrees);
+    for (let turnDegrees = first.turnDegrees; turnDegrees <= constants.underBarMostTurnDegrees; turnDegrees += 1) {
+      const span = spanFromAfar(corners, tiltDegrees, turnDegrees);
+      if (span.across <= 0 || span.up <= 0) continue;
+      const pixelsPerUnit = Math.min(roomAcross / span.across, roomDown / span.up);
+      // From the far edge of one plate up to the near edge of the next, at one place across the picture.
+      const comesForward = Math.cos(tilt) / Math.cos(radians(turnDegrees));
+      const clearPx =
+        pixelsPerUnit *
+        Math.min(
+          Infinity,
+          ...upward.slice(1).map((plate, at) => {
+            const under = upward[at]!;
+            const forward = plate.z + plate.depth / 2 - (under.z - under.depth / 2);
+            return (plate.y - under.y) * Math.sin(tilt) - forward * comesForward;
+          }),
+        );
+      // The first angle is kept whatever room it leaves: the labels leave a tag out where it has none.
+      const isFirst = tiltDegrees === first.tiltDegrees && turnDegrees === first.turnDegrees;
+      if (!isFirst && clearPx < constants.underBarTagRoomPx) continue;
+      // A mark's side is drawn `pixelsPerUnit` across, and as much from top to bottom as the tilt leaves of it.
+      const markArea = pixelsPerUnit * pixelsPerUnit * Math.cos(tilt);
+      if (markArea > largest) {
+        largest = markArea;
+        best = { tiltDegrees, turnDegrees };
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * The camera's angle at rest: its tilt and its turn. Under the bar each tier's tag stands over
+ * its plate, and a more level camera opens the room for it; there the angle is also fitted to
+ * the window, so that the stack fills it (see `underBarRestAngle`).
+ * @param plates The plates of the stack, which the angle under the bar is fitted to.
+ */
+export function restAngleAt(
+  size: WindowSize,
+  constants: Constants,
+  plates: readonly PlateLayout[],
+): { tiltDegrees: number; turnDegrees: number } {
+  if (!underBarAt(size, constants)) return { tiltDegrees: constants.restTiltDegrees, turnDegrees: constants.restTurnDegrees };
+  return underBarRestAngle(size, constants, plates);
 }
 
 /** The margins a focused plate or cell keeps inside the room the panels leave: above it, at its sides and under it. */

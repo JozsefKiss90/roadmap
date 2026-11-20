@@ -78,6 +78,16 @@ export const constants = {
   underBarTopPx: 44,
   /** The stack's tilt at rest in those two layouts: a little more level, so each tier's count has room over its plate. */
   underBarRestTiltDegrees: 64,
+  /**
+   * In those two layouts the camera's angle at rest is fitted to the window, so that the stack fills
+   * it (see `restAngleAt` in src/page-layout.ts): from the tilt above and `restTurnDegrees` up to
+   * these two. Turned further, a tag that runs along its plate slopes too steeply to read with ease;
+   * more level, the marks are too flat. The last is the room a tag needs between the far edge of
+   * its plate and the near edge of the next: its line, the plate's side, and a clear space.
+   */
+  underBarMostTiltDegrees: 70,
+  underBarMostTurnDegrees: 35,
+  underBarTagRoomPx: 22,
   /** The room the phase strip takes above the legend, while the phase scrub is on. The stack keeps clear of it. */
   phaseStripPx: 60,
   /** The clear space at each side of the strip: from the rail or the window's edge, and from an open detail card. */
