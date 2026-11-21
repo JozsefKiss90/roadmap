@@ -301,6 +301,24 @@ describe('the margins the picture keeps inside its room', () => {
     }
   });
 
+  it('ask no tag room between two rows of one tier, which need only show clear of each other', () => {
+    // Every other plate is the second row of the tier over it, 3.25 under it. No angle leaves a tag
+    // its room there, and the stack is still turned as far as draws it largest.
+    // Three long tiers, so the stack is wider than it is tall and is drawn larger turned.
+    const inColumns = plates.slice(0, 3).flatMap((plate, at) => [
+      { ...plate, width: 52, x: 0, y: at * 9.75 + 3.25 },
+      { ...plate, width: 52, x: 0, y: at * 9.75 },
+    ]);
+    const size = at(390, 844);
+    const angle = restAngleAt(size, angles, inColumns);
+    expect(angle).not.toEqual(first);
+    const clear = 3.25 * Math.sin(radians(angle.tiltDegrees)) - (5.7 * Math.cos(radians(angle.tiltDegrees))) / Math.cos(radians(angle.turnDegrees));
+    expect(clear).toBeGreaterThanOrEqual(0);
+    // As tiers of their own, as close as that, the plates would leave no tag its room at any angle.
+    const apart = inColumns.map((plate, at) => ({ ...plate, tier: `R${at}` }));
+    expect(restAngleAt(size, angles, apart)).toEqual(first);
+  });
+
   it('keep the first angle for a stack of no plates', () => {
     expect(restAngleAt(at(360, 640), angles, [])).toEqual(first);
   });

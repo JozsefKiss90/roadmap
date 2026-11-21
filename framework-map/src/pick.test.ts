@@ -4,7 +4,7 @@ import { pickOnStack } from './pick';
 import type { Ray } from './pick';
 
 /** Two plates, the upper one shorter. The lower plate holds two cells with a gap between them. */
-const layout: StackLayout = {
+const layout: Pick<StackLayout, 'plates' | 'cells' | 'marks'> = {
   plates: [
     { tier: 'T1', x: -5, y: 5, z: 0, width: 10, depth: 6 },
     { tier: 'T0', x: 0, y: 0, z: 0, width: 20, depth: 6 },
@@ -18,7 +18,6 @@ const layout: StackLayout = {
     { tool: 'tool:a', cluster: '0B', tier: 'T0', x: 2, y: 0, z: -1, size: 0.72 },
     { tool: 'tool:b', cluster: '0B', tier: 'T0', x: 3, y: 0, z: -1, size: 0.72 },
   ],
-  bounds: { min: { x: -10, y: 0, z: -3 }, max: { x: 10, y: 5, z: 3 } },
 };
 
 /** A ray straight down onto the point (x, z). */
@@ -74,6 +73,27 @@ describe('pickOnStack', () => {
 
   it('finds the mark under the finger before a nearer neighbour', () => {
     expect(pickOnStack(down(2.3, -1), layout, undefined, 2)).toEqual({ tier: 'T0', cluster: '0B', tool: 'tool:a' });
+  });
+
+  it('finds a cell on the plate it lies on, where a tier has two plates in a column', () => {
+    // The two rows of one tier, as they stand in the folded stack: the first straight over the second.
+    const column = {
+      plates: [
+        { tier: 'T0', x: 0, y: 3, z: 0, width: 20, depth: 6 },
+        { tier: 'T0', x: 0, y: 0, z: 0, width: 12, depth: 6 },
+      ],
+      cells: [
+        { cluster: '0A', tier: 'T0', x: -5, y: 3, z: 0, width: 8, depth: 5, slots: 8 },
+        { cluster: '0B', tier: 'T0', x: -1, y: 0, z: 0, width: 8, depth: 5, slots: 8 },
+      ],
+      marks: [],
+    };
+    expect(pickOnStack(down(-2, 0), column)).toEqual({ tier: 'T0', cluster: '0A', tool: null });
+    // Past the cell 0A the upper plate is bare, and the cell under it is not met through it.
+    expect(pickOnStack(down(2, 0), column)).toEqual({ tier: 'T0', cluster: null, tool: null });
+    // A ray that comes in under the upper plate meets the lower one, and its cell.
+    const under: Ray = { origin: { x: 2, y: 2, z: 0 }, direction: { x: 0, y: -1, z: 0 } };
+    expect(pickOnStack(under, column)).toEqual({ tier: 'T0', cluster: '0B', tool: null });
   });
 
   it('finds nothing for a ray that points away from the plates, or runs level', () => {

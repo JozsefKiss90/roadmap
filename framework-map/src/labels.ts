@@ -245,6 +245,8 @@ export function addLabels(
   const tierCounts: {
     tier: string;
     plate: PlateLayout;
+    /** Where the plate stands in the stack at rest. */
+    restPlate: PlateLayout;
     name: Text;
     count: StandingTag;
     label: Label;
@@ -270,8 +272,10 @@ export function addLabels(
     narrows(lens) && index.toolCountOf(tierId, lens) === 0 ? tagColour : nameColour;
 
   const tierLabels: Label[] = index.tiers.map((tier) => {
-    const plate = layout.plates.find((candidate) => candidate.tier === tier.id);
-    if (!plate) throw new Error(`The layout has no plate for the tier "${tier.id}".`);
+    // The plate as it stands now: in the folded stack it is the first of its tier's rows.
+    const plate = stage.stack.plates.find((candidate) => candidate.tier === tier.id);
+    const restPlate = stage.restPlates.find((candidate) => candidate.tier === tier.id);
+    if (!plate || !restPlate) throw new Error(`The layout has no plate for the tier "${tier.id}".`);
     const group = new Group();
 
     const name = new Text();
@@ -308,6 +312,7 @@ export function addLabels(
     const counted = {
       tier: tier.id,
       plate,
+      restPlate,
       name,
       count,
       label,
@@ -719,7 +724,7 @@ export function addLabels(
   function fittedTitles(): string[] {
     const most = pictureRoomAt(stage.window, constants, openPanelsOf(store.get())).right;
     const atRest = stage.restView();
-    return tierCounts.map(({ tier, plate, title, titleWidth }) => {
+    return tierCounts.map(({ tier, restPlate: plate, title, titleWidth }) => {
       const from = atRest(leftEnd.set(plate.x - plate.width / 2, plate.y, plate.z - plate.depth / 2)).x;
       /** How far along the plate from its left end a point is drawn, in pixels across the window. */
       const across = (units: number): number => atRest(along.copy(leftEnd).setX(leftEnd.x + units)).x - from;
@@ -753,7 +758,7 @@ export function addLabels(
     // A tier's label stands in the scene, upright, and runs along its plate. It is stretched so
     // that at rest it is drawn at its own size; `tall` is how many pixels of the picture one of
     // its pixels then takes from top to bottom, which is 1 at rest and follows the camera's tilt.
-    const angle = restAngleAt(stage.window, constants, layout.plates);
+    const angle = restAngleAt(stage.window, constants, stage.restPlates);
     const stretch = standingStretch(angle.tiltDegrees, angle.turnDegrees);
     const tall = stretch.up * up.y;
     // From behind the stack the plates' right ends are at the left of the picture. The labels
@@ -805,11 +810,19 @@ export function addLabels(
       tierCountsOut = tierCounts.some(({ plate, label }, at) => {
         if (at === 0) return false;
         // The tag of the lower of the two plates stands under the near edge of the upper one, which is
-        // as far down the picture from its own far edge as that plate is deep.
+        // as far down the picture from its own far edge as that plate is deep. Where the upper tier's
+        // rows stand in a column, the tag stands under the lowest of them.
         const before = tierCounts[at - 1]!.plate;
         const upper = plate.y > before.y ? plate : before;
-        const deepPx = (upper.depth * Math.abs(forward.y)) / unitsPerPixelAt(label.anchor);
-        return apart(at) - deepPx < countPx;
+        const far = upper.z - upper.depth / 2;
+        const steep = Math.sqrt(1 - forward.y * forward.y);
+        const deep = Math.max(
+          upper.depth * Math.abs(forward.y),
+          ...stage.stack.rows
+            .filter((row) => row.tier === upper.tier)
+            .map((row) => (upper.y - row.y) * steep + (row.z + row.depth / 2 - far) * Math.abs(forward.y)),
+        );
+        return apart(at) - deep / unitsPerPixelAt(label.anchor) < countPx;
       });
     }
     const atStack = store.get().distance === 'stack';

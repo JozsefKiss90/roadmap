@@ -17,8 +17,13 @@
  * second layout, the wrapped one (`WRAPPED_STACK`): a tier whose cells are
  * longer than a row may be stands them in two rows or more, on one plate that
  * is as much deeper. The near edges of the plates stay in line, so a deeper
- * plate runs further back, and the plates above it stand higher to leave it
- * its room.
+ * plate runs further back.
+ *
+ * That is how a plate lies when its tier is open. In the stack each row is a
+ * plate of its own, and the rows of a tier stand in a column: the first on
+ * top, each next one straight under it, the last where the plate lies. Each
+ * row's `lift` is the way from the one place to the other, and the plates
+ * above stand as much higher. src/fold.ts moves the rows between the two.
  */
 import type { GraphIndex } from './data';
 import { DECISION_STEPS, decisionStep } from './display.ts';
@@ -56,14 +61,14 @@ export interface WrapMetrics {
   mostPlateWidth: number;
   /** Between two rows of cells on a plate. */
   rowGap: number;
-  /** How much higher the plates above a plate stand for each row it has after its first. */
+  /** In the stack, the height from one row of a plate to the row over it. The plates above stand as much higher. */
   rowRise: number;
 }
 
 /**
  * The wrapped layout, for a phone's window. The length is what an upright phone shows of a plate
- * with the stack as tall as the window; the rise is what a second row takes of the height to the
- * next plate, as the camera sees it at rest under the bar.
+ * with the stack as tall as the window; the rise is the least that shows a row clear of the row
+ * over it, as the camera sees the stack at rest under the bar.
  */
 export const WRAPPED_STACK: WrapMetrics = {
   mostPlateWidth: 34,
@@ -79,6 +84,23 @@ export interface PlateLayout {
   z: number;
   width: number;
   depth: number;
+}
+
+/**
+ * A row of a plate's cells. `x`, `z` are the centre and `y` the top face of the plate it is in the
+ * stack, given where it lies with its tier open: on the tier's plate, over its own cells.
+ */
+export interface RowLayout {
+  tier: string;
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  depth: number;
+  /** From there to where the row stands in the stack: up, and forward to over the plate's last row. */
+  lift: { y: number; z: number };
+  /** The clusters whose cells stand in the row. */
+  clusters: string[];
 }
 
 /** A cell: the rectangle of one cluster, lying on its plate. */
@@ -113,6 +135,8 @@ export interface Point {
 
 export interface StackLayout {
   plates: PlateLayout[];
+  /** Every plate's rows, a plate's first row first. A plate that is not wrapped has one, with no lift. */
+  rows: RowLayout[];
   cells: CellLayout[];
   marks: MarkLayout[];
   /** The box that holds every plate. Its centre is the origin in x, and in z where no plate is wrapped. */
@@ -185,6 +209,7 @@ export function layoutStack(index: GraphIndex, metrics: StackMetrics = STACK_MET
   const rowStep = cellDepth + (wrap?.rowGap ?? 0);
 
   const plates: PlateLayout[] = [];
+  const stackRows: RowLayout[] = [];
   const cells: CellLayout[] = [];
   const marks: MarkLayout[] = [];
   /** How many rows each plate has. */
@@ -199,6 +224,8 @@ export function layoutStack(index: GraphIndex, metrics: StackMetrics = STACK_MET
     });
     const widths = clusters.map(({ width }) => width);
     const inRows = wrap ? rowsOf(widths, cellGap, wrap.mostPlateWidth - 2 * platePadding) : [clusters.length];
+    // A tier with no cluster still has its plate, and the plate its one row.
+    if (inRows.length === 0) inRows.push(0);
     const y = tier.layout.z * plateSpacing;
     let longest = 0;
     let next = 0;
@@ -232,23 +259,37 @@ export function layoutStack(index: GraphIndex, metrics: StackMetrics = STACK_MET
         });
         cursor += width + cellGap;
       }
+      // In the stack the rows stand in a column over the last one, a rise apart.
+      const over = inRows.length - 1 - row;
+      stackRows.push({
+        tier: tier.id,
+        x: 0,
+        y,
+        z,
+        width: 0,
+        depth: plateDepth,
+        lift: { y: over * (wrap?.rowRise ?? 0), z: over * rowStep },
+        clusters: clusters.slice(next, next + count).map(({ cluster }) => cluster.id),
+      });
       next += count;
       longest = Math.max(longest, cursor - cellGap);
     });
     const width = Math.max(longest, platePadding) + platePadding;
+    // Every row is as long as its plate, so the rows of a tier stand in one column.
+    for (const row of stackRows) if (row.tier === tier.id) Object.assign(row, { x: width / 2, width });
     const rowsHere = Math.max(1, inRows.length);
     rowCount.set(tier.id, rowsHere);
     // The plate's near edge is where a plate of one row has it.
     const deeper = (rowsHere - 1) * rowStep;
-    plates.push({ tier: tier.id, x: width / 2, y, z: -deeper / 2, width, depth: plateDepth + deeper });
+    plates.push({ tier: tier.id, x: width / 2, y, z: 0 - deeper / 2, width, depth: plateDepth + deeper });
   }
 
   // Second pass: centre the widest plate on the origin.
   const widest = Math.max(0, ...plates.map((plate) => plate.width));
-  for (const placed of [...plates, ...cells, ...marks]) placed.x -= widest / 2;
+  for (const placed of [...plates, ...stackRows, ...cells, ...marks]) placed.x -= widest / 2;
 
-  // Third pass: a plate with more rows than one runs further back, and so further up the picture,
-  // so every plate above it stands higher.
+  // Third pass: in the stack the rows of a plate stand one over the other, so every plate above
+  // it stands higher by the rises its rows take.
   if (wrap) {
     const rise = new Map<string, number>();
     let risen = 0;
@@ -256,12 +297,13 @@ export function layoutStack(index: GraphIndex, metrics: StackMetrics = STACK_MET
       rise.set(plate.tier, risen);
       risen += ((rowCount.get(plate.tier) ?? 1) - 1) * wrap.rowRise;
     }
-    for (const placed of [...plates, ...cells, ...marks]) placed.y += rise.get(placed.tier) ?? 0;
+    for (const placed of [...plates, ...stackRows, ...cells, ...marks]) placed.y += rise.get(placed.tier) ?? 0;
   }
 
   const heights = plates.length > 0 ? plates.map((plate) => plate.y) : [0];
   return {
     plates,
+    rows: stackRows,
     cells,
     marks,
     bounds: {

@@ -14,8 +14,11 @@
  *
  * The scene reads the distance, the focus and the selection from the state
  * store, and writes to the store when the partner clicks a plate, a cell or a
- * mark. It moves the camera and changes colour and opacity; it never moves a
- * plate, a cell or a mark.
+ * mark. It moves the camera and changes colour and opacity. A plate, a cell
+ * or a mark is moved by the fold alone (src/fold.ts): in the wrapped layout,
+ * a phone's, the rows of a tier stand in a column while the stack is on show,
+ * each a plate of its own, and lie on the tier's one plate once a tier or a
+ * cluster is open. The rows go from the one to the other as the camera flies.
  *
  * A mark of a tool that the lens or the filters leave out is drawn in the
  * faded state: it keeps its form and its place. A traced mark takes the
@@ -56,6 +59,7 @@ import { FLAT_CORNERS, pictureOf, pixelsPerTangent, radians, towardCamera, place
 import type { Box, Frame, Region, CameraPlace } from './camera';
 import type { Constants } from './constants';
 import { createDepthBlur } from './depth-blur';
+import { createFold, folds, rowsInStack } from './fold';
 import type { GraphIndex } from './data';
 import type { ToolNode } from './graph';
 import { DECISION_STEPS, decisionStep } from './display';
@@ -119,6 +123,13 @@ export interface Stage {
   add(object: Object3D): void;
   remove(object: Object3D): void;
   readonly camera: PerspectiveCamera;
+  /**
+   * The stack as it stands now. Its plates, cells and marks are moved as the stack folds, so a
+   * label that holds one follows it (see src/fold.ts).
+   */
+  readonly stack: StackLayout;
+  /** The plates as they stand in the stack at rest, where every row of a wrapped plate is one. */
+  readonly restPlates: readonly PlateLayout[];
   /** The picture the camera draws, in pixels, and the margins the stack keeps clear inside it at rest. */
   readonly frame: Frame;
   /** The window the picture is seen through, in pixels. */
@@ -191,8 +202,6 @@ interface TierParts {
   plate: PlateLayout;
   /** The fills of the plate's face and of its underside. */
   fills: MeshBasicMaterial[];
-  /** What is drawn for the underside. It is moved as the camera moves, to stay as deep on screen as its token says. */
-  side: Object3D[];
   lines: Line[];
   marks: Map<DecisionStep, ShaderMaterial>;
   /** The same forms in the faded state, for the marks the filters leave out. */
@@ -211,6 +220,16 @@ interface TierParts {
   blurTo: number;
   /** The materials of marks that are changing form, by the material they had and the one they take. */
   blends: Map<ShaderMaterial, Map<ShaderMaterial, ShaderMaterial>>;
+}
+
+/**
+ * What is drawn for one plate, or for one row of a plate while the stack is folded: its face and,
+ * under it, its underside, which is moved as the camera moves to stay as deep on screen as its token says.
+ */
+interface Slab {
+  at: PlateLayout;
+  face: Object3D[];
+  side: Object3D[];
 }
 
 /** Every material a tier's marks are drawn with. */
@@ -279,6 +298,16 @@ export function createStage(
       polygonOffsetUnits: 1,
     });
   const tiers = new Map<string, TierParts>();
+  // The stack as it stands now. The layout is how it lies with a tier open, and never changes.
+  const fold = createFold(layout);
+  const stack = fold.stack;
+  const folding = folds(layout);
+  /** The stack is folded while it is on show, and unfolded once a tier or a cluster is open. */
+  const foldOf = (state: MapState): number => (state.distance === 'stack' ? 1 : 0);
+  /** Each plate whole, and its rows where it has more than one: the rows are drawn while the stack is folded at all. */
+  const plateSlabs: { whole: Slab; inRows: Slab[] }[] = [];
+  /** The outlines of each row's cells, drawn where the row lies flat, and moved by its lift. */
+  const rowOutlines: { lift: { y: number; z: number }; outlines: LineSegments }[] = [];
   for (const plate of layout.plates) {
     const fill = plateFill(MAP_TOKENS['map-plate-fill'].fill);
     const sideFill = plateFill(PLATE_SIDE.fill);
@@ -292,11 +321,9 @@ export function createStage(
     );
     const selected = markMaterial(SELECTED_MARK, renderer.getPixelRatio());
     const objects: Object3D[] = [];
-    const side: Object3D[] = [];
     tiers.set(plate.tier, {
       plate,
       fills: [fill, sideFill],
-      side,
       lines: [edge, cellLine],
       marks,
       fadedMarks,
@@ -311,31 +338,42 @@ export function createStage(
       blends: new Map(),
     });
 
-    // The face and the underside are the same rectangle with the same edge. The underside starts
-    // under the face where the face is, and placePlateSides() lowers it for where the camera stands.
-    const face = [new Mesh(square, fill), new LineSegments(squareSides, edge.material)];
-    side.push(new Mesh(square, sideFill), new LineSegments(squareSides, edge.material));
-    for (const part of [...side, ...face]) {
-      part.position.set(plate.x, plate.y, plate.z);
-      part.scale.set(plate.width, 1, plate.depth);
-      objects.push(part);
-      graph.scene().add(part);
-    }
+    // The face and the underside are the same rectangle with the same edge. placePlates() puts
+    // both where the slab is, and lowers the underside for where the camera stands.
+    const slab = (at: PlateLayout): Slab => {
+      const made: Slab = {
+        at,
+        face: [new Mesh(square, fill), new LineSegments(squareSides, edge.material)],
+        side: [new Mesh(square, sideFill), new LineSegments(squareSides, edge.material)],
+      };
+      for (const part of [...made.side, ...made.face]) {
+        part.position.set(at.x, at.y, at.z);
+        part.scale.set(at.width, 1, at.depth);
+        objects.push(part);
+        graph.scene().add(part);
+      }
+      return made;
+    };
+    const rowsHere = layout.rows.flatMap((row, at) => (row.tier === plate.tier ? [{ row, moved: stack.rows[at]! }] : []));
+    plateSlabs.push({ whole: slab(plate), inRows: rowsHere.length > 1 ? rowsHere.map(({ moved }) => slab(moved)) : [] });
 
-    const corners: number[] = [];
-    for (const cell of layout.cells) {
-      if (cell.tier !== plate.tier) continue;
-      const [left, right] = [cell.x - cell.width / 2, cell.x + cell.width / 2];
-      const [back, front] = [cell.z - cell.depth / 2, cell.z + cell.depth / 2];
-      const y = cell.y + MARK_LIFT / 2;
-      corners.push(left, y, back, right, y, back, right, y, back, right, y, front);
-      corners.push(right, y, front, left, y, front, left, y, front, left, y, back);
+    for (const { row } of rowsHere) {
+      const corners: number[] = [];
+      for (const cell of layout.cells) {
+        if (!row.clusters.includes(cell.cluster)) continue;
+        const [left, right] = [cell.x - cell.width / 2, cell.x + cell.width / 2];
+        const [back, front] = [cell.z - cell.depth / 2, cell.z + cell.depth / 2];
+        const y = cell.y + MARK_LIFT / 2;
+        corners.push(left, y, back, right, y, back, right, y, back, right, y, front);
+        corners.push(right, y, front, left, y, front, left, y, front, left, y, back);
+      }
+      const outlines = new BufferGeometry();
+      outlines.setAttribute('position', new Float32BufferAttribute(corners, 3));
+      const cellOutlines = new LineSegments(outlines, cellLine.material);
+      objects.push(cellOutlines);
+      graph.scene().add(cellOutlines);
+      rowOutlines.push({ lift: row.lift, outlines: cellOutlines });
     }
-    const outlines = new BufferGeometry();
-    outlines.setAttribute('position', new Float32BufferAttribute(corners, 3));
-    const cellOutlines = new LineSegments(outlines, cellLine.material);
-    objects.push(cellOutlines);
-    graph.scene().add(cellOutlines);
   }
   // The depth blur draws the scene itself, straight to the screen, so the renderer's own
   // render pass stands aside. Drawn through the composer's buffers, the scene would lose
@@ -352,8 +390,9 @@ export function createStage(
   };
 
   // Marks. One flat square per tool, in the material of its tier and its decision-class step.
-  const markOf = new Map<string, MarkLayout>(layout.marks.map((mark) => [mark.tool, mark]));
-  const cellOf = new Map<string, CellLayout>(layout.cells.map((cell) => [cell.cluster, cell]));
+  // A mark or a cell is looked up in the stack as it stands now.
+  const markOf = new Map<string, MarkLayout>(stack.marks.map((mark) => [mark.tool, mark]));
+  const cellOf = new Map<string, CellLayout>(stack.cells.map((cell) => [cell.cluster, cell]));
   const meshes = new Map<string, { mesh: Mesh; node: MarkNode }>();
   /**
    * The material of a mark for a state: the selected fill for the selected
@@ -411,7 +450,7 @@ export function createStage(
     .graphData({ nodes, links: [] });
 
   // A need trace: the home cell's outline, the lines to the traced tools and the best-fit rings.
-  const traceDrawing = createTraceDrawing((object) => void graph.scene().add(object), index, layout, renderer.getPixelRatio());
+  const traceDrawing = createTraceDrawing((object) => void graph.scene().add(object), index, stack, renderer.getPixelRatio());
 
   /** How far the marks that are changing form have come, from 0 to 1. Every one of them reads it. */
   const markMix = { value: 0 };
@@ -465,7 +504,7 @@ export function createStage(
   const selectionDrawing = createSelectionDrawing(
     (object) => void graph.scene().add(object),
     index,
-    layout,
+    stack,
     renderer.getPixelRatio(),
   );
 
@@ -513,14 +552,63 @@ export function createStage(
     }
   }
 
-  /** Puts each plate's underside as far under its face as map-plate-side says, in pixels on screen. */
-  function placePlateSides(): void {
+  /**
+   * Puts each plate where it is now, and its underside as far under its face as map-plate-side
+   * says, in pixels on screen. A plate of more rows than one is drawn whole while the stack is
+   * unfolded, and as its rows while it is folded at all.
+   */
+  function placePlates(): void {
     camera.getWorldDirection(forward);
     // A step down in the scene is drawn shorter the more steeply the camera looks down on the stack.
     const shareSeen = Math.max(LEAST_SHARE_OF_DROP_SEEN, Math.sqrt(1 - forward.y * forward.y));
-    for (const { plate, side } of tiers.values()) {
-      const drop = (PLATE_SIDE.depthPx * unitsPerPixelAt(plate.x, plate.y, plate.z)) / shareSeen;
-      for (const part of side) part.position.y = plate.y - drop;
+    const put = ({ at, face, side }: Slab, shown: boolean): void => {
+      const drop = (PLATE_SIDE.depthPx * unitsPerPixelAt(at.x, at.y, at.z)) / shareSeen;
+      for (const part of [...face, ...side]) {
+        part.visible = shown;
+        part.position.set(at.x, at.y, at.z);
+        part.scale.set(at.width, 1, at.depth);
+      }
+      for (const part of side) part.position.y = at.y - drop;
+    };
+    for (const { whole, inRows } of plateSlabs) {
+      const asRows = inRows.length > 0 && fold.at > 0;
+      put(whole, !asRows);
+      for (const row of inRows) put(row, asRows);
+    }
+  }
+
+  /**
+   * Folds the stack as far as `value` says, from 0 to 1, and moves what is drawn of it: the rows
+   * of the plates, their cells and their marks, and the selection and the trace drawn over them.
+   */
+  function applyFold(value: number): void {
+    if (!folding || value === fold.at) return;
+    fold.set(value);
+    for (const { lift, outlines } of rowOutlines) outlines.position.set(0, value * lift.y, value * lift.z);
+    stack.marks.forEach((mark, at) => {
+      // The renderer places a mark from its node once, so the node is moved with the mark.
+      const node = nodes[at]!;
+      node.y = node.fy = mark.y + MARK_LIFT;
+      node.z = node.fz = mark.z;
+      meshes.get(mark.tool)?.mesh.position.set(node.x, node.y, node.z);
+    });
+    placePlates();
+    const state = store.get();
+    selectionDrawing.show(state.selection, traces(state.lens));
+    traceDrawing.show(state);
+  }
+
+  /**
+   * What `read` gives with the stack folded as a state has it. The camera's place for a state and
+   * the plates that fade for it are worked out before the stack has come to its fold.
+   */
+  function foldedFor<Read>(state: MapState, read: () => Read): Read {
+    const now = fold.at;
+    fold.set(foldOf(state));
+    try {
+      return read();
+    } finally {
+      fold.set(now);
     }
   }
 
@@ -561,12 +649,15 @@ export function createStage(
   const windowSize = { width: 0, height: 0 };
   const frame: Frame = { width: 0, height: 0, inset: { top: 0, right: 0, bottom: 0, left: 0 } };
   const origin = { x: 0, y: 0 };
-  const listeners: (() => void)[] = [placePlateSides, placeHover, () => traceDrawing.place(unitsPerPixelAt)];
+  const listeners: (() => void)[] = [placePlates, placeHover, () => traceDrawing.place(unitsPerPixelAt)];
   const notify = (): void => listeners.forEach((listener) => listener());
+  /** The plates as they stand in the stack at rest: every row of a plate is one. */
+  const restPlates = rowsInStack(layout);
+  const middleOf = (ends: number[]): number => (Math.min(...ends) + Math.max(...ends)) / 2;
   const centre = new Vector3(
-    (layout.bounds.min.x + layout.bounds.max.x) / 2,
-    (layout.bounds.min.y + layout.bounds.max.y) / 2,
-    (layout.bounds.min.z + layout.bounds.max.z) / 2,
+    middleOf(restPlates.flatMap((plate) => [plate.x - plate.width / 2, plate.x + plate.width / 2])),
+    middleOf(restPlates.map((plate) => plate.y)),
+    middleOf(restPlates.flatMap((plate) => [plate.z - plate.depth / 2, plate.z + plate.depth / 2])),
   );
   let restRange = 0;
 
@@ -593,7 +684,7 @@ export function createStage(
       : box;
 
   /** Every corner of every plate: of its top face, and of its underside. */
-  const plateCorners: Point[] = layout.plates.flatMap((plate) =>
+  const plateCorners: Point[] = restPlates.flatMap((plate) =>
     [0, constants.plateThickness].flatMap((under) =>
       FLAT_CORNERS.map(([alongX, alongZ]) => ({
         x: plate.x + (alongX * plate.width) / 2,
@@ -645,7 +736,7 @@ export function createStage(
   function restFit(state: MapState): { place: CameraPlace; names: boolean } {
     const room = pictureRoomAt(windowSize, constants, openPanelsOf(state));
     const inset = restInsetsAt(windowSize, constants);
-    const angle = restAngleAt(windowSize, constants, layout.plates);
+    const angle = restAngleAt(windowSize, constants, restPlates);
     const field = constants.fieldOfViewDegrees;
     const pixelsPerTan = pixelsPerTangent(frame.height, field);
     const fit = (left: number, names: boolean | null): CameraPlace => {
@@ -771,6 +862,7 @@ export function createStage(
   let move = 0;
   let moveFrame = 0;
   let stopPlateFade = (): void => {};
+  let stopFold = (): void => {};
   let landFlight = (): void => {};
 
   /**
@@ -801,7 +893,7 @@ export function createStage(
   /** Takes every plate to the opacity and the blur a state gives it, over `ms`. A fade still under way stops where it is. */
   function fadePlates(state: MapState, ms: number): void {
     stopPlateFade();
-    fadeTargets(state);
+    foldedFor(state, () => fadeTargets(state));
     stopPlateFade = run(ms, (progress) => {
       for (const parts of tiers.values()) {
         setTierOpacity(parts, parts.from + (parts.to - parts.from) * progress);
@@ -825,12 +917,16 @@ export function createStage(
     landFlight();
     const { flightMs, fadeMs } = animate ? durationsNow() : AT_ONCE;
 
-    const place = placeOf(state);
+    const place = foldedFor(state, () => placeOf(state));
     const out = towardCamera(place.tiltDegrees, place.turnDegrees);
     const target = new Vector3(place.target.x, place.target.y, place.target.z);
     const position = target.clone().addScaledVector(new Vector3(out.x, out.y, out.z), place.range);
 
     fadePlates(state, fadeMs);
+    // The rows of the wrapped plates go to their column, or back onto their plates, as the camera flies.
+    stopFold();
+    const [foldFrom, foldTo] = [fold.at, foldOf(state)];
+    if (foldFrom !== foldTo) stopFold = run(flightMs, (progress) => applyFold(foldFrom + (foldTo - foldFrom) * progress), notify);
 
     // The controls would hold a flying camera to their limits, so they stand
     // aside until it lands. A flight still under way stops where it is.
@@ -977,6 +1073,8 @@ export function createStage(
   const pickables: Pickable[] = [];
   const raycaster = new Raycaster();
   const isFaded = (tier: string): boolean => partsOf(tier).to < 1;
+  /** What a ray is picked against: every row a plate, where it stands now. */
+  const picked = { plates: stack.rows, cells: stack.cells, marks: stack.marks };
 
   /** What lies under a point of the picture: a label's action, or a place on the stack, or nothing. */
   function under(x: number, y: number): { action: (() => void) | null; hit: StackHit | null } {
@@ -985,7 +1083,7 @@ export function createStage(
       if (action) return { action, hit: null };
     }
     raycaster.setFromCamera(new Vector2((x / frame.width) * 2 - 1, 1 - (y / frame.height) * 2), camera);
-    return { action: null, hit: pickOnStack(raycaster.ray, layout, isFaded) };
+    return { action: null, hit: pickOnStack(raycaster.ray, picked, isFaded) };
   }
 
   /** What a click on a point of the picture does, if anything. */
@@ -1017,7 +1115,7 @@ export function createStage(
   const underFinger = (x: number, y: number, reachPx: number): StackHit | null => {
     raycaster.setFromCamera(new Vector2((x / frame.width) * 2 - 1, 1 - (y / frame.height) * 2), camera);
     const { target } = controls;
-    return pickOnStack(raycaster.ray, layout, isFaded, reachPx * unitsPerPixelAt(target.x, target.y, target.z));
+    return pickOnStack(raycaster.ray, picked, isFaded, reachPx * unitsPerPixelAt(target.x, target.y, target.z));
   };
 
   /**
@@ -1116,6 +1214,8 @@ export function createStage(
     add: (object) => void graph.scene().add(object),
     remove: (object) => void graph.scene().remove(object),
     camera,
+    stack,
+    restPlates,
     frame,
     window: windowSize,
     origin,

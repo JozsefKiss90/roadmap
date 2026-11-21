@@ -202,21 +202,22 @@ function underBarRestAngle(
       const span = spanFromAfar(corners, tiltDegrees, turnDegrees);
       if (span.across <= 0 || span.up <= 0) continue;
       const pixelsPerUnit = Math.min(roomAcross / span.across, roomDown / span.up);
-      // From the far edge of one plate up to the near edge of the next, at one place across the picture.
+      // From the far edge of one plate up to the near edge of the next, at one place across the picture,
+      // over the room the two need between them: a tier's tag stands under the tier above, and two
+      // rows of one tier need only to show clear of each other.
       const comesForward = Math.cos(tilt) / Math.cos(radians(turnDegrees));
-      const clearPx =
-        pixelsPerUnit *
-        Math.min(
-          Infinity,
-          ...upward.slice(1).map((plate, at) => {
-            const under = upward[at]!;
-            const forward = plate.z + plate.depth / 2 - (under.z - under.depth / 2);
-            return (plate.y - under.y) * Math.sin(tilt) - forward * comesForward;
-          }),
-        );
+      const sparePx = Math.min(
+        Infinity,
+        ...upward.slice(1).map((plate, at) => {
+          const under = upward[at]!;
+          const forward = plate.z + plate.depth / 2 - (under.z - under.depth / 2);
+          const clear = (plate.y - under.y) * Math.sin(tilt) - forward * comesForward;
+          return pixelsPerUnit * clear - (plate.tier === under.tier ? 0 : constants.underBarTagRoomPx);
+        }),
+      );
       // The first angle is kept whatever room it leaves: the labels leave a tag out where it has none.
       const isFirst = tiltDegrees === first.tiltDegrees && turnDegrees === first.turnDegrees;
-      if (!isFirst && clearPx < constants.underBarTagRoomPx) continue;
+      if (!isFirst && sparePx < 0) continue;
       // A mark's side is drawn `pixelsPerUnit` across, and as much from top to bottom as the tilt leaves of it.
       const markArea = pixelsPerUnit * pixelsPerUnit * Math.cos(tilt);
       if (markArea > largest) {
@@ -232,7 +233,8 @@ function underBarRestAngle(
  * The camera's angle at rest: its tilt and its turn. Under the bar each tier's tag stands over
  * its plate, and a more level camera opens the room for it; there the angle is also fitted to
  * the window, so that the stack fills it (see `underBarRestAngle`).
- * @param plates The plates of the stack, which the angle under the bar is fitted to.
+ * @param plates The plates of the stack, which the angle under the bar is fitted to. A tier whose rows
+ *   stand in a column has a plate for each (see `rowsInStack` in src/fold.ts).
  */
 export function restAngleAt(
   size: WindowSize,

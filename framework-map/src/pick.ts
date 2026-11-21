@@ -26,13 +26,15 @@ const awayFrom = (x: number, z: number, square: { x: number; z: number; size: nu
 
 /**
  * The first plate a ray meets, and the cell and the mark it meets there. A plate that
- * `seesThrough` names is passed over, as if it were not there.
+ * `seesThrough` names is passed over, as if it were not there. A tier may have more plates than
+ * one, as it has in the folded stack, where each of its rows is one: a cell is met on the plate it lies on.
+ * @param layout The plates, with the cells and the marks that lie on them.
  * @param markReach How far from a mark the ray may land and still meet it, in layout units: the
  *   width of a finger, which is no point. The nearest mark of the cell within reach is met.
  */
 export function pickOnStack(
   ray: Ray,
-  layout: StackLayout,
+  layout: Pick<StackLayout, 'plates' | 'cells' | 'marks'>,
   seesThrough: (tier: string) => boolean = () => false,
   markReach = 0,
 ): StackHit | null {
@@ -49,7 +51,10 @@ export function pickOnStack(
     if (!within(x, plate.x, plate.width) || !within(z, plate.z, plate.depth)) continue;
     const cell = layout.cells.find(
       (candidate) =>
-        candidate.tier === plate.tier && within(x, candidate.x, candidate.width) && within(z, candidate.z, candidate.depth),
+        candidate.tier === plate.tier &&
+        candidate.y === plate.y &&
+        within(x, candidate.x, candidate.width) &&
+        within(z, candidate.z, candidate.depth),
     );
     let tool: string | null = null;
     let away = markReach;
