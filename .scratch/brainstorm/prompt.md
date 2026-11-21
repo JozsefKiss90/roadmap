@@ -22,6 +22,7 @@ This does not mean that the workflow itself is flawed. Usually it already contai
 The AI drift (my term) is directly caused by  not being able to find the bottleneck and align the process between Ai and human to 100% (by the way this is impossible since it would require a direct neural interface, futhermore indivuals also vary significantly which furhter compicates the acquisition a unifed process for AI usage).
 
 So I want to apply and observability first approach which eventually biols own to desing tools and skills:
+the graph and framework map is for system level observabiltiy the gent-html-kit is for immediate tasks and ongoing implementation
 
 I would like to build it in the follwoing ways:
 

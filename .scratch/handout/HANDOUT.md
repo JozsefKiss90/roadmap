@@ -76,13 +76,22 @@ The agent reads the two attachments, then runs a `/grill-me` interview, one ques
 | It establishes | So that |
 | --- | --- |
 | Your hard skills | the roadmap builds on what you are already expert at |
-| Your real AI proficiency, tested with a small live task | nothing starts too easy or too hard |
+| Your AI proficiency, from six self-ratings | nothing starts too easy or too hard |
 | A map from your current skills to AI | you see which of your tasks an agent can take over |
 | User stories from your work | every week produces something you actually want |
 | Your learning style and preferences | sessions fit your pace and time |
 | Progression and difficulty levels | you know when you have moved up |
 | Likely bottlenecks | stalls are caught in week one, not week four |
 | One task you can do today | you ship something in the first hour |
+
+AI proficiency is not tested. The agent asks you to rate yourself from 1 (not at all) to 5 (a great deal) on six questions, and takes your answers as given:
+
+1. How often do you use AI?
+2. How much of your job is AI part of?
+3. How many AI tools do you use, and which ones?
+4. How much have you delivered with AI, and what?
+5. How aware are you of new trends in AI, and which ones?
+6. How much do you take part in the AI community?
 
 It also asks you to walk through three real examples from your work, including one that went badly. It then restates what it understood and waits. Only after you say "yes, that's it" does it propose the roadmap and build the rest of your workspace around the `sources/` folder you made: a `wiki/` it writes and keeps current, and an `AGENTS.md` with the rules of the folder.
 

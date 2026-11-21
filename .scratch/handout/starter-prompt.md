@@ -75,8 +75,15 @@ topics [
             no skill installed? interview the same way
 find {
   hard_skills  → what I am expert at, with evidence
-  ai_level     → what I really do with AI. test it with a small
-                 live task, don't trust my self-rating
+  ai_level     → six self-ratings, 1 (not at all) to 5 (a great deal).
+                 no test, no wrong answers. one at a time:
+                   frequency → how often I use AI
+                   job_share → how much of my job AI is part of
+                   tools     → how many AI tools I use. which ones
+                   delivered → how much I have delivered with AI. what
+                   trends    → how aware I am of new trends. which
+                   community → how much I take part in the AI community
+                 take my ratings as given. they set the starting level
   mapping      → which of my skills transfer, which of my tasks
                  an agent could take over
   user_stories → 5 to 8 from my real work:
