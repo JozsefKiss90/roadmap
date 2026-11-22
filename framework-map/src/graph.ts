@@ -5,8 +5,8 @@
  * the validator before it bundles the JSON, so the map can rely on them.
  */
 
-/** A role's code in the data: Architect, Designer or Analyst. */
-export type RoleCode = 'A' | 'D' | 'M';
+/** A role's code in the data: Architect, Designer, Analyst or Trader. */
+export type RoleCode = 'A' | 'D' | 'M' | 'T';
 
 export interface RootNode {
   id: 'root';

@@ -118,7 +118,10 @@ describe('the fold', () => {
       expect(row.y).toBeCloseTo(flat.y + flat.lift.y / 2, 9);
       expect(row.z).toBeCloseTo(flat.z + flat.lift.z / 2, 9);
     });
-    expect(Math.max(...wrapped.rows.map((row) => row.lift.z))).toBeCloseTo(rowStep, 9);
+    // The first row of the tier with the most rows stands a row step behind for each row after it.
+    const mostRows = Math.max(...wrapped.plates.map((plate) => wrapped.rows.filter((row) => row.tier === plate.tier).length));
+    expect(mostRows).toBe(3);
+    expect(Math.max(...wrapped.rows.map((row) => row.lift.z))).toBeCloseTo((mostRows - 1) * rowStep, 9);
   });
 
   it('moves nothing in a layout that is not wrapped', () => {

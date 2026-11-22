@@ -3,7 +3,7 @@
  * is on needs beside it. It offers no lens, the role lens, the need trace and
  * the phase scrub.
  *
- * With the role lens on, it lists the three roles, one of which is chosen.
+ * With the role lens on, it lists the four roles, one of which is chosen.
  * The needs of the need trace and of the phase scrub stand in a list of their
  * own, under the switch (src/need-list.ts), and the phases on a strip at the
  * bottom of the map (src/phase-strip.ts). Beside its heading, the switch

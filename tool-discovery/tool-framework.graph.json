@@ -4,11 +4,11 @@
   "generated": "2026-11-22",
   "note": "Repository facts (existence, stars, last commit, licence file) were read on 2026-11-17. Decisions marked \"Proposed here\" are recommendations, not accepted ADRs.",
   "counts": {
-   "tools": 773,
-   "clusters": 55,
+   "tools": 803,
+   "clusters": 57,
    "tiers": 8,
    "needs": 33,
-   "edges": 1567
+   "edges": 1614
   },
   "edge_types": [
    "contains",
@@ -41,7 +41,7 @@
   },
   {
    "axis": "Cluster",
-   "values": "55 clusters",
+   "values": "57 clusters",
    "meaning": "Capability family inside a tier",
    "encoding": "Sector on the plane; cluster node is the hub of its tools"
   },
@@ -59,13 +59,13 @@
   },
   {
    "axis": "Used by",
-   "values": "Architect, Designer, Analyst",
+   "values": "Architect, Designer, Analyst, Trader",
    "meaning": "Which partners work with it",
    "encoding": "Colour; shared tools take a blended ring"
   },
   {
    "axis": "Operated by",
-   "values": "Architect, Designer, Analyst",
+   "values": "Architect, Designer, Analyst, Trader",
    "meaning": "Who installs, hosts and maintains it",
    "encoding": "Filter"
   },
@@ -77,7 +77,7 @@
   },
   {
    "axis": "Value stream",
-   "values": "Hermes OS and RAG Factory, Product build and ship, Client delivery, Go-to-market, Enablement and training, Personal resilience",
+   "values": "Hermes OS and RAG Factory, Product build and ship, Client delivery, Go-to-market, Enablement and training, Personal resilience, Trading",
    "meaning": "Which part of the business it serves",
    "encoding": "Filter and optional sector grouping"
   },
@@ -128,6 +128,11 @@
    "label": "Analyst"
   },
   {
+   "id": "role:T",
+   "type": "role",
+   "label": "Trader"
+  },
+  {
    "id": "stream:OS",
    "type": "stream",
    "label": "Hermes OS and RAG Factory"
@@ -156,6 +161,11 @@
    "id": "stream:Resilience",
    "type": "stream",
    "label": "Personal resilience"
+  },
+  {
+   "id": "stream:Trade",
+   "type": "stream",
+   "label": "Trading"
   },
   {
    "id": "phase:P0",
@@ -420,12 +430,13 @@
    "used_by": [
     "A",
     "D",
-    "M"
+    "M",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "Enable",
    "gate": "Admission review for third-party skills",
-   "tools": 58,
+   "tools": 59,
    "layout": {
     "z": 1,
     "sector": 0,
@@ -508,12 +519,13 @@
    "used_by": [
     "A",
     "D",
-    "M"
+    "M",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "OS",
    "gate": "Admission review (mcp-auditor)",
-   "tools": 17,
+   "tools": 18,
    "layout": {
     "z": 1,
     "sector": 4,
@@ -529,12 +541,13 @@
     "A"
    ],
    "used_by": [
-    "A"
+    "A",
+    "T"
    ],
    "hosting": "n/a",
    "stream": "Enable",
    "gate": "Reference only",
-   "tools": 9,
+   "tools": 10,
    "layout": {
     "z": 1,
     "sector": 5,
@@ -690,7 +703,7 @@
    "layout": {
     "z": 3,
     "sector": 0,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -711,7 +724,7 @@
    "layout": {
     "z": 3,
     "sector": 1,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -733,7 +746,7 @@
    "layout": {
     "z": 3,
     "sector": 2,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -755,7 +768,7 @@
    "layout": {
     "z": 3,
     "sector": 3,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -777,7 +790,7 @@
    "layout": {
     "z": 3,
     "sector": 4,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -800,7 +813,7 @@
    "layout": {
     "z": 3,
     "sector": 5,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -821,7 +834,7 @@
    "layout": {
     "z": 3,
     "sector": 6,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -843,7 +856,7 @@
    "layout": {
     "z": 3,
     "sector": 7,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -864,7 +877,7 @@
    "layout": {
     "z": 3,
     "sector": 8,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -885,7 +898,7 @@
    "layout": {
     "z": 3,
     "sector": 9,
-    "sectors": 11
+    "sectors": 12
    }
   },
   {
@@ -908,7 +921,29 @@
    "layout": {
     "z": 3,
     "sector": 10,
-    "sectors": 11
+    "sectors": 12
+   }
+  },
+  {
+   "id": "3L",
+   "type": "cluster",
+   "label": "Market data, signals and execution",
+   "tier": "T3",
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "tools": 14,
+   "layout": {
+    "z": 3,
+    "sector": 11,
+    "sectors": 12
    }
   },
   {
@@ -962,12 +997,13 @@
     "A"
    ],
    "used_by": [
-    "A"
+    "A",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 14,
+   "tools": 15,
    "layout": {
     "z": 4,
     "sector": 2,
@@ -1101,7 +1137,7 @@
    "layout": {
     "z": 5,
     "sector": 0,
-    "sectors": 6
+    "sectors": 7
    }
   },
   {
@@ -1122,7 +1158,7 @@
    "layout": {
     "z": 5,
     "sector": 1,
-    "sectors": 6
+    "sectors": 7
    }
   },
   {
@@ -1144,7 +1180,7 @@
    "layout": {
     "z": 5,
     "sector": 2,
-    "sectors": 6
+    "sectors": 7
    }
   },
   {
@@ -1165,7 +1201,7 @@
    "layout": {
     "z": 5,
     "sector": 3,
-    "sectors": 6
+    "sectors": 7
    }
   },
   {
@@ -1187,7 +1223,7 @@
    "layout": {
     "z": 5,
     "sector": 4,
-    "sectors": 6
+    "sectors": 7
    }
   },
   {
@@ -1208,7 +1244,29 @@
    "layout": {
     "z": 5,
     "sector": 5,
-    "sectors": 6
+    "sectors": 7
+   }
+  },
+  {
+   "id": "5G",
+   "type": "cluster",
+   "label": "Backtesting and strategy verification",
+   "tier": "T5",
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "tools": 7,
+   "layout": {
+    "z": 5,
+    "sector": 6,
+    "sectors": 7
    }
   },
   {
@@ -1241,12 +1299,13 @@
     "A"
    ],
    "used_by": [
-    "A"
+    "A",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "OS",
    "gate": "ADR first: v1 excludes multi-agent orchestration",
-   "tools": 10,
+   "tools": 12,
    "layout": {
     "z": 6,
     "sector": 1,
@@ -1284,12 +1343,13 @@
    ],
    "used_by": [
     "A",
-    "M"
+    "M",
+    "T"
    ],
    "hosting": "Cloud",
    "stream": "OS",
    "gate": "Operator approval for cron changes",
-   "tools": 28,
+   "tools": 29,
    "layout": {
     "z": 6,
     "sector": 3,
@@ -1436,12 +1496,13 @@
     "A"
    ],
    "used_by": [
-    "A"
+    "A",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "Build",
    "gate": "None",
-   "tools": 8,
+   "tools": 10,
    "layout": {
     "z": 7,
     "sector": 4,
@@ -2842,60 +2903,30 @@
    "tier": "T7",
    "cluster": "7E",
    "kind": "Model",
-   "capability": "Foundation model for financial candlesticks; belongs to the trading track, not Hermes OS",
-   "decision_class": "Out of scope",
-   "decision": "Out of scope",
+   "capability": "Foundation model for financial candlesticks: forecasts price and volume series",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
    "decision_source": "Proposed here",
    "best_fit": false,
    "operated_by": [
     "A"
    ],
    "used_by": [
+    "T",
     "A"
    ],
    "hosting": "Hub",
-   "stream": "Build",
+   "stream": "Trade",
    "gate": "None",
    "origin": "tools.md",
    "repo": "shiyu-coder/Kronos",
    "url": "https://github.com/shiyu-coder/Kronos",
-   "stars": 47900,
+   "stars": 48077,
    "last_commit": "2026-04-13",
    "licence": "MIT",
-   "verification": "Verified 2026-11-17",
-   "note": null,
+   "verification": "Verified 2026-11-22",
+   "note": "Was Out of scope until the Trader role was added.",
    "size": 5.68
-  },
-  {
-   "id": "tool:calibrain-harness",
-   "type": "tool",
-   "label": "calibrain-harness",
-   "tier": "T7",
-   "cluster": "7E",
-   "kind": "Framework",
-   "capability": "Forward-testing harness for crypto perpetuals on Bybit testnet; under development",
-   "decision_class": "Out of scope",
-   "decision": "Out of scope",
-   "decision_source": "Proposed here",
-   "best_fit": false,
-   "operated_by": [
-    "A"
-   ],
-   "used_by": [
-    "A"
-   ],
-   "hosting": "Hub",
-   "stream": "Build",
-   "gate": "None",
-   "origin": "tools.md",
-   "repo": "zadescoxp/calibrain-harness",
-   "url": "https://github.com/zadescoxp/calibrain-harness",
-   "stars": 341,
-   "last_commit": "2026-11-13",
-   "licence": "MIT",
-   "verification": "Verified 2026-11-17",
-   "note": null,
-   "size": 3.53
   },
   {
    "id": "tool:algory-algory-app",
@@ -2905,18 +2936,18 @@
    "cluster": "7E",
    "kind": "SaaS / closed app",
    "capability": "Closed Windows app that breeds and forward-tests MetaTrader 5 strategies; no agent integration",
-   "decision_class": "Out of scope",
-   "decision": "Out of scope",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
    "decision_source": "Proposed here",
    "best_fit": false,
    "operated_by": [
-    "A"
+    "T"
    ],
    "used_by": [
-    "A"
+    "T"
    ],
    "hosting": "Hub",
-   "stream": "Build",
+   "stream": "Trade",
    "gate": "None",
    "origin": "tools.md",
    "repo": null,
@@ -2925,8 +2956,104 @@
    "last_commit": null,
    "licence": null,
    "verification": "Product page read",
-   "note": null,
+   "note": "Was Out of scope until the Trader role was added.",
    "size": 1
+  },
+  {
+   "id": "tool:qlib",
+   "type": "tool",
+   "label": "Qlib",
+   "tier": "T7",
+   "cluster": "7E",
+   "kind": "Framework",
+   "capability": "Microsoft's AI-oriented quant research platform: data, factor models, model training, backtest and portfolio pipeline",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "microsoft/qlib",
+   "url": "https://github.com/microsoft/qlib",
+   "stars": 50496,
+   "last_commit": "2026-10-08",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 5.7
+  },
+  {
+   "id": "tool:finrl",
+   "type": "tool",
+   "label": "FinRL",
+   "tier": "T7",
+   "cluster": "7E",
+   "kind": "Framework",
+   "capability": "Deep reinforcement learning framework for training and testing trading agents",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "AI4Finance-Foundation/FinRL",
+   "url": "https://github.com/AI4Finance-Foundation/FinRL",
+   "stars": 17166,
+   "last_commit": "2026-11-18",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 5.23
+  },
+  {
+   "id": "tool:fingpt",
+   "type": "tool",
+   "label": "FinGPT",
+   "tier": "T7",
+   "cluster": "7E",
+   "kind": "Framework",
+   "capability": "Open financial language models and fine-tuning recipes for sentiment, forecasting and analysis",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "AI4Finance-Foundation/FinGPT",
+   "url": "https://github.com/AI4Finance-Foundation/FinGPT",
+   "stars": 21677,
+   "last_commit": "2026-11-18",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 5.34
   },
   {
    "id": "tool:nousresearch-hermes-agent",
@@ -3919,6 +4046,70 @@
    "verification": "Verified 2026-11-19",
    "note": "Same author as mattpocock/skills.",
    "size": 4.96
+  },
+  {
+   "id": "tool:tradingagents",
+   "type": "tool",
+   "label": "TradingAgents",
+   "tier": "T6",
+   "cluster": "6B",
+   "kind": "Framework",
+   "capability": "Multi-agent LLM trading framework: analyst, researcher, trader and risk agents debate a position",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Admission review",
+   "origin": "Discovery",
+   "repo": "TauricResearch/TradingAgents",
+   "url": "https://github.com/TauricResearch/TradingAgents",
+   "stars": 123450,
+   "last_commit": "2026-11-04",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "A research framework; its output is not a signal to act on unreviewed.",
+   "size": 6.09
+  },
+  {
+   "id": "tool:ai-hedge-fund",
+   "type": "tool",
+   "label": "AI Hedge Fund",
+   "tier": "T6",
+   "cluster": "6B",
+   "kind": "Framework",
+   "capability": "Proof-of-concept team of LLM agents, modelled on named investors, that analyses stocks and proposes trades",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Admission review",
+   "origin": "Discovery",
+   "repo": "virattt/ai-hedge-fund",
+   "url": "https://github.com/virattt/ai-hedge-fund",
+   "stars": 64809,
+   "last_commit": "2026-11-09",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Does the same job as TradingAgents.",
+   "size": 5.81
   },
   {
    "id": "tool:langchain-ai-langgraph",
@@ -5187,6 +5378,38 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:apscheduler",
+   "type": "tool",
+   "label": "APScheduler",
+   "tier": "T6",
+   "cluster": "6D",
+   "kind": "Library",
+   "capability": "In-process Python task scheduler with cron, interval and date triggers and persistent job stores",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "agronholm/apscheduler",
+   "url": "https://github.com/agronholm/apscheduler",
+   "stars": 7719,
+   "last_commit": "2026-11-17",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Schedules the Trader's data pulls and strategy runs inside one Python process.",
+   "size": 4.89
   },
   {
    "id": "tool:loop-engineering-cobusgreyling-loop-engineering",
@@ -9044,6 +9267,230 @@
    "size": 5.08
   },
   {
+   "id": "tool:vectorbt",
+   "type": "tool",
+   "label": "vectorbt",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Vectorised backtesting and research engine that runs many strategy variants over pandas and NumPy arrays",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Licence check",
+   "origin": "Discovery",
+   "repo": "polakowo/vectorbt",
+   "url": "https://github.com/polakowo/vectorbt",
+   "stars": 9913,
+   "last_commit": "2026-11-11",
+   "licence": "Apache-2.0 with Commons Clause (source-available)",
+   "verification": "Verified 2026-11-22",
+   "note": "The Commons Clause withholds the right to sell the software.",
+   "size": 5.0
+  },
+  {
+   "id": "tool:quantstats",
+   "type": "tool",
+   "label": "QuantStats",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Portfolio analytics: performance and risk metrics, plots and HTML tear sheets",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "ranaroussi/quantstats",
+   "url": "https://github.com/ranaroussi/quantstats",
+   "stars": 7905,
+   "last_commit": "2026-11-02",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 4.9
+  },
+  {
+   "id": "tool:skfolio",
+   "type": "tool",
+   "label": "skfolio",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Portfolio optimisation, factor models and risk management on scikit-learn, with cross-validation of portfolios",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "skfolio/skfolio",
+   "url": "https://github.com/skfolio/skfolio",
+   "stars": 2667,
+   "last_commit": "2026-11-20",
+   "licence": "BSD-3-Clause",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 4.43
+  },
+  {
+   "id": "tool:calibrain-harness",
+   "type": "tool",
+   "label": "Calibrain Harness",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "App (self-hosted)",
+   "capability": "Forward-testing harness that trades crypto perpetuals from fast classification models on Bybit testnet and scores every prediction",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: credentials",
+   "origin": "tools.md",
+   "repo": "zadescoxp/calibrain-harness",
+   "url": "https://github.com/zadescoxp/calibrain-harness",
+   "stars": 488,
+   "last_commit": "2026-11-21",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Under development; Bybit testnet only, with no mainnet switch. Needs testnet and model-provider keys. Was Out of scope in 7E until the Trader role was added.",
+   "size": 3.69
+  },
+  {
+   "id": "tool:backtesting-py",
+   "type": "tool",
+   "label": "backtesting.py",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Small Python backtesting library with interactive result charts and a built-in parameter optimiser",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "kernc/backtesting.py",
+   "url": "https://github.com/kernc/backtesting.py",
+   "stars": 9279,
+   "last_commit": "2026-08-05",
+   "licence": "AGPL-3.0",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 4.97
+  },
+  {
+   "id": "tool:pyportfolioopt",
+   "type": "tool",
+   "label": "PyPortfolioOpt",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Portfolio optimisation: efficient frontier, Black-Litterman and hierarchical risk parity",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "PyPortfolio/PyPortfolioOpt",
+   "url": "https://github.com/PyPortfolio/PyPortfolioOpt",
+   "stars": 6177,
+   "last_commit": "2026-07-07",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Moved from robertmartin8/PyPortfolioOpt. Does the same job as skfolio.",
+   "size": 4.79
+  },
+  {
+   "id": "tool:riskfolio-lib",
+   "type": "tool",
+   "label": "Riskfolio-Lib",
+   "tier": "T5",
+   "cluster": "5G",
+   "kind": "Library",
+   "capability": "Portfolio optimisation and risk analysis in Python, with many risk measures and risk-parity models",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "dcajasn/Riskfolio-Lib",
+   "url": "https://github.com/dcajasn/Riskfolio-Lib",
+   "stars": 4619,
+   "last_commit": "2026-11-04",
+   "licence": "BSD-3-Clause",
+   "verification": "Verified 2026-11-22",
+   "note": "Does the same job as skfolio.",
+   "size": 4.66
+  },
+  {
    "id": "tool:dev-graph",
    "type": "tool",
    "label": "dev_graph",
@@ -9701,7 +10148,7 @@
    "tier": "T4",
    "cluster": "4C",
    "kind": "Embedded analytics DB",
-   "capability": "Deduplication, source manifests, data workbench",
+   "capability": "Deduplication, source manifests, data workbench; market-data and backtest store for the Trader",
    "decision_class": "Core v1",
    "decision": "Core v1",
    "decision_source": "Hermes catalogue",
@@ -9710,7 +10157,8 @@
     "A"
    ],
    "used_by": [
-    "A"
+    "A",
+    "T"
    ],
    "hosting": "Hub",
    "stream": "OS",
@@ -9718,12 +10166,12 @@
    "origin": "Hermes catalogue",
    "repo": "duckdb/duckdb",
    "url": "https://github.com/duckdb/duckdb",
-   "stars": 43114,
-   "last_commit": "2026-11-16",
+   "stars": 43233,
+   "last_commit": "2026-11-20",
    "licence": "MIT",
-   "verification": "Verified 2026-11-17",
+   "verification": "Verified 2026-11-22",
    "note": null,
-   "size": 5.63
+   "size": 5.64
   },
   {
    "id": "tool:qdrant-qdrant",
@@ -10096,6 +10544,38 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:arcticdb",
+   "type": "tool",
+   "label": "ArcticDB",
+   "tier": "T4",
+   "cluster": "4C",
+   "kind": "Database",
+   "capability": "Serverless DataFrame database for versioned time series such as ticks and bars, on S3 or local storage",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Licence check",
+   "origin": "Discovery",
+   "repo": "man-group/ArcticDB",
+   "url": "https://github.com/man-group/ArcticDB",
+   "stars": 2655,
+   "last_commit": "2026-11-20",
+   "licence": "BSL-1.1 (source-available)",
+   "verification": "Verified 2026-11-22",
+   "note": "The Business Source License forbids offering it as a database service. DuckDB is the committed store.",
+   "size": 4.42
   },
   {
    "id": "tool:cube",
@@ -17029,6 +17509,454 @@
    "size": 4.3
   },
   {
+   "id": "tool:ccxt",
+   "type": "tool",
+   "label": "CCXT",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "One trading API across more than 100 crypto exchanges: market data, balances and orders",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "ccxt/ccxt",
+   "url": "https://github.com/ccxt/ccxt",
+   "stars": 44955,
+   "last_commit": "2026-11-22",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Reading market data needs no key; placing orders does.",
+   "size": 5.65
+  },
+  {
+   "id": "tool:cryptofeed",
+   "type": "tool",
+   "label": "Cryptofeed",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "Websocket feed handler that normalises trades, order books and tickers from crypto exchanges",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "bmoscon/cryptofeed",
+   "url": "https://github.com/bmoscon/cryptofeed",
+   "stars": 3042,
+   "last_commit": "2026-11-18",
+   "licence": "AGPL-3.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Its licence file is the AGPL-3.0 notice in short form, which GitHub does not recognise.",
+   "size": 4.48
+  },
+  {
+   "id": "tool:freqtrade",
+   "type": "tool",
+   "label": "Freqtrade",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "App (self-hosted)",
+   "capability": "Crypto trading bot with dry-run mode, backtesting, hyperparameter optimisation and Telegram control",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "freqtrade/freqtrade",
+   "url": "https://github.com/freqtrade/freqtrade",
+   "stars": 57155,
+   "last_commit": "2026-11-19",
+   "licence": "GPL-3.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Start in dry-run; live trading needs exchange keys.",
+   "size": 5.76
+  },
+  {
+   "id": "tool:ta-lib-python",
+   "type": "tool",
+   "label": "TA-Lib (Python)",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "Python wrapper for the TA-Lib technical-analysis indicators",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "TA-Lib/ta-lib-python",
+   "url": "https://github.com/TA-Lib/ta-lib-python",
+   "stars": 12426,
+   "last_commit": "2026-11-20",
+   "licence": "BSD-2-Clause",
+   "verification": "Verified 2026-11-22",
+   "note": "Needs the TA-Lib C library.",
+   "size": 5.09
+  },
+  {
+   "id": "tool:lightweight-charts",
+   "type": "tool",
+   "label": "Lightweight Charts",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "TradingView's HTML5 canvas library for candlestick and other financial charts",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A",
+    "D"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "tradingview/lightweight-charts",
+   "url": "https://github.com/tradingview/lightweight-charts",
+   "stars": 17938,
+   "last_commit": "2026-11-18",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "The licence asks for a TradingView attribution on the page.",
+   "size": 5.25
+  },
+  {
+   "id": "tool:stock-market-signal-automation",
+   "type": "tool",
+   "label": "Stock Market Signal Automation",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "GitHub repo",
+   "capability": "Guide and consumer-side webhook examples for routing swing-trade signal events into dashboards, alerts and agents",
+   "decision_class": "Reference / concept",
+   "decision": "Reference / concept",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Reference only",
+   "origin": "Discovery",
+   "repo": "cporter202/stock-market-signal-automation",
+   "url": "https://github.com/cporter202/stock-market-signal-automation",
+   "stars": 377,
+   "last_commit": "2026-10-17",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Promotes the paid KamdenAI signal membership; the signal engine is private and the examples use fictional symbols.",
+   "size": 3.58
+  },
+  {
+   "id": "tool:yfinance",
+   "type": "tool",
+   "label": "yfinance",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "Downloads historical and current market data from Yahoo Finance",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: site terms",
+   "origin": "Discovery",
+   "repo": "ranaroussi/yfinance",
+   "url": "https://github.com/ranaroussi/yfinance",
+   "stars": 25981,
+   "last_commit": "2026-11-07",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Unofficial; it reads Yahoo's public endpoints, so Yahoo's terms of use apply.",
+   "size": 5.41
+  },
+  {
+   "id": "tool:openbb",
+   "type": "tool",
+   "label": "OpenBB",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Framework",
+   "capability": "Open data platform that puts equities, crypto, macro and other financial data providers behind one Python interface and API",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "openbq-org/OpenBB",
+   "url": "https://github.com/openbq-org/OpenBB",
+   "stars": 75639,
+   "last_commit": "2026-11-18",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Looked up as OpenBB-finance/OpenBB; GitHub now reports it under openbq-org. Some data providers need their own keys.",
+   "size": 5.88
+  },
+  {
+   "id": "tool:alpaca-py",
+   "type": "tool",
+   "label": "alpaca-py",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "Official Python SDK for the Alpaca broker API: market data, paper trading and live orders for stocks, options and crypto",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "alpacahq/alpaca-py",
+   "url": "https://github.com/alpacahq/alpaca-py",
+   "stars": 1602,
+   "last_commit": "2026-11-20",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Paper trading first; live orders need broker keys.",
+   "size": 4.2
+  },
+  {
+   "id": "tool:ib_async",
+   "type": "tool",
+   "label": "ib_async",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Library",
+   "capability": "Python sync and async framework for the Interactive Brokers API; successor to ib_insync",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "ib-api-reloaded/ib_async",
+   "url": "https://github.com/ib-api-reloaded/ib_async",
+   "stars": 1796,
+   "last_commit": "2025-12-06",
+   "licence": "BSD-2-Clause",
+   "verification": "Verified 2026-11-22",
+   "note": "Needs a running TWS or IB Gateway. The default branch was last committed to in 2025-12.",
+   "size": 4.25
+  },
+  {
+   "id": "tool:nautilus-trader",
+   "type": "tool",
+   "label": "NautilusTrader",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Framework",
+   "capability": "Rust-native, event-driven trading engine that runs the same strategy code in backtest and live",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "nautechsystems/nautilus_trader",
+   "url": "https://github.com/nautechsystems/nautilus_trader",
+   "stars": 31737,
+   "last_commit": "2026-11-22",
+   "licence": "LGPL-3.0",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 5.5
+  },
+  {
+   "id": "tool:hummingbot",
+   "type": "tool",
+   "label": "Hummingbot",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "App (self-hosted)",
+   "capability": "Framework for building and running market-making and arbitrage bots on crypto exchanges",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "hummingbot/hummingbot",
+   "url": "https://github.com/hummingbot/hummingbot",
+   "stars": 21343,
+   "last_commit": "2026-11-18",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": null,
+   "size": 5.33
+  },
+  {
+   "id": "tool:lean",
+   "type": "tool",
+   "label": "LEAN",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Framework",
+   "capability": "QuantConnect's algorithmic trading engine for backtesting and live trading in Python and C#",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "QuantConnect/Lean",
+   "url": "https://github.com/QuantConnect/Lean",
+   "stars": 22653,
+   "last_commit": "2026-11-20",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Runs locally; QuantConnect's cloud and data are a separate paid service.",
+   "size": 5.36
+  },
+  {
+   "id": "tool:jesse",
+   "type": "tool",
+   "label": "Jesse",
+   "tier": "T3",
+   "cluster": "3L",
+   "kind": "Framework",
+   "capability": "Python crypto trading framework for writing, backtesting, optimising and running strategies live",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "T"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "jesse-ai/jesse",
+   "url": "https://github.com/jesse-ai/jesse",
+   "stars": 8828,
+   "last_commit": "2026-11-17",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Does the same job as Freqtrade.",
+   "size": 4.95
+  },
+  {
    "id": "tool:claude-code",
    "type": "tool",
    "label": "Claude Code",
@@ -21083,6 +22011,37 @@
    "size": 5.73
   },
   {
+   "id": "tool:claude-trading-skills",
+   "type": "tool",
+   "label": "claude-trading-skills",
+   "tier": "T1",
+   "cluster": "1A",
+   "kind": "Skill library",
+   "capability": "Claude Code skills for equity investors and traders: market analysis, technical charting, economic calendars, screeners and strategy development",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Admission review for third-party skills",
+   "origin": "Discovery",
+   "repo": "tradermonty/claude-trading-skills",
+   "url": "https://github.com/tradermonty/claude-trading-skills",
+   "stars": 7719,
+   "last_commit": "2026-11-22",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Given as tradermonty/claude-trading-skill, which does not exist; this is the repository of that name.",
+   "size": 4.89
+  },
+  {
    "id": "tool:claude-plugins-official",
    "type": "tool",
    "label": "claude-plugins-official",
@@ -22848,6 +23807,37 @@
    "size": 4.87
   },
   {
+   "id": "tool:alpaca-mcp-server",
+   "type": "tool",
+   "label": "Alpaca MCP Server",
+   "tier": "T1",
+   "cluster": "1E",
+   "kind": "MCP server",
+   "capability": "Alpaca's official MCP server: an agent reads market data and places stock, ETF, crypto and option orders",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Guarded: exchange keys and live orders",
+   "origin": "Discovery",
+   "repo": "alpacahq/alpaca-mcp-server",
+   "url": "https://github.com/alpacahq/alpaca-mcp-server",
+   "stars": 1106,
+   "last_commit": "2026-11-13",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Lets an agent place orders: paper account only until the Architect decides otherwise.",
+   "size": 4.04
+  },
+  {
    "id": "tool:awesome-mcp-servers",
    "type": "tool",
    "label": "awesome-mcp-servers",
@@ -23127,6 +24117,38 @@
    "verification": "Verified 2026-11-19",
    "note": null,
    "size": 6.53
+  },
+  {
+   "id": "tool:awesome-quant",
+   "type": "tool",
+   "label": "awesome-quant",
+   "tier": "T1",
+   "cluster": "1F",
+   "kind": "Catalogue",
+   "capability": "Curated list of libraries, packages and resources for quantitative finance",
+   "decision_class": "Reference / concept",
+   "decision": "Reference / concept",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "T",
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "Trade",
+   "gate": "Reference only",
+   "origin": "Discovery",
+   "repo": "wilsonfreitas/awesome-quant",
+   "url": "https://github.com/wilsonfreitas/awesome-quant",
+   "stars": 30778,
+   "last_commit": "2026-11-14",
+   "licence": null,
+   "verification": "Verified 2026-11-22",
+   "note": "No licence file. The source for further Trader tool discovery.",
+   "size": 5.49
   },
   {
    "id": "tool:anthropic",
@@ -26700,6 +27722,11 @@
    "type": "uses"
   },
   {
+   "source": "role:T",
+   "target": "1A",
+   "type": "uses"
+  },
+  {
    "source": "1A",
    "target": "stream:Enable",
    "type": "serves_stream"
@@ -26800,6 +27827,11 @@
    "type": "uses"
   },
   {
+   "source": "role:T",
+   "target": "1E",
+   "type": "uses"
+  },
+  {
    "source": "1E",
    "target": "stream:OS",
    "type": "serves_stream"
@@ -26816,6 +27848,11 @@
   },
   {
    "source": "role:A",
+   "target": "1F",
+   "type": "uses"
+  },
+  {
+   "source": "role:T",
    "target": "1F",
    "type": "uses"
   },
@@ -27230,6 +28267,31 @@
    "type": "serves_stream"
   },
   {
+   "source": "T3",
+   "target": "3L",
+   "type": "contains"
+  },
+  {
+   "source": "role:T",
+   "target": "3L",
+   "type": "operates"
+  },
+  {
+   "source": "role:T",
+   "target": "3L",
+   "type": "uses"
+  },
+  {
+   "source": "role:A",
+   "target": "3L",
+   "type": "uses"
+  },
+  {
+   "source": "3L",
+   "target": "stream:Trade",
+   "type": "serves_stream"
+  },
+  {
    "source": "T4",
    "target": "4A",
    "type": "contains"
@@ -27281,6 +28343,11 @@
   },
   {
    "source": "role:A",
+   "target": "4C",
+   "type": "uses"
+  },
+  {
+   "source": "role:T",
    "target": "4C",
    "type": "uses"
   },
@@ -27540,6 +28607,31 @@
    "type": "serves_stream"
   },
   {
+   "source": "T5",
+   "target": "5G",
+   "type": "contains"
+  },
+  {
+   "source": "role:T",
+   "target": "5G",
+   "type": "operates"
+  },
+  {
+   "source": "role:T",
+   "target": "5G",
+   "type": "uses"
+  },
+  {
+   "source": "role:A",
+   "target": "5G",
+   "type": "uses"
+  },
+  {
+   "source": "5G",
+   "target": "stream:Trade",
+   "type": "serves_stream"
+  },
+  {
    "source": "T6",
    "target": "6A",
    "type": "contains"
@@ -27571,6 +28663,11 @@
   },
   {
    "source": "role:A",
+   "target": "6B",
+   "type": "uses"
+  },
+  {
+   "source": "role:T",
    "target": "6B",
    "type": "uses"
   },
@@ -27616,6 +28713,11 @@
   },
   {
    "source": "role:M",
+   "target": "6D",
+   "type": "uses"
+  },
+  {
+   "source": "role:T",
    "target": "6D",
    "type": "uses"
   },
@@ -27781,6 +28883,11 @@
   },
   {
    "source": "role:A",
+   "target": "7E",
+   "type": "uses"
+  },
+  {
+   "source": "role:T",
    "target": "7E",
    "type": "uses"
   },
@@ -28452,12 +29559,22 @@
   },
   {
    "source": "7E",
-   "target": "tool:calibrain-harness",
+   "target": "tool:algory-algory-app",
    "type": "contains"
   },
   {
    "source": "7E",
-   "target": "tool:algory-algory-app",
+   "target": "tool:qlib",
+   "type": "contains"
+  },
+  {
+   "source": "7E",
+   "target": "tool:finrl",
+   "type": "contains"
+  },
+  {
+   "source": "7E",
+   "target": "tool:fingpt",
    "type": "contains"
   },
   {
@@ -28714,6 +29831,16 @@
    "source": "tool:sandcastle",
    "target": "2D",
    "type": "implements"
+  },
+  {
+   "source": "6B",
+   "target": "tool:tradingagents",
+   "type": "contains"
+  },
+  {
+   "source": "6B",
+   "target": "tool:ai-hedge-fund",
+   "type": "contains"
   },
   {
    "source": "6C",
@@ -29046,6 +30173,11 @@
    "target": "N14",
    "type": "serves",
    "best_fit": false
+  },
+  {
+   "source": "6D",
+   "target": "tool:apscheduler",
+   "type": "contains"
   },
   {
    "source": "6E",
@@ -30036,6 +31168,41 @@
    "type": "contains"
   },
   {
+   "source": "5G",
+   "target": "tool:vectorbt",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:quantstats",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:skfolio",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:calibrain-harness",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:backtesting-py",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:pyportfolioopt",
+   "type": "contains"
+  },
+  {
+   "source": "5G",
+   "target": "tool:riskfolio-lib",
+   "type": "contains"
+  },
+  {
    "source": "4A",
    "target": "tool:dev-graph",
    "type": "contains"
@@ -30239,6 +31406,11 @@
   {
    "source": "4C",
    "target": "tool:pinecone",
+   "type": "contains"
+  },
+  {
+   "source": "4C",
+   "target": "tool:arcticdb",
    "type": "contains"
   },
   {
@@ -32117,6 +33289,76 @@
    "type": "contains"
   },
   {
+   "source": "3L",
+   "target": "tool:ccxt",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:cryptofeed",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:freqtrade",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:ta-lib-python",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:lightweight-charts",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:stock-market-signal-automation",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:yfinance",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:openbb",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:alpaca-py",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:ib_async",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:nautilus-trader",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:hummingbot",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:lean",
+   "type": "contains"
+  },
+  {
+   "source": "3L",
+   "target": "tool:jesse",
+   "type": "contains"
+  },
+  {
    "source": "2A",
    "target": "tool:claude-code",
    "type": "contains"
@@ -33128,6 +34370,11 @@
    "type": "implements"
   },
   {
+   "source": "1A",
+   "target": "tool:claude-trading-skills",
+   "type": "contains"
+  },
+  {
    "source": "1B",
    "target": "tool:claude-plugins-official",
    "type": "contains"
@@ -33552,6 +34799,11 @@
    "type": "contains"
   },
   {
+   "source": "1E",
+   "target": "tool:alpaca-mcp-server",
+   "type": "contains"
+  },
+  {
    "source": "1F",
    "target": "tool:awesome-mcp-servers",
    "type": "contains"
@@ -33594,6 +34846,11 @@
   {
    "source": "1F",
    "target": "tool:awesome-selfhosted",
+   "type": "contains"
+  },
+  {
+   "source": "1F",
+   "target": "tool:awesome-quant",
    "type": "contains"
   },
   {

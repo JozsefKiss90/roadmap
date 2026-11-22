@@ -1039,6 +1039,24 @@ body {
   color: var(--ink);
 }
 
+/* The four roles stand two to a row: their names do not fit the rail side by side, and a name is not broken within a word. */
+.segments-within {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.segments-within .segment {
+  min-height: 32px;
+}
+
+.segments-within .segment:nth-child(odd) {
+  border-left: 0;
+}
+
+.segments-within .segment:nth-child(n + 3) {
+  border-top: 1px solid var(--rule-solid);
+}
+
 /* A radio button holds the focus; its control shows it, as the chosen segment moves with the arrow keys. */
 .segments:has(:focus-visible) {
   outline: 2px solid var(--accent);

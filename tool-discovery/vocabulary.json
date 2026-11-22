@@ -24,7 +24,8 @@
     "Deliver",
     "GTM",
     "Enable",
-    "Resilience"
+    "Resilience",
+    "Trade"
   ],
   "kind": {
     "Skill or command": [
@@ -355,7 +356,8 @@
       "Guarded: acts with user sign-ins",
       "Guarded: session data and consent",
       "Guarded: authorised targets only",
-      "Guarded: site terms"
+      "Guarded: site terms",
+      "Guarded: exchange keys and live orders"
     ],
     "Operator approval": [
       "Operator approval for cron changes",

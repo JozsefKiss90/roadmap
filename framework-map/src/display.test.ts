@@ -42,14 +42,14 @@ describe('"committed only"', () => {
     for (const decisionClass of COMMITTED_ONLY) expect(vocabulary.decision_class).toContain(decisionClass);
   });
 
-  // The ticket gives the number: 330 of the 773 tools (327 of 766 before the Obsidian tools).
-  it('chooses 330 tools of the framework', () => {
+  // The ticket gives the number: 340 of the 803 tools (330 of 773 before the Trader's tools).
+  it('chooses 340 tools of the framework', () => {
     const graph = JSON.parse(
       readFileSync(new URL('../../tool-discovery/tool-framework.graph.json', import.meta.url), 'utf8'),
     ) as { nodes: { type: string; decision_class?: string }[] };
     const tools = graph.nodes.filter((node) => node.type === 'tool');
-    expect(tools).toHaveLength(773);
-    expect(tools.filter((tool) => COMMITTED_ONLY.includes(tool.decision_class ?? ''))).toHaveLength(330);
+    expect(tools).toHaveLength(803);
+    expect(tools.filter((tool) => COMMITTED_ONLY.includes(tool.decision_class ?? ''))).toHaveLength(340);
   });
 });
 

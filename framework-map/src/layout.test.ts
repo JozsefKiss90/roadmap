@@ -220,19 +220,19 @@ describe('layoutStack on the real graph', () => {
   const index = realIndex();
   const layout = layoutStack(index);
 
-  it('places 8 plates, 55 cells and 773 marks', () => {
+  it('places 8 plates, 57 cells and 803 marks', () => {
     expect(layout.plates).toHaveLength(8);
-    expect(layout.cells).toHaveLength(55);
-    expect(layout.marks).toHaveLength(773);
+    expect(layout.cells).toHaveLength(57);
+    expect(layout.marks).toHaveLength(803);
   });
 
   it('is sound: marks inside cells, cells inside plates, no overlap', () => {
     expectSoundLayout(layout);
   });
 
-  it('lays out the largest cluster (58 tools) and the smallest (4) with no empty-looking cell', () => {
+  it('lays out the largest cluster (59 tools) and the smallest (4) with no empty-looking cell', () => {
     const sizes = layout.cells.map((cell) => index.toolsOf(cell.cluster).length);
-    expect(Math.max(...sizes)).toBe(58);
+    expect(Math.max(...sizes)).toBe(59);
     expect(Math.min(...sizes)).toBe(4);
     // A cell is a grid of mark-sized slots. With four marks to a column and at
     // least four tools to a cluster, the emptiest cell is 5 of 8. This fails if

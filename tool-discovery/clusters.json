@@ -158,7 +158,8 @@
       "used_by": [
         "A",
         "D",
-        "M"
+        "M",
+        "T"
       ],
       "hosting": "Hub",
       "stream": "Enable",
@@ -218,7 +219,8 @@
       "used_by": [
         "A",
         "D",
-        "M"
+        "M",
+        "T"
       ],
       "hosting": "Hub",
       "stream": "OS",
@@ -232,7 +234,8 @@
         "A"
       ],
       "used_by": [
-        "A"
+        "A",
+        "T"
       ],
       "hosting": "n/a",
       "stream": "Enable",
@@ -490,6 +493,21 @@
       "gate": "None"
     },
     {
+      "id": "3L",
+      "label": "Market data, signals and execution",
+      "tier": "T3",
+      "operated_by": [
+        "T"
+      ],
+      "used_by": [
+        "T",
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Trade",
+      "gate": "Guarded: exchange keys and live orders"
+    },
+    {
       "id": "4A",
       "label": "Engineering graph and code intelligence",
       "tier": "T4",
@@ -525,7 +543,8 @@
         "A"
       ],
       "used_by": [
-        "A"
+        "A",
+        "T"
       ],
       "hosting": "Hub",
       "stream": "OS",
@@ -692,6 +711,21 @@
       "gate": "None"
     },
     {
+      "id": "5G",
+      "label": "Backtesting and strategy verification",
+      "tier": "T5",
+      "operated_by": [
+        "T"
+      ],
+      "used_by": [
+        "T",
+        "A"
+      ],
+      "hosting": "Hub",
+      "stream": "Trade",
+      "gate": "None"
+    },
+    {
       "id": "6A",
       "label": "Persistent controller (Hermes)",
       "tier": "T6",
@@ -713,7 +747,8 @@
         "A"
       ],
       "used_by": [
-        "A"
+        "A",
+        "T"
       ],
       "hosting": "Hub",
       "stream": "OS",
@@ -742,7 +777,8 @@
       ],
       "used_by": [
         "A",
-        "M"
+        "M",
+        "T"
       ],
       "hosting": "Cloud",
       "stream": "OS",
@@ -845,7 +881,8 @@
         "A"
       ],
       "used_by": [
-        "A"
+        "A",
+        "T"
       ],
       "hosting": "Hub",
       "stream": "Build",

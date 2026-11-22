@@ -26,7 +26,7 @@ NOTE = (
 ROOT = {"id": "root", "type": "root", "label": "Agentic OS tool framework"}
 
 # Code and the name the CSV uses, in the order the nodes are written.
-ROLES = [("A", "Architect"), ("D", "Designer"), ("M", "Analyst")]
+ROLES = [("A", "Architect"), ("D", "Designer"), ("M", "Analyst"), ("T", "Trader")]
 STREAMS = [
     ("OS", "Hermes OS and RAG Factory"),
     ("Build", "Product build and ship"),
@@ -34,6 +34,7 @@ STREAMS = [
     ("GTM", "Go-to-market"),
     ("Enable", "Enablement and training"),
     ("Resilience", "Personal resilience"),
+    ("Trade", "Trading"),
 ]
 PHASES = ["P0", "P1", "P2", "P3", "P4"]
 

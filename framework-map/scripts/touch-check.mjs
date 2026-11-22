@@ -369,11 +369,11 @@ try {
   await page.tap('.filters-committed');
   await atRest(page);
   const filtered = await read(page);
-  check('set a filter', /decision=/.test(filtered.fragment) && /^327 of 766/.test(filtered.passing ?? ''), filtered.passing);
+  check('set a filter', /decision=/.test(filtered.fragment) && /^340 of 803/.test(filtered.passing ?? ''), filtered.passing);
   await page.tap('.filters-clear');
   await atRest(page);
   const cleared = await read(page);
-  check('clear the filters', !/decision=/.test(cleared.fragment) && /^766 of 766/.test(cleared.passing ?? ''), cleared.passing);
+  check('clear the filters', !/decision=/.test(cleared.fragment) && /^803 of 803/.test(cleared.passing ?? ''), cleared.passing);
   await page.tap('.rail-close');
 
   await page.tap(icon('Outline'));

@@ -27,7 +27,7 @@ One of the 33 capability needs taken from the AI 2027 roadmap, which tools are m
 _Avoid_: Requirement, capability, gap
 
 **Role**:
-One of the three working positions in the partnership: Architect, Designer or Analyst.
+One of the four working positions in the partnership: Architect, Designer, Analyst or Trader.
 _Avoid_: Persona, user type
 
 **Partner**:
