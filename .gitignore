@@ -41,3 +41,5 @@ __pycache__/
 framework-map/dist/
 offtopic
 .scratch/handout/prompt.md
+
+.scratch/brainstorm/old.md

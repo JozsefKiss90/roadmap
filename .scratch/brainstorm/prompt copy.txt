@@ -1,0 +1,47 @@
+
+The efficiency of monitoring depends on observability, which is limited by and depends on traceability (which enables security).
+
+I want to implement all three by leveraging the framework map and establish an observability first approach.
+I want to consolidate the tools into an ontology governed knowledge base and workflow through spec driven development. 
+    For more see the reference templates to be promoted: 'C:\Code\el_nino\dev_graph\CLAUDE.md' and 'CLAUDE.md'C:\Kierkegaard\sickness\wiki\kierkegaard'
+
+Its graph structure should be translated into a Markdown Engine and live dashboard to provide unified tracking and health monitoring, which will facilitate the implementation of the AI OS. I need direct access to, and oversight of, the available and implemented tools. This will enable the specification of the next development steps and facilitate vertical and horizontal scaling, benchmarking and resource management, change detection, targeted upgrades and the parallel execution of loop-governed agentic workflows.
+
+The Obsidian Jarvis template is available at '.scratch\handout\Obsidian Jarvis — main interface-html' as a prototype for the live dashboard.
+
+The AI OS itself will emerge from the stack and built upon the Markdown Engine. 
+This should enable a quick translation between markdown and HTML (see https://github.com/DIY-Smart-Code/agent-html-kit for reference)
+
+The build process should: 
+    Anyalze the current problem space
+    Continue with defining the Markdown Engine blueprint and spec details
+        Tool discovery to help with implementation of the specs
+    Implement the specs
+    Apply the same process for the Obisidian Jarvis UI, including in the design system these decisions:
+        Incude framework map tiers in the grahps which are being represented in the browser UI according to the following idea:
+        The galaxies are clustered per tier type = Top level,
+        as galaxies, nodes grouped by framework map tiers,  
+        tiers consists of groups of tier clusters
+        clusters are grouped by cells
+
+Restrictions 
+    The design and structure of the framework map must not be changed or altered in any significant way (apply the open–closed principle). All tools must remain in the framework map stack, and their ontological statuses and identities must be specified ( for tracability, observability and monitoring), aligning them with the Markdown Engine graphs.
+
+I want to be able to
+    Able to visualize, track, monitor, aggrate, udpate, delete, move, query resources across multiple domains under a single markdwon management system
+    Promote the operational tools into to implemented status and indicate if it active or not, include them in health checks
+    Track and mintior current system status and compoents live in the Obsidian Jarvis UI
+    Map inter tier relations arcorss clusters.
+    Keep the framework map and connect it with the markdown enginge
+        this should help with validation and cross referencing
+
+Planned features
+    The Markdown Engine will be prompoted to goverannce authority for downstream projects and superseeds earlier projects (such as the Hermes OS)
+    Advanced components of the traceability, observability and monitoring pillars (such as thresholds, trigger signals, benchmarking and cost reports) will be integrated into the Obsidian Jarvis to observe and monitor Loop Engineering and Agentic AI workflows. 
+    Graph goverened version controll and containerizaton is a remaining task to specify 
+    The next upstream process will be the integration of Loop Engineering and Agentic AI workflows into the OS using the Markdown Engine. A selected use case scenario will be the automated creation of Obsidian wikis for philosophical and psychological literature, as well as various academic texts. (exapmle expected output 'C:\Kierkegaard\sickness\wiki\')
+
+Additional notes:
+    Migration to a linux based AI workstation will happen as soon as the AI workstation is prepared. Expected within 2 weeks.
+    Current workstation: Acer NITRO V5
+

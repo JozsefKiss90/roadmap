@@ -26,7 +26,7 @@ The generator stops without writing anything if it cannot translate a cell. It n
 | `tool-framework.graph.json` | Generator | The graph the map reads. Never edit it. |
 | `evidence/` | Repository check | What was read from GitHub, kept as a record |
 
-`Hermes OS tool matrix.xlsx` at the repository root is an export of the CSV. Edits made there are lost.
+`Agentic OS tool matrix.xlsx` at the repository root is an export of the CSV. Edits made there are lost.
 
 ## What the generator takes from where
 

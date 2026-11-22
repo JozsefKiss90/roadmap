@@ -129,7 +129,7 @@ A partner can select a tool, a cluster or a need. The detail card on the right d
 
 The rail is the 240-pixel column down the left. It holds the title, the search box, the lens switch, the filters, the outline and the build stamp, and the need list while the need trace or the phase scrub is on. Below 1366 pixels it stands as a column of icons, and below 1024 pixels as a bar across the top; see "Page layouts, the fallback page and the build stamp". The headings "Filters" and "Outline" are buttons that fold their part of the rail to the heading, or open it. A partner can do everything the canvas does from the rail and the detail card, with the keyboard alone.
 
-**The outline** is a tree of the 8 tiers, 55 clusters and 766 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
+**The outline** is a tree of the 8 tiers, 55 clusters and 773 tools. Tiers start open and clusters closed. A cluster's tool rows are made when it is first opened.
 
 - **Choosing a row goes there.** A tier row goes to the tier. A cluster or tool row selects it, which flies to it and opens its detail card.
 - **The outline follows the map.** Selecting on the canvas, in the detail card or by a link opens the rows above the selected row, marks it and scrolls to it. With nothing selected, the outline scrolls to the focused tier or cluster and marks its row as the place. A focused cluster's row is opened.
@@ -265,7 +265,7 @@ Seven filters stand in the rail between the search box and the outline: decision
 - **A tool the filters leave out fades and stays in place.** Its mark keeps its form and takes the guide's `map-faded`. Its row in the outline is dimmed, and so is its name in the list above a focused cell. It can still be hovered, clicked and selected. A selected mark keeps the selected fill.
 - **A cluster or tier row of the outline is dimmed** when the filters leave none of its tools in.
 - **The count** at the head of the filters gives the tools that pass, as "276 of 752". Assistive technology is told "276 of 752 tools". While a lens is on, it gives the tools that are in reach and pass, and says whose reach. A change is announced; see "Accessibility".
-- **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 327 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
+- **"Committed only"** chooses the decision classes Core v1, Core later and Build, which is 330 tools. It is off when the map opens. `COMMITTED_ONLY` in `src/display.ts` lists them. They are not the legend's "Committed" step, which is Core v1, Adapter and Skill / rule.
 - **"Clear"** clears every filter. It is there only while a filter is on.
 - **The numbers beside the values do not change.** Each is the number of all tools with that value, whatever else is chosen.
 - **Kind and gate are filtered by family.** The families and their order come from `../tool-discovery/vocabulary.json`. Decision classes are listed from the committed step to the guarded one.

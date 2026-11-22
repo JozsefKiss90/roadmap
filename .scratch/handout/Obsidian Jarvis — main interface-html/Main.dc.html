@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Obsidian Jarvis — main interface</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0B0B10}
+a{color:#A99BFF}a:hover{color:#C9C0FF}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid #E8E6F2;outline-offset:2px}
+</style>
+</helmet>
+<div style="--acc: {{accent}}; min-height: 100vh; box-sizing: border-box; background: #0B0B10; color: #E8E6F2; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5; padding: 0 0 24px 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding: 10px 24px; border-bottom: 1px solid #2A2A3A; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 16px">
+<span>jarvis · ~/vault</span>
+<span style="padding: 2px 8px; background: var(--acc); color: #0B0B10; font-weight: 700">Mock data</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 24px">
+<span>Clusters <span style="color: #E8E6F2; font-weight: 700">{{nClusters}}</span></span>
+<span>Tools <span style="color: #E8E6F2; font-weight: 700">{{nTools}}</span></span>
+<span>Active <span style="color: #E8E6F2; font-weight: 700">{{nActive}}</span></span>
+<span>Attention <span style="color: #F2B84B; font-weight: 700">{{nWarn}}</span></span>
+</div>
+</div>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 12px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 18px 0 6px 0">
+<div style="display: flex; align-items: center; gap: 14px">
+<div aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: var(--acc)"></div>
+<h1 style="margin: 0; font-size: 26px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase">Obsidian <span style="color: var(--acc)">×</span> Jarvis</h1>
+</div>
+<div role="group" aria-label="Filter tools by status" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="min-height: 44px; padding: 0 16px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase">{{f.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; border-top: 1px solid #2A2A3A; border-bottom: 1px solid #2A2A3A; padding: 0 16px 0 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<span style="padding: 8px 12px; background: var(--acc); color: #0B0B10; font-weight: 700">How it works</span>
+<span>Tool matrix</span><span aria-hidden="true">→</span>
+<span>Stack layers</span><span aria-hidden="true">→</span>
+<span>Graph clusters</span><span aria-hidden="true">→</span>
+<span>Monitored in the vault</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+
+<section aria-label="Selected cluster" style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; border: 1px solid #2A2A3A; background: #101018; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 6px; height: 6px; background: var(--acc)"></span><h2 style="margin: 0; font-size: 11px; font-weight: 700; color: #E8E6F2">Selected cluster</h2></div>
+<span>#{{sel.num}} / {{nClustersPad}}</span>
+</div>
+<div style="border: 1px solid #2A2A3A; padding: 8px 12px; color: #9A97B0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">~/vault/Agentic OS/Clusters/{{sel.name}}.md</div>
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+<div style="font-size: 26px; font-weight: 500; letter-spacing: 0.02em">{{sel.name}}</div>
+<div style="color: var(--acc); font-size: 16px; font-weight: 700; white-space: nowrap">{{sel.count}} tools</div>
+</div>
+<div style="color: #9A97B0">{{sel.desc}}</div>
+<div role="group" aria-label="Clusters" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto">
+<sc-for list="{{clusters}}" as="c" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="flex: 1 1 90px; min-width: 0; min-height: 44px; padding: 8px 2px 0 2px; border: 0; border-top: 2px solid {{c.tabBar}}; background: transparent; color: {{c.tabFg}}; font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.name}}</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Event log" style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; border: 1px solid #2A2A3A; background: #101018; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 6px; height: 6px; background: var(--acc)"></span><h2 style="margin: 0; font-size: 11px; font-weight: 700; color: #E8E6F2">Event log</h2></div>
+<span>$ jarvis · ~/vault</span>
+</div>
+<div style="display: flex; flex-direction: column; font-size: 12px">
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700">sync</span><span style="flex: 1; min-width: 0; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Stack/tool-matrix.md</span><span style="color: #9A97B0; white-space: nowrap">Knowledge</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700">run</span><span style="flex: 1; min-width: 0; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">scheduled task · daily digest</span><span style="color: #9A97B0; white-space: nowrap">Automation</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700">call</span><span style="flex: 1; min-width: 0; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">mcp · filesystem.read</span><span style="color: #9A97B0; white-space: nowrap">Tools · MCP</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700">spawn</span><span style="flex: 1; min-width: 0; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">subagent · researcher</span><span style="color: #9A97B0; white-space: nowrap">Orchestration</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700; color: #F2B84B">warn</span><span style="flex: 1; min-width: 0; color: #F2B84B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">evals · regression set needs review</span><span style="color: #9A97B0; white-space: nowrap">Observability</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px"><span style="width: 48px; flex: none; font-weight: 700">write</span><span style="flex: 1; min-width: 0; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Clusters.canvas</span><span style="color: #9A97B0; white-space: nowrap">Knowledge</span></div>
+<div style="display: flex; gap: 12px; padding: 5px 8px; background: #1A1A26"><span style="width: 48px; flex: none; font-weight: 700; color: var(--acc)">link</span><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">[[agentic-os-matrix]] → 6 clusters</span><span style="color: #9A97B0; white-space: nowrap">Knowledge</span></div>
+</div>
+</section>
+
+</div>
+
+<section aria-label="Jarvis and vault" style="box-sizing: border-box; border: 1px solid #2A2A3A; background: #101018; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 6px; height: 6px; background: var(--acc)"></span><h2 style="margin: 0; font-size: 11px; font-weight: 700; color: #E8E6F2">Jarvis ⇄ Vault</h2></div>
+<span>one agent · one vault · {{nClusters}} clusters</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+
+<div style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; border: 1px solid var(--acc); background: #0B0B10; display: flex; flex-direction: column; min-height: 320px">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; background: var(--acc); color: #0B0B10; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase"><span>Jarvis</span><span>~/vault</span></div>
+<div aria-live="polite" style="flex: 1; padding: 14px 14px 6px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<sc-for list="{{log}}" as="l" hint-placeholder-count="4">
+<div style="color: {{l.color}}; overflow-wrap: anywhere">{{l.text}}</div>
+</sc-for>
+</div>
+<form onSubmit="{{run}}" style="display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 8px 8px 14px; border-top: 1px solid #2A2A3A">
+<label for="jarvis-cmd" style="color: var(--acc); font-weight: 700">›</label>
+<input id="jarvis-cmd" type="text" aria-label="Command for Jarvis" autocomplete="off" placeholder="ask jarvis…" value="{{cmd}}" onChange="{{onCmd}}" style="flex: 1; min-width: 0; min-height: 44px; box-sizing: border-box; border: 0; background: transparent; color: #E8E6F2; font: inherit">
+<button type="submit" style="min-height: 44px; padding: 0 14px; border: 1px solid #2A2A3A; background: transparent; color: #E8E6F2; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase">Run</button>
+</form>
+</div>
+
+<div style="flex: 1.5 1 440px; min-width: 0; position: relative; height: 520px; overflow: hidden">
+<svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<g stroke="#3A3A52" stroke-width="1" fill="none" vector-effect="non-scaling-stroke">
+<line x1="50" y1="50" x2="50" y2="20" vector-effect="non-scaling-stroke"></line>
+<line x1="50" y1="50" x2="82" y2="32" vector-effect="non-scaling-stroke"></line>
+<line x1="50" y1="50" x2="82" y2="68" vector-effect="non-scaling-stroke"></line>
+<line x1="50" y1="50" x2="50" y2="80" vector-effect="non-scaling-stroke"></line>
+<line x1="50" y1="50" x2="18" y2="68" vector-effect="non-scaling-stroke"></line>
+<line x1="50" y1="50" x2="18" y2="32" vector-effect="non-scaling-stroke"></line>
+<polygon points="50,20 82,32 82,68 50,80 18,68 18,32" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"></polygon>
+</g>
+</svg>
+
+<sc-for list="{{clusters}}" as="c" hint-placeholder-count="6">
+<sc-for list="{{c.sats}}" as="s" hint-placeholder-count="3">
+<div aria-hidden="true" style="position: absolute; left: {{c.left}}; top: {{c.top}}; width: 84px; height: 1px; background: {{c.satLine}}; transform-origin: 0 50%; transform: rotate({{s.rot}})"></div>
+<div title="{{s.name}}" style="position: absolute; left: {{s.left}}; top: {{s.top}}; width: 8px; height: 8px; box-sizing: border-box; border: 1px solid {{s.border}}; background: {{s.bg}}; border-radius: {{s.radius}}; opacity: {{s.opacity}}"></div>
+</sc-for>
+</sc-for>
+
+<div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 96px; height: 96px; box-sizing: border-box; border-radius: 50%; border: 1px solid var(--acc); background: #0B0B10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<div style="font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acc)">Vault</div>
+<div style="font-size: 11px; color: #9A97B0">{{nTools}} tools</div>
+</div>
+
+<sc-for list="{{clusters}}" as="c" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="position: absolute; left: {{c.left}}; top: {{c.top}}; transform: translate(-50%, -50%); min-height: 32px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border: 1px solid {{c.chipBorder}}; background: {{c.chipBg}}; color: {{c.chipFg}}; font-size: 11px; font-weight: 700; white-space: nowrap"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{c.chipFg}}"></span>{{c.name}} · {{c.count}}</button>
+</sc-for>
+</div>
+
+</div>
+<div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0; text-align: center">Placeholder stage · terminal and graph cluster to be specified</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+
+<section aria-label="Tool matrix" style="flex: 1.4 1 480px; min-width: 0; box-sizing: border-box; border: 1px solid #2A2A3A; background: #101018; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 6px; height: 6px; background: var(--acc)"></span><h2 style="margin: 0; font-size: 11px; font-weight: 700; color: #E8E6F2">Tool matrix</h2></div>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 14px; text-transform: none; letter-spacing: 0">
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: var(--acc)"></span>active</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; border-radius: 50%; border: 1px solid #9A97B0"></span>idle</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 8px; height: 8px; background: #F2B84B"></span>attention</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px">
+<sc-for list="{{tools}}" as="t" hint-placeholder-count="12">
+<div style="min-width: 0; box-sizing: border-box; border: 1px solid {{t.cellBorder}}; background: {{t.cellBg}}; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; opacity: {{t.opacity}}">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 8px; height: 8px; box-sizing: border-box; border: 1px solid {{t.dotBorder}}; background: {{t.dotBg}}; border-radius: {{t.dotRadius}}"></span><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{t.name}}</span></div>
+<div style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #9A97B0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{t.cluster}} · {{t.status}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Stack layers" style="flex: 1 1 380px; min-width: 0; box-sizing: border-box; border: 1px solid #2A2A3A; background: #101018; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9A97B0">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 6px; height: 6px; background: var(--acc)"></span><h2 style="margin: 0; font-size: 11px; font-weight: 700; color: #E8E6F2">Stack layers</h2></div>
+<span>layer → cluster</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{clusters}}" as="c" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 12px; border: 1px solid {{c.rowBorder}}; background: {{c.rowBg}}; color: #E8E6F2; font-size: 12px; text-align: left">
+<span style="flex: none; width: 20px; color: #9A97B0">{{c.num}}</span>
+<span style="flex: 1 1 110px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.name}}</span>
+<span aria-hidden="true" style="flex: 1 1 80px; height: 4px; background: #2A2A3A; display: flex"><span style="width: {{c.barW}}; background: {{c.barBg}}"></span></span>
+<span style="flex: none; width: 64px; text-align: right; color: #9A97B0">{{c.activeCount}}/{{c.count}} on</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+</div>
+
+<div role="group" aria-label="Clusters" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{clusters}}" as="c" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="flex: 1 1 180px; min-width: 0; min-height: 76px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; border: 1px solid {{c.cardBorder}}; background: {{c.cardBg}}; color: {{c.cardFg}}; text-align: left">
+<span style="display: flex; justify-content: space-between; gap: 8px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: {{c.cardSub}}"><span>{{c.num}}</span><span>{{c.count}} tools</span></span>
+<span style="font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.name}}</span>
+</button>
+</sc-for>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#A99BFF","options":["#A99BFF","#7FD1C7","#F2B84B","#E8E6F2"]},"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { active: 'knowledge', filter: 'all', cmd: '', extra: [] };
+  }
+  data() {
+    // Sample tool matrix. Each cluster = one stack layer; edit here to re-aggregate.
+    // x / y are the hub position in % of the graph stage, a = outward angle in degrees.
+    return [
+      { id: 'models', name: 'Models', x: 50, y: 20, a: -90, desc: 'Reasoning engines the agents run on.',
+        tools: [['Claude', 'active'], ['Gemini', 'active'], ['Local LLM', 'idle']] },
+      { id: 'orchestration', name: 'Orchestration', x: 82, y: 32, a: -30, desc: 'Agents, skills and hooks that plan and route the work.',
+        tools: [['Claude Code', 'active'], ['Subagents', 'active'], ['Skills', 'active'], ['Hooks', 'idle']] },
+      { id: 'knowledge', name: 'Knowledge', x: 82, y: 68, a: 30, desc: 'The vault itself: notes, bases and canvases the agents read and write.',
+        tools: [['Vault notes', 'active'], ['Bases', 'active'], ['Canvas', 'idle'], ['NotebookLM', 'idle']] },
+      { id: 'tools', name: 'Tools · MCP', x: 50, y: 80, a: 90, desc: 'Connectors that let agents act outside the vault.',
+        tools: [['Filesystem', 'active'], ['Browser', 'active'], ['Drive', 'idle'], ['Git', 'active']] },
+      { id: 'automation', name: 'Automation', x: 18, y: 68, a: 150, desc: 'Scheduled and triggered runs.',
+        tools: [['Scheduled tasks', 'active'], ['Importer', 'idle'], ['Web clipper', 'idle']] },
+      { id: 'observability', name: 'Observability', x: 18, y: 32, a: 210, desc: 'Logs, evals and cost signals for every run.',
+        tools: [['Run logs', 'active'], ['Evals', 'attention'], ['Cost', 'idle']] }
+    ];
+  }
+  renderVals() {
+    const ACC = 'var(--acc)', INK = '#0B0B10', TEXT = '#E8E6F2', MUTED = '#9A97B0', LINE = '#2A2A3A', WARN = '#F2B84B';
+    const R = 84;
+    const { active, filter, cmd, extra } = this.state;
+    const data = this.data();
+    const pad = (n) => String(n).padStart(2, '0');
+    const matches = (st) => filter === 'all' || st === filter;
+    const dot = (st, on) => st === 'attention'
+      ? { bg: WARN, border: WARN, radius: '0' }
+      : st === 'active'
+        ? { bg: on ? ACC : TEXT, border: on ? ACC : TEXT, radius: '50%' }
+        : { bg: 'transparent', border: MUTED, radius: '50%' };
+    const maxCount = Math.max(...data.map((c) => c.tools.length));
+
+    const clusters = data.map((c, i) => {
+      const on = c.id === active;
+      const n = c.tools.length;
+      const sats = c.tools.map(([name, st], j) => {
+        const deg = c.a + (j - (n - 1) / 2) * 38;
+        const rad = deg * Math.PI / 180;
+        const d = dot(st, on);
+        return {
+          name: name + ' · ' + st,
+          rot: deg + 'deg',
+          left: 'calc(' + c.x + '% + ' + (Math.cos(rad) * R - 4).toFixed(1) + 'px)',
+          top: 'calc(' + c.y + '% + ' + (Math.sin(rad) * R - 4).toFixed(1) + 'px)',
+          bg: d.bg === 'transparent' ? INK : d.bg, border: d.border, radius: d.radius,
+          opacity: matches(st) ? '1' : '0.3'
+        };
+      });
+      const activeCount = c.tools.filter((t) => t[1] === 'active').length;
+      return {
+        id: c.id, name: c.name, desc: c.desc, num: pad(i + 1), count: n, activeCount,
+        pressed: on, pick: () => this.setState({ active: c.id }),
+        left: c.x + '%', top: c.y + '%', sats,
+        satLine: on ? ACC : '#3A3A52',
+        chipBg: on ? ACC : '#101018', chipFg: on ? INK : TEXT, chipBorder: on ? ACC : '#4A4A66',
+        tabBar: on ? ACC : LINE, tabFg: on ? TEXT : MUTED,
+        rowBg: on ? '#1A1A26' : 'transparent', rowBorder: on ? ACC : LINE,
+        barW: Math.round(n / maxCount * 100) + '%', barBg: on ? ACC : MUTED,
+        cardBg: on ? ACC : '#101018', cardFg: on ? INK : TEXT, cardSub: on ? INK : MUTED, cardBorder: on ? ACC : LINE
+      };
+    });
+
+    const tools = [];
+    data.forEach((c) => c.tools.forEach(([name, st]) => {
+      const on = c.id === active;
+      const d = dot(st, true);
+      tools.push({
+        name, status: st, cluster: c.name,
+        cellBg: on ? '#1A1A26' : 'transparent', cellBorder: on ? ACC : LINE,
+        dotBg: d.bg, dotBorder: d.border, dotRadius: d.radius,
+        opacity: matches(st) ? '1' : '0.3'
+      });
+    }));
+
+    const filters = [['all', 'All'], ['active', 'Active'], ['attention', 'Attention']].map(([id, label]) => {
+      const on = filter === id;
+      return { label, pressed: on, pick: () => this.setState({ filter: id }),
+        bg: on ? ACC : 'transparent', fg: on ? INK : TEXT, border: on ? ACC : '#4A4A66' };
+    });
+
+    const nTools = tools.length;
+    const log = [
+      { text: '› map agentic-os tool matrix', color: TEXT },
+      { text: 'reading Stack/tool-matrix.md', color: MUTED },
+      { text: '+ [[agentic-os-matrix]]', color: MUTED },
+      { text: '✓ ' + data.length + ' clusters · ' + nTools + ' tools linked', color: ACC }
+    ].concat(extra).slice(-9);
+
+    return {
+      accent: this.props.accent ?? '#A99BFF',
+      clusters, tools, filters, log, cmd,
+      sel: clusters.find((c) => c.id === active) || clusters[0],
+      nClusters: data.length, nClustersPad: pad(data.length), nTools,
+      nActive: tools.filter((t) => t.status === 'active').length,
+      nWarn: tools.filter((t) => t.status === 'attention').length,
+      onCmd: (e) => this.setState({ cmd: e.target.value }),
+      run: (e) => {
+        e.preventDefault();
+        const text = this.state.cmd.trim();
+        if (!text) return;
+        this.setState({
+          cmd: '',
+          extra: this.state.extra.concat([
+            { text: '› ' + text, color: TEXT },
+            { text: 'queued · no backend connected yet', color: MUTED }
+          ])
+        });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

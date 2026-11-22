@@ -1,102 +1,47 @@
 
-https://github.com/DIY-Smart-Code/agent-html-kit
-Both sources share a similar underliying idea 
+The efficiency of monitoring depends on observability, which is limited by and depends on traceability (which enables security).
 
-The number 1 cause of the topic discussed in source "Something Strange Is Happening to Developers Who Work With AI
-" is a direct cause of unsophisticated markdown files. Which extrapolated further boils down to 
+I want to implement all three by leveraging the framework map and establish an observability first approach.
+I want to consolidate the tools into an ontology governed knowledge base and workflow through spec driven development. 
+    See reference template for promotion: 'C:\Code\el_nino\dev_graph\CLAUDE.md' and 'CLAUDE.md'C:\Kierkegaard\sickness\wiki\kierkegaard'
 
-The same philoisophy is represented in whipserflow as the easy of communitcion from human to machine (and vice versa via talking agents). The term "being wisperpilled", bacmae a thing.  I want to achieve the same effect but on the cognitive level be making a cunrtibution on how the files that were supporting the projects were generatedf and categorized. I want to ascend the one dimnesional nature of the .md files: they look the same desipite having extremely wide differenes on their contriubtion and relevant in any project (CLAUDE.md vs some random log file). Therfore documents hihger in the consiutional authority should also have deeper ontological foundations, as  well as greater visual complexity and being able to convey more information effectivle, to have also increased utility. This is fundamentally the UX if AI. 
+Its graph structure should be translated into a Markdown Engine and live dashboard (in and idempoten way to enable translation between markdown  html) to provide unified tracking and health monitoring, which will facilitate the implementation of the AI OS. I need direct access to, and oversight of, the available and implemented tools. This will enable the specification of the next development steps and facilitate vertical and horizontal scaling, benchmarking and resource management, change detection, targeted upgrades and the parallel execution of loop-governed agentic workflows.
 
-I have already taken the first steps through creating the 'framework-map.html' 
+The Obsidian Jarvis template is available at '.scratch\handout\Obsidian Jarvis — main interface-html' as a prototype for the live dashboard.
 
-TREAT THE HTML SORUCE AS BASÉINE FOR WORKLFOW
-This eventually biols down to mobile usage as the primarily visual interface.
+The AI OS itself will emerge from the stack and built upon the Markdown Engine. 
+The Obsidian Jarvis UI should enable a quick translation between markdown and HTML (see https://github.com/DIY-Smart-Code/agent-html-kit for reference)
 
-I already have used several tools to accomplish this, 
-such as the Matt Pocock skillset (such as grill, spec, to-tickets, handoff, implement, teach etc.), Obsidian graphs, spec driven development and  
-without realizeing the fundmanetal cause of adverse effects of AI use: the homogenous, endless, parts of these markdown outputs which leads to the utter 
-incomprehensabilty of the sessions.
+The build process should: 
+    Anyalze the current problem space
+    Finalise blueprints and specifications for the Markdown Engine.
+        Tool discovery to help with implementation of the specs.
+    Implement the specs
+    Apply the same process to the Obsidian Jarvis UI, incorporating these design system decisions:
+        Incude framework map tiers in the grahps which are being represented in the browser UI according to the following idea:
+        The galaxies are clustered per tier type = Top level,
+        as galaxies, nodes grouped by framework map tiers,  
+        tiers consists of groups of tier clusters
+        clusters are grouped by cells
 
-This does not mean that the workflow itself is flawed. Usually it already contaisn a lot of deliberation and effort on both side.
+Restrictions
+    The design and structure of the framework map must not be changed or altered in any significant way (apply the open–closed principle). All tools must remain in the framework map stack, and their ontological statuses and identities must be specified ( for tracability, observability and monitoring), aligning them with the Markdown Engine graphs.
 
-The AI drift (my term) is directly caused by  not being able to find the bottleneck and align the process between Ai and human to 100% (by the way this is impossible since it would require a direct neural interface, futhermore indivuals also vary significantly which furhter compicates the acquisition a unifed process for AI usage).
+I want to be able to
+    Ability to visualise, track, monitor, aggregate, update, delete and move resources across multiple domains under a single Markdown management system.    Promote operational tools to the 'implemented' status and indicate whether they are active. Include them in health checks.
+    Track and monitor the current system status and components live in the Obsidian Jarvis UI.
+    Map the relationships between clusters.    
+    Keep the Agentic OS tool matrix.xlsx and framework map as the primary tool inventory and connect it with the Markdown engine. 
+        This should help with validation and cross-referencing, and markdown to html conversion.
 
-So I want to apply and observability first approach which eventually biols own to desing tools and skills:
-the graph and framework map is for system level observabiltiy the gent-html-kit is for immediate tasks and ongoing implementation
+Planned features
+    The Markdown Engine will be prompoted to goverannce authority for downstream projects and superseeds earlier projects (such as the Hermes OS)
+    Advanced components of the traceability, observability and monitoring pillars (such as thresholds, trigger signals, benchmarking and cost reports) will be integrated into the Obsidian Jarvis to observe and monitor Loop Engineering and Agentic AI workflows. 
+    Graph goverened version controll and containerizaton is a remaining task to specify 
+    Create multiple independent sandboxes for experimentation.
+The next upstream process will be the integration of Loop Engineering and Agentic AI workflows into the OS using the Markdown Engine. A selected use case scenario will be the automated creation of Obsidian wikis for philosophical and psychological literature, as well as various academic texts. (exapmle expected output 'C:\Kierkegaard\sickness\wiki\')
 
-I would like to build it in the follwoing ways:
+Additional notes:
+    Migration to a linux based AI workstation will happen as soon as the AI workstation is prepared. Expected within 2 weeks.
+    Current workstation: Acer NITRO V5
 
-Lane 0 
-
-extend the agent-html-kit with new tools with advanced visual components for better outputs 
-deine new skills
-Lane 1
-Obsidian design
-2 designs
-
-Lane 2 
-Vibe coding zone
-Agentic engineering zone
-
-Lane 3
-
-THe actual tools that should be utilized in the next step. 
-
-Lane 4 feedback 
-
-Lane 5 benchmarking 
-
-Step 1
-
-framework-map tools and 'Agentic OS tool matrix.xlsx'
-
-Step 2 
-
-
-Cut off zone
-Klein Bottle Pattern
-
-WHEN A TASK IS DEEMED USEFUL INCLUDE IT IN THE STACK
-EFFICIENCEY: ADD THE OBSIDIAN STACK
-Kutatásmanagementtel kapcsolatos problémák Ai-való megoldása, kontrollávla az AI-al kapcsolatos kockázati tényezők figyelembevételével.
-
-Guardrails in paralell
-
-AGENT first approach/alignment
-
-keep the markdown fist approach for machine-readability and simple documentation, help the mahcine (MCPs)
-
-
-reuse useful proven methods and pattenrs
-
-define the current problems space and based on it propose the most pressing arcihetcural decision and their domains
-
-detect repetitive and redundant methods
-
-use memory and log every decisions,document milestones and important artefacts (e.g the framwork map), unexpected discoveries,  
-
-LEverage on what you already posess
-
-identify cross cutting cases to propose a unfieid solution
-
-wieght time and effort cost and align them to deliverables
-
-once something new is consolidated in the worflow propose them for automation and delegate them to agents
-
-track sessions, apply delete via PRs, specifiy authority levles and exeuctions policies
-
-24/7 headless supervision
- 
-invokable live dashboard for unified tracking (jarvis template) with health monitoring
- 
-
-note for human:
-keep track of AFK tasks while also defining startegies for unplugging
-keep the buget low
-
-
-promote the repository the first prototype (rewrite claude.md, rename both the local and remote repositories ) keep the scope until the deliverable is functional 
- current workstation NITRO V5
-}
-
-execute 

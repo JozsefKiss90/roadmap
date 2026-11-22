@@ -1,14 +1,14 @@
 {
  "meta": {
   "title": "Hermes OS tool discovery: meta framework",
-  "generated": "2026-11-19",
+  "generated": "2026-11-22",
   "note": "Repository facts (existence, stars, last commit, licence file) were read on 2026-11-17. Decisions marked \"Proposed here\" are recommendations, not accepted ADRs.",
   "counts": {
-   "tools": 766,
+   "tools": 773,
    "clusters": 55,
    "tiers": 8,
    "needs": 33,
-   "edges": 1557
+   "edges": 1567
   },
   "edge_types": [
    "contains",
@@ -425,7 +425,7 @@
    "hosting": "Hub",
    "stream": "Enable",
    "gate": "Admission review for third-party skills",
-   "tools": 57,
+   "tools": 58,
    "layout": {
     "z": 1,
     "sector": 0,
@@ -686,7 +686,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "Guarded: site terms and personal data",
-   "tools": 18,
+   "tools": 19,
    "layout": {
     "z": 3,
     "sector": 0,
@@ -707,7 +707,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 12,
+   "tools": 13,
    "layout": {
     "z": 3,
     "sector": 1,
@@ -817,7 +817,7 @@
    "hosting": "Hub",
    "stream": "GTM",
    "gate": "None",
-   "tools": 28,
+   "tools": 29,
    "layout": {
     "z": 3,
     "sector": 6,
@@ -904,7 +904,7 @@
    "hosting": "Spoke",
    "stream": "Enable",
    "gate": "None",
-   "tools": 15,
+   "tools": 16,
    "layout": {
     "z": 3,
     "sector": 10,
@@ -1054,7 +1054,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 16,
+   "tools": 17,
    "layout": {
     "z": 4,
     "sector": 6,
@@ -1332,7 +1332,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 19,
+   "tools": 20,
    "layout": {
     "z": 6,
     "sector": 5,
@@ -6260,6 +6260,38 @@
    "verification": "Catalogued, not re-checked",
    "note": null,
    "size": 1
+  },
+  {
+   "id": "tool:checkmate",
+   "type": "tool",
+   "label": "Checkmate",
+   "tier": "T6",
+   "cluster": "6F",
+   "kind": "App (self-hosted)",
+   "capability": "Self-hosted uptime, response-time, server-hardware and incident monitoring with status pages; AGPL",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A",
+    "M"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "bluewave-labs/Checkmate",
+   "url": "https://github.com/bluewave-labs/Checkmate",
+   "stars": 11114,
+   "last_commit": "2026-11-20",
+   "licence": "AGPL-3.0",
+   "verification": "Verified 2026-11-22",
+   "note": "Watches the hub and client endpoints; not LLM tracing.",
+   "size": 5.05
   },
   {
    "id": "tool:vale",
@@ -11630,6 +11662,39 @@
    "size": 4.26
   },
   {
+   "id": "tool:obsidian-web-clipper",
+   "type": "tool",
+   "label": "Obsidian Web Clipper",
+   "tier": "T4",
+   "cluster": "4G",
+   "kind": "Browser extension",
+   "capability": "Official browser extension that highlights and saves web pages into the vault as Markdown, with templates",
+   "decision_class": "Core v1",
+   "decision": "Core v1",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "M"
+   ],
+   "used_by": [
+    "M",
+    "D",
+    "A"
+   ],
+   "hosting": "Spoke",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "obsidianmd/obsidian-clipper",
+   "url": "https://github.com/obsidianmd/obsidian-clipper",
+   "stars": 5627,
+   "last_commit": "2026-11-21",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-21",
+   "note": "Built on Defuddle. Its optional Interpreter sends page text to the chosen model provider.",
+   "size": 4.75
+  },
+  {
    "id": "tool:karpathy-llm-wiki-blueprint",
    "type": "tool",
    "label": "karpathy_llm_wiki blueprint",
@@ -12485,6 +12550,38 @@
    "size": 5.22
   },
   {
+   "id": "tool:defuddle",
+   "type": "tool",
+   "label": "Defuddle",
+   "tier": "T3",
+   "cluster": "3A",
+   "kind": "Library",
+   "capability": "Extracts the main content of a web page as clean Markdown, dropping clutter to save tokens; engine behind Web Clipper",
+   "decision_class": "Core later",
+   "decision": "Core later",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A",
+    "M"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "Guarded: site terms and personal data",
+   "origin": "Discovery",
+   "repo": "kepano/defuddle",
+   "url": "https://github.com/kepano/defuddle",
+   "stars": 10129,
+   "last_commit": "2026-11-21",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-21",
+   "note": "Also ships a CLI and a skill in obsidian-skills.",
+   "size": 5.01
+  },
+  {
    "id": "tool:docling",
    "type": "tool",
    "label": "Docling",
@@ -12855,6 +12952,39 @@
    "verification": "Verified 2026-11-17",
    "note": null,
    "size": 5.32
+  },
+  {
+   "id": "tool:obsidian-importer",
+   "type": "tool",
+   "label": "Obsidian Importer",
+   "tier": "T3",
+   "cluster": "3B",
+   "kind": "Obsidian plug-in",
+   "capability": "Converts Apple Notes, OneNote, Evernote, Notion, Google Keep and other exports into Markdown in a vault",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "M"
+   ],
+   "used_by": [
+    "M",
+    "D",
+    "A"
+   ],
+   "hosting": "Spoke",
+   "stream": "Enable",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "obsidianmd/obsidian-importer",
+   "url": "https://github.com/obsidianmd/obsidian-importer",
+   "stars": 1820,
+   "last_commit": "2026-11-12",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-21",
+   "note": "One-off migration into the vault; not a recurring pipeline.",
+   "size": 4.26
   },
   {
    "id": "tool:changedetection-io",
@@ -15146,6 +15276,37 @@
    "size": 4.82
   },
   {
+   "id": "tool:claude-motion",
+   "type": "tool",
+   "label": "claude-motion",
+   "tier": "T3",
+   "cluster": "3G",
+   "kind": "Skill library",
+   "capability": "Motion-design toolkit for coding agents: Remotion motion rules, a frame-review loop, a stdlib sound engine, and web sims captured to 60 fps video",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": true,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "D"
+   ],
+   "hosting": "Hub",
+   "stream": "GTM",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "whaleyxbt/claude-motion",
+   "url": "https://github.com/whaleyxbt/claude-motion",
+   "stars": 1034,
+   "last_commit": "2026-11-08",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-22",
+   "note": "Builds on Remotion, so the Remotion licence check applies to company use.",
+   "size": 4.01
+  },
+  {
    "id": "tool:marketing-knowledge-work-plugin",
    "type": "tool",
    "label": "marketing (knowledge-work plugin)",
@@ -16833,6 +16994,39 @@
    "verification": "Verified 2026-11-17",
    "note": null,
    "size": 5.6
+  },
+  {
+   "id": "tool:obsidian-help",
+   "type": "tool",
+   "label": "Obsidian Help",
+   "tier": "T3",
+   "cluster": "3K",
+   "kind": "Course material",
+   "capability": "Official Obsidian help docs as a Markdown vault; reference for people and agents learning Obsidian syntax and features",
+   "decision_class": "Reference / concept",
+   "decision": "Reference / concept",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "M"
+   ],
+   "used_by": [
+    "M",
+    "D",
+    "A"
+   ],
+   "hosting": "Spoke",
+   "stream": "Enable",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "obsidianmd/obsidian-help",
+   "url": "https://github.com/obsidianmd/obsidian-help",
+   "stars": 2013,
+   "last_commit": "2026-11-19",
+   "licence": "Not found at default path",
+   "verification": "Verified 2026-11-21",
+   "note": null,
+   "size": 4.3
   },
   {
    "id": "tool:claude-code",
@@ -20854,6 +21048,39 @@
    "verification": "Verified 2026-11-17",
    "note": null,
    "size": 5.48
+  },
+  {
+   "id": "tool:obsidian-skills",
+   "type": "tool",
+   "label": "Obsidian Skills",
+   "tier": "T1",
+   "cluster": "1A",
+   "kind": "Skill library",
+   "capability": "Official Obsidian skills that teach agents Obsidian Markdown, Bases, JSON Canvas, the Obsidian CLI and Headless, Defuddle and Knap",
+   "decision_class": "Core v1",
+   "decision": "Core v1",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A",
+    "D",
+    "M"
+   ],
+   "hosting": "Hub",
+   "stream": "Enable",
+   "gate": "Admission review for third-party skills",
+   "origin": "Discovery",
+   "repo": "obsidianmd/obsidian-skills",
+   "url": "https://github.com/obsidianmd/obsidian-skills",
+   "stars": 53379,
+   "last_commit": "2026-11-20",
+   "licence": "MIT",
+   "verification": "Verified 2026-11-21",
+   "note": "Installs as the obsidian@obsidian-skills Claude Code plugin, or through npx skills for OpenCode and Codex.",
+   "size": 5.73
   },
   {
    "id": "tool:claude-plugins-official",
@@ -29105,6 +29332,11 @@
    "type": "contains"
   },
   {
+   "source": "6F",
+   "target": "tool:checkmate",
+   "type": "contains"
+  },
+  {
    "source": "5A",
    "target": "tool:vale",
    "type": "contains"
@@ -30285,6 +30517,11 @@
    "type": "contains"
   },
   {
+   "source": "4G",
+   "target": "tool:obsidian-web-clipper",
+   "type": "contains"
+  },
+  {
    "source": "4H",
    "target": "tool:karpathy-llm-wiki-blueprint",
    "type": "contains"
@@ -30438,6 +30675,11 @@
    "best_fit": false
   },
   {
+   "source": "3A",
+   "target": "tool:defuddle",
+   "type": "contains"
+  },
+  {
    "source": "3B",
    "target": "tool:docling",
    "type": "contains"
@@ -30496,6 +30738,16 @@
    "source": "3B",
    "target": "tool:pdfcraft",
    "type": "contains"
+  },
+  {
+   "source": "3B",
+   "target": "tool:obsidian-importer",
+   "type": "contains"
+  },
+  {
+   "source": "tool:obsidian-importer",
+   "target": "4G",
+   "type": "implements"
   },
   {
    "source": "3C",
@@ -31194,6 +31446,17 @@
    "best_fit": false
   },
   {
+   "source": "3G",
+   "target": "tool:claude-motion",
+   "type": "contains"
+  },
+  {
+   "source": "tool:claude-motion",
+   "target": "N23",
+   "type": "serves",
+   "best_fit": true
+  },
+  {
    "source": "3H",
    "target": "tool:marketing-knowledge-work-plugin",
    "type": "contains"
@@ -31847,6 +32110,11 @@
    "target": "N32",
    "type": "serves",
    "best_fit": false
+  },
+  {
+   "source": "3K",
+   "target": "tool:obsidian-help",
+   "type": "contains"
   },
   {
    "source": "2A",
@@ -32848,6 +33116,16 @@
    "source": "1A",
    "target": "tool:alirezarezvani-claude-skills",
    "type": "contains"
+  },
+  {
+   "source": "1A",
+   "target": "tool:obsidian-skills",
+   "type": "contains"
+  },
+  {
+   "source": "tool:obsidian-skills",
+   "target": "4G",
+   "type": "implements"
   },
   {
    "source": "1B",
