@@ -12,6 +12,8 @@ The Obsidian Jarvis template is available at '.scratch\handout\Obsidian Jarvis â
 The AI OS itself will emerge from the stack and built upon the Markdown Engine. 
 The Obsidian Jarvis UI should enable a quick translation between markdown and HTML (see https://github.com/DIY-Smart-Code/agent-html-kit for reference)
 
+Before building anything, I want to be able to visualise the process and track architectural decisions. Static prototypes with minimal designs are sufficient.
+
 The build process should: 
     Anyalze the current problem space
     Finalise blueprints and specifications for the Markdown Engine.
@@ -37,8 +39,9 @@ I want to be able to
 Planned features
     The Markdown Engine will be prompoted to goverannce authority for downstream projects and superseeds earlier projects (such as the Hermes OS)
     Advanced components of the traceability, observability and monitoring pillars (such as thresholds, trigger signals, benchmarking and cost reports) will be integrated into the Obsidian Jarvis to observe and monitor Loop Engineering and Agentic AI workflows. 
-    Graph goverened version controll and containerizaton is a remaining task to specify 
+    Graph goverened version controll and containerizaton is a remaining task to specify. 
     Create multiple independent sandboxes for experimentation.
+        
 The next upstream process will be the integration of Loop Engineering and Agentic AI workflows into the OS using the Markdown Engine. A selected use case scenario will be the automated creation of Obsidian wikis for philosophical and psychological literature, as well as various academic texts. (exapmle expected output 'C:\Kierkegaard\sickness\wiki\')
 
 Additional notes:
