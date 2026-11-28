@@ -1,6 +1,6 @@
-# Hermes OS tool framework
+# Agentic OS tool framework
 
-The language for the Hermes OS tool discovery framework and the map that shows it: what was catalogued, how it is classified, and how it is looked at.
+The language for the Agentic OS tool discovery framework and the map that shows it: what was catalogued, how it is classified, and how it is looked at.
 
 ## Language
 
@@ -33,6 +33,158 @@ _Avoid_: Persona, user type
 **Partner**:
 A person who holds a role.
 _Avoid_: User, member, teammate
+
+### Agentic OS
+
+**Agentic OS**:
+The whole system being built on top of the framework, in which agents and their tools are tracked, monitored and run.
+_Avoid_: AI OS, Hermes OS
+
+**Markdown Engine**:
+The governance layer of the Agentic OS, in which markdown is the source of truth and translates to HTML and back without loss.
+_Avoid_: Wiki, vault engine
+
+**Jarvis**:
+The live dashboard of the Agentic OS, from which a partner oversees its tools, their status and their health.
+_Avoid_: Obsidian Jarvis (that is the prototype), console, cockpit
+
+**Knowledge Visualizer**:
+The panel of Jarvis that draws the tiers as galaxies, the clusters as constellations and the tools as stars, and the main place where cross-references are followed.
+_Avoid_: Graph view, brain view
+
+**FounderOS**:
+The outside business command centre whose working parts are taken into the Agentic OS, copied and adapted rather than merged.
+_Avoid_: Upstream, base
+
+### Tool state
+
+**Status**:
+How far a tool has come into the Agentic OS: catalogued, implemented or retired. Every tool holds exactly one.
+_Avoid_: State, stage, lifecycle
+
+**Catalogued**:
+The status of a tool that is in the framework and nothing more; every tool starts here.
+_Avoid_: Planned, candidate, evaluated
+
+**Implemented**:
+The status of a tool a partner can find, reach, invoke and use in the Agentic OS today.
+_Avoid_: Installed, adopted, operational
+
+**Retired**:
+The status of a tool that was implemented and has been taken out. Its record is kept.
+_Avoid_: Deprecated, removed, deleted
+
+**Promote**:
+To move a tool from catalogued or retired to implemented. Only a partner promotes.
+_Avoid_: Upgrade, advance, approve
+
+**Retire**:
+To move a tool from implemented to retired. Only a partner retires.
+_Avoid_: Demote, deprecate, remove
+
+**Standing tool**:
+A tool that runs continuously once started, such as a service or a provider.
+_Avoid_: Service (that is a kind), daemon, long-running tool
+
+**Triggered tool**:
+A tool that runs only when it is called, such as a skill, a command or a library.
+_Avoid_: On-demand tool, passive tool
+
+**Active**:
+Seen running now. Only an implemented standing tool can be active; for a triggered tool the question does not apply.
+_Avoid_: Running, live, enabled, online
+
+**Health**:
+Whether an implemented tool can still be found, reached and invoked, as checked at the moment of asking.
+_Avoid_: Status (that is how far a tool has come), uptime
+
+**Attention**:
+What Jarvis shows for an implemented tool whose health check fails or could not be run.
+_Avoid_: Error, warning, unhealthy, down
+
+**Idle**:
+What Jarvis shows for an implemented tool that is healthy and not active.
+_Avoid_: Inactive, off, stopped
+
+### Vault
+
+**Vault**:
+The markdown store of the Agentic OS: a folder of notes kept under git, which Obsidian can also open.
+_Avoid_: Wiki, knowledge base, brain
+
+**Tool note**:
+The one note that stands for a tool in the vault. A cluster, a tier and a need each have theirs in the same way: a cluster note, a tier note, a need note.
+_Avoid_: Page, doc, card
+
+**Generated block**:
+The fenced part of a note that is written from the tool matrix and rewritten on every run. Everything outside it belongs to the partners.
+_Avoid_: Auto section, managed block
+
+**Presence**:
+Whether a tool is a standing tool or a triggered tool. It is derived from the tool's kind and can be set by hand on the tool note.
+_Avoid_: Mode, run type
+
+**Evidence**:
+The pointer on a tool note that shows where an implemented tool is found: a path, a config entry or a URL.
+_Avoid_: Proof, source, location
+
+**Move**:
+One promotion or retirement of a tool, recorded with who made it, when, from which status and on what evidence.
+_Avoid_: Transition, change, event
+
+**Move log**:
+The append-only list of every move, one line each, kept at the root of the vault.
+_Avoid_: History, changelog, audit trail
+
+**Partner list**:
+The closed list of partners who may make a move, each known by a short handle.
+_Avoid_: Users, authors, contributors
+
+**Check mode**:
+A run of the generator that writes nothing and reports every note it would change.
+_Avoid_: Dry run, diff mode, verify
+
+**Matrix snapshot**:
+The committed copy of the tool matrix and its companion files that the Agentic OS repo holds, marked with the roadmap commit it was taken from.
+_Avoid_: Mirror, cache, vendored matrix
+
+**Tool state file**:
+The generated record of every tool that is not catalogued, written from the vault for the roadmap repo to read.
+_Avoid_: Sidecar, write-back column, status export
+
+**Prune**:
+To delete the note of a tool, cluster, tier or need that has left the tool matrix and held nothing written by a partner.
+_Avoid_: Clean up, purge, remove
+
+**Finding**:
+A disagreement between the vault and the tool matrix that lint reports without failing.
+_Avoid_: Warning, issue, stack finding (that is about the tools, not the notes)
+
+### Knowledge Visualizer
+
+**Galaxy**:
+A tier as the Knowledge Visualizer draws it.
+_Avoid_: Sector, wedge, ring
+
+**Constellation**:
+A cluster as the Knowledge Visualizer draws it, inside the galaxy of its tier.
+_Avoid_: Group, arc, community
+
+**Star**:
+A tool as the Knowledge Visualizer draws it. A need and a free note are drawn too, and keep their own names.
+_Avoid_: Node, dot, planet
+
+**Cross-reference**:
+A stated tie between two things in the Knowledge Visualizer: a tool serves a need, overlaps another tool, implements a cluster or replaces a tool, a need has its home in a cluster, or one note links to another. Belonging to a cluster or a tier is not one.
+_Avoid_: Edge, relation, connection
+
+**Unlinked**:
+Said of a tool that has no cross-reference.
+_Avoid_: Orphan, isolated
+
+**Stack finding**:
+Something the Knowledge Visualizer reports that the tools lack or double up on, such as a need that no implemented tool serves.
+_Avoid_: Finding (that is the lint grade), insight, alert
 
 ### Map
 

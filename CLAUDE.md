@@ -11,3 +11,7 @@ The five canonical triage roles use their default names (`needs-triage`, `needs-
 ### Domain docs
 
 Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Figma blueprint
+
+Before creating or editing a Figma file, read `docs/agents/figma-blueprint.md`: pages, layer names, layout, variables and the scene spec for 3D wireframes.

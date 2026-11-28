@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "43562b81-9ded-405f-89e6-e240c0b261fe",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\candidate.archify.md",
+  "output": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\agentic-os-observability.html",
+  "specification": {
+    "sha256": "32724860c85b1d7961d42171d8ec67fd6f654e73ec4fea88fd64af8a55be83a6",
+    "bytes": 10623
+  },
+  "artifact": {
+    "sha256": "04d12b77b3c303c9e987e93049011695fe33b56a95a0e84b02263f59b5759b52",
+    "bytes": 1538868
+  },
+  "explainer": {
+    "preparedSha256": "6ef997c92359aa562b9c582585b3637136b8c1c55162ce58b9eed1300582363a",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "system-parts",
+        "inline": true,
+        "sha256": "2a394f8663be57182d8c5531394b2a07ba7d0b98421e0bc3e68ff52f11272102",
+        "bytes": 2118
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "jarvis-state",
+        "inline": true,
+        "sha256": "ed685c9c1f8a299193e0104942572c9c88a648ff616334747c03f708b263d671",
+        "bytes": 1821
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "ticket-map",
+        "inline": true,
+        "sha256": "8ebcb8715acddd656ebf5483da700ccf0bdd444d392f5bd47c3e1e0da4d02f73",
+        "bytes": 2166
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\candidate.archify.md",
+    "sha256": "32724860c85b1d7961d42171d8ec67fd6f654e73ec4fea88fd64af8a55be83a6",
+    "bytes": 10623
+  },
+  "artifact": {
+    "path": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\agentic-os-observability.html",
+    "sha256": "04d12b77b3c303c9e987e93049011695fe33b56a95a0e84b02263f59b5759b52",
+    "bytes": 1538868
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\agentic-os-observability.finalize.json",
+    "summaryReceipt": "C:\\Code\\roadmap\\.archify\\explainer-agentic-os-observability-20261125-010500\\agentic-os-observability.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 8115,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

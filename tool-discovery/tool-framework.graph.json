@@ -1,14 +1,14 @@
 {
  "meta": {
   "title": "Hermes OS tool discovery: meta framework",
-  "generated": "2026-11-22",
+  "generated": "2026-11-23",
   "note": "Repository facts (existence, stars, last commit, licence file) were read on 2026-11-17. Decisions marked \"Proposed here\" are recommendations, not accepted ADRs.",
   "counts": {
-   "tools": 803,
+   "tools": 805,
    "clusters": 57,
    "tiers": 8,
    "needs": 33,
-   "edges": 1614
+   "edges": 1617
   },
   "edge_types": [
    "contains",
@@ -720,7 +720,7 @@
    "hosting": "Hub",
    "stream": "OS",
    "gate": "None",
-   "tools": 13,
+   "tools": 14,
    "layout": {
     "z": 3,
     "sector": 1,
@@ -830,7 +830,7 @@
    "hosting": "Hub",
    "stream": "GTM",
    "gate": "None",
-   "tools": 29,
+   "tools": 30,
    "layout": {
     "z": 3,
     "sector": 6,
@@ -13310,6 +13310,37 @@
    "size": 1
   },
   {
+   "id": "tool:paddleocr",
+   "type": "tool",
+   "label": "PaddleOCR",
+   "tier": "T3",
+   "cluster": "3B",
+   "kind": "Library",
+   "capability": "OCR and document parsing for scans and images: PP-OCR text recognition, PP-StructureV3 layout and tables, and the PaddleOCR-VL model, to Markdown or JSON in 100+ languages",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "A"
+   ],
+   "hosting": "Hub",
+   "stream": "OS",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "PaddlePaddle/PaddleOCR",
+   "url": "https://github.com/PaddlePaddle/PaddleOCR",
+   "stars": 93011,
+   "last_commit": "2026-09-16",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-23",
+   "note": "Needs the PaddlePaddle framework; runs on CPU or the hub GPU.",
+   "size": 5.97
+  },
+  {
    "id": "tool:mineru",
    "type": "tool",
    "label": "MinerU",
@@ -15785,6 +15816,37 @@
    "verification": "Verified 2026-11-22",
    "note": "Builds on Remotion, so the Remotion licence check applies to company use.",
    "size": 4.01
+  },
+  {
+   "id": "tool:openmotion",
+   "type": "tool",
+   "label": "OpenMotion",
+   "tier": "T3",
+   "cluster": "3G",
+   "kind": "App (self-hosted)",
+   "capability": "Agentic video studio: turns a reference video or brief into editable HTML motion graphics with a brand kit and renders MP4; local Studio, MCP server and skills for 22 agents including Claude Code and Hermes",
+   "decision_class": "Optional / benchmark",
+   "decision": "Optional / benchmark",
+   "decision_source": "Proposed here",
+   "best_fit": false,
+   "operated_by": [
+    "A"
+   ],
+   "used_by": [
+    "D"
+   ],
+   "hosting": "Hub",
+   "stream": "GTM",
+   "gate": "None",
+   "origin": "Discovery",
+   "repo": "nexu-io/openmotion",
+   "url": "https://github.com/nexu-io/openmotion",
+   "stars": 15308,
+   "last_commit": "2026-11-22",
+   "licence": "Apache-2.0",
+   "verification": "Verified 2026-11-23",
+   "note": "Overlaps claude-motion and Hyperframes, and imports Hyperframes projects. Media models are bring-your-own-key.",
+   "size": 5.18
   },
   {
    "id": "tool:marketing-knowledge-work-plugin",
@@ -31893,6 +31955,11 @@
   },
   {
    "source": "3B",
+   "target": "tool:paddleocr",
+   "type": "contains"
+  },
+  {
+   "source": "3B",
    "target": "tool:mineru",
    "type": "contains"
   },
@@ -32627,6 +32694,17 @@
    "target": "N23",
    "type": "serves",
    "best_fit": true
+  },
+  {
+   "source": "3G",
+   "target": "tool:openmotion",
+   "type": "contains"
+  },
+  {
+   "source": "tool:openmotion",
+   "target": "N23",
+   "type": "serves",
+   "best_fit": false
   },
   {
    "source": "3H",

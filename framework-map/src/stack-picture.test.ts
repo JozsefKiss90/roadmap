@@ -28,7 +28,7 @@ describe('the static picture of the stack', () => {
   it('draws one plate for each tier, one cell for each cluster and one mark for each tool', () => {
     expect(countOf(/class="picture-plate"/g)).toBe(8);
     expect(countOf(/class="picture-cell"/g)).toBe(57);
-    expect(countOf(/class="picture-mark picture-mark-\w+"/g)).toBe(803);
+    expect(countOf(/class="picture-mark picture-mark-\w+"/g)).toBe(805);
   });
 
   it('draws the underside of each plate first, the same size and 7 pixels under it', () => {
@@ -51,7 +51,7 @@ describe('the static picture of the stack', () => {
   });
 
   it('names every tier, with its count of tools', () => {
-    expect(picture).toContain('T3 · 173 TOOLS');
+    expect(picture).toContain('T3 · 175 TOOLS');
     expect(picture).toContain('>Pipelines and applications<');
     expect(picture).toContain('T7 · 35 TOOLS');
     expect(countOf(/class="picture-name"/g)).toBe(8);
@@ -66,7 +66,7 @@ describe('the static picture of the stack', () => {
   it('puts the top tier first, with each tier’s marks in its own drawing', () => {
     expect(picture.indexOf('T7 · 35 TOOLS')).toBeGreaterThan(-1);
     expect(picture.indexOf('T7 · 35 TOOLS')).toBeLessThan(picture.indexOf('T0 · 104 TOOLS'));
-    expect(drawings.map((drawing) => [...drawing.matchAll(/picture-mark /g)].length)).toEqual([35, 110, 94, 94, 173, 68, 125, 104]);
+    expect(drawings.map((drawing) => [...drawing.matchAll(/picture-mark /g)].length)).toEqual([35, 110, 94, 94, 175, 68, 125, 104]);
   });
 
   it('gives every drawing the same frame, so the plates share their left edge at any size', () => {
@@ -78,7 +78,7 @@ describe('the static picture of the stack', () => {
     const [, , width, height] = /viewBox="([^"]+)"/.exec(picture)![1]!.split(' ').map(Number) as [number, number, number, number];
     expect(Math.min(...numbersOf('x'), ...numbersOf('y'))).toBeGreaterThanOrEqual(0);
     const rects = [...picture.matchAll(/<rect [^>]*x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)];
-    expect(rects.length).toBe(8 + 8 + 57 + 803);
+    expect(rects.length).toBe(8 + 8 + 57 + 805);
     for (const [, x, y, w, h] of rects) {
       expect(Number(x) + Number(w)).toBeLessThanOrEqual(width);
       expect(Number(y) + Number(h)).toBeLessThanOrEqual(height);
@@ -88,7 +88,7 @@ describe('the static picture of the stack', () => {
   it('draws every mark the same size, with its outline inside it', () => {
     const marks = [...picture.matchAll(/<rect class="picture-mark [^"]+" x="[^"]+" y="[^"]+" width="([^"]+)" height="([^"]+)"(?: stroke-width="([^"]+)")?/g)];
     const sizes = new Set(marks.map(([, width, height, line = '0']) => `${Number(width) + Number(line)}x${Number(height) + Number(line)}`));
-    expect(marks).toHaveLength(803);
+    expect(marks).toHaveLength(805);
     expect([...sizes]).toEqual(['9x6']);
   });
 
